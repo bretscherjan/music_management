@@ -1,0 +1,144 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model Attendances {
+  Id        Int      @id @default(autoincrement())
+  EventId   Int
+  UserId    Int
+  Status    Int
+  Comment   String   @db.Text
+  UpdatedAt DateTime @default(now()) @db.DateTime(0)
+  Events    Events   @relation(fields: [EventId], references: [Id], onDelete: Cascade, onUpdate: NoAction, map: "FK_Attendances_Events")
+  Users     Users    @relation(fields: [UserId], references: [Id], onDelete: Cascade, onUpdate: NoAction, map: "FK_Attendances_Users")
+
+  @@index([EventId], map: "FK_Attendances_Events")
+  @@index([UserId], map: "FK_Attendances_Users")
+}
+
+model Events {
+  Id                   Int           @id @default(autoincrement())
+  Title                String        @db.VarChar(255)
+  Description          String        @db.Text
+  Type                 String        @db.VarChar(50)
+  StartTime            DateTime      @db.DateTime(0)
+  EndTime              DateTime      @db.DateTime(0)
+  Location             String        @db.VarChar(255)
+  Clothing             String        @default("") @db.VarChar(255)
+  RegistrationDeadline DateTime      @default(now()) @db.DateTime(0)
+  Attendances          Attendances[]
+}
+
+model FileEntities {
+  Id                 Int            @id @default(autoincrement())
+  Name               String         @db.VarChar(255)
+  Path               String         @db.VarChar(500)
+  ContentType        String         @default("") @db.VarChar(100)
+  Size               BigInt         @default(0)
+  ParentId           Int?
+  IsFolder           Boolean        @default(false)
+  AccessLevel        String         @default("Member") @db.VarChar(50)
+  UploadedByUserId   Int
+  CreatedAt          DateTime       @default(now()) @db.DateTime(0)
+  FileEntities       FileEntities?  @relation("FileEntitiesToFileEntities", fields: [ParentId], references: [Id], onDelete: Cascade, onUpdate: NoAction, map: "FK_FileEntities_Parent")
+  other_FileEntities FileEntities[] @relation("FileEntitiesToFileEntities")
+  Users              Users          @relation(fields: [UploadedByUserId], references: [Id], onDelete: Cascade, onUpdate: NoAction, map: "FK_FileEntities_Users")
+
+  @@index([ParentId], map: "FK_FileEntities_Parent")
+  @@index([UploadedByUserId], map: "FK_FileEntities_Users")
+}
+
+model PollOptions {
+  Id        Int         @id @default(autoincrement())
+  PollId    Int
+  Text      String      @db.VarChar(255)
+  Polls     Polls       @relation(fields: [PollId], references: [Id], onDelete: Cascade, onUpdate: NoAction, map: "FK_PollOptions_Polls")
+  PollVotes PollVotes[]
+
+  @@index([PollId], map: "FK_PollOptions_Polls")
+}
+
+model PollVotes {
+  Id           Int         @id @default(autoincrement())
+  PollOptionId Int
+  UserId       Int
+  VotedAt      DateTime    @default(now()) @db.DateTime(0)
+  PollOptions  PollOptions @relation(fields: [PollOptionId], references: [Id], onDelete: Cascade, onUpdate: NoAction, map: "FK_PollVotes_PollOptions")
+  Users        Users       @relation(fields: [UserId], references: [Id], onDelete: Cascade, onUpdate: NoAction, map: "FK_PollVotes_Users")
+
+  @@index([PollOptionId], map: "FK_PollVotes_PollOptions")
+  @@index([UserId], map: "FK_PollVotes_Users")
+}
+
+model Polls {
+  Id          Int           @id @default(autoincrement())
+  Title       String        @db.VarChar(255)
+  Description String        @db.Text
+  DueDate     DateTime      @db.DateTime(0)
+  IsActive    Boolean       @default(true)
+  PollOptions PollOptions[]
+}
+
+model RoleChangeRequests {
+  Id                                                Int       @id @default(autoincrement())
+  TargetUserId                                      Int
+  NewRoleId                                         Int
+  RequestedByUserId                                 Int
+  ApprovedByUserId                                  Int?
+  Status                                            Int       @default(0)
+  CreatedAt                                         DateTime  @default(now()) @db.DateTime(0)
+  ProcessedAt                                       DateTime? @db.DateTime(0)
+  Users_RoleChangeRequests_ApprovedByUserIdToUsers  Users?    @relation("RoleChangeRequests_ApprovedByUserIdToUsers", fields: [ApprovedByUserId], references: [Id], onDelete: NoAction, onUpdate: NoAction, map: "FK_RCR_Approver")
+  Roles                                             Roles     @relation(fields: [NewRoleId], references: [Id], onDelete: Cascade, onUpdate: NoAction, map: "FK_RCR_NewRole")
+  Users_RoleChangeRequests_RequestedByUserIdToUsers Users     @relation("RoleChangeRequests_RequestedByUserIdToUsers", fields: [RequestedByUserId], references: [Id], onDelete: Cascade, onUpdate: NoAction, map: "FK_RCR_Requester")
+  Users_RoleChangeRequests_TargetUserIdToUsers      Users     @relation("RoleChangeRequests_TargetUserIdToUsers", fields: [TargetUserId], references: [Id], onDelete: Cascade, onUpdate: NoAction, map: "FK_RCR_TargetUser")
+
+  @@index([ApprovedByUserId], map: "FK_RCR_Approver")
+  @@index([NewRoleId], map: "FK_RCR_NewRole")
+  @@index([RequestedByUserId], map: "FK_RCR_Requester")
+  @@index([TargetUserId], map: "FK_RCR_TargetUser")
+}
+
+model Roles {
+  Id                 Int                  @id @default(autoincrement())
+  Name               String               @db.VarChar(255)
+  Level              Int
+  RoleChangeRequests RoleChangeRequests[]
+  UserRoles          UserRoles[]
+}
+
+model UserRoles {
+  UserId Int
+  RoleId Int
+  Roles  Roles @relation(fields: [RoleId], references: [Id], onDelete: Cascade, onUpdate: NoAction, map: "FK_UserRoles_Roles")
+  Users  Users @relation(fields: [UserId], references: [Id], onDelete: Cascade, onUpdate: NoAction, map: "FK_UserRoles_Users")
+
+  @@id([UserId, RoleId])
+  @@index([RoleId], map: "FK_UserRoles_Roles")
+}
+
+model Users {
+  Id                                                             Int                  @id @default(autoincrement())
+  Email                                                          String               @unique(map: "Email") @db.VarChar(255)
+  PasswordHash                                                   String               @db.VarChar(255)
+  FirstName                                                      String               @db.VarChar(255)
+  LastName                                                       String               @db.VarChar(255)
+  Address                                                        String               @default("") @db.VarChar(255)
+  Phone                                                          String               @default("") @db.VarChar(50)
+  Instrument                                                     String               @default("") @db.VarChar(255)
+  JoinDate                                                       DateTime             @default(now()) @db.DateTime(0)
+  IsActive                                                       Boolean              @default(true)
+  Attendances                                                    Attendances[]
+  FileEntities                                                   FileEntities[]
+  PollVotes                                                      PollVotes[]
+  RoleChangeRequests_RoleChangeRequests_ApprovedByUserIdToUsers  RoleChangeRequests[] @relation("RoleChangeRequests_ApprovedByUserIdToUsers")
+  RoleChangeRequests_RoleChangeRequests_RequestedByUserIdToUsers RoleChangeRequests[] @relation("RoleChangeRequests_RequestedByUserIdToUsers")
+  RoleChangeRequests_RoleChangeRequests_TargetUserIdToUsers      RoleChangeRequests[] @relation("RoleChangeRequests_TargetUserIdToUsers")
+  UserRoles                                                      UserRoles[]
+}

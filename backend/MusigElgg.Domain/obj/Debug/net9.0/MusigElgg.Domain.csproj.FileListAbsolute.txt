@@ -1,0 +1,12 @@
+C:\Daten\010_Privat\020_Musik\040_musig_elgg\00_website\musig_elgg\backend\MusigElgg.Domain\bin\Debug\net9.0\MusigElgg.Domain.deps.json
+C:\Daten\010_Privat\020_Musik\040_musig_elgg\00_website\musig_elgg\backend\MusigElgg.Domain\bin\Debug\net9.0\MusigElgg.Domain.dll
+C:\Daten\010_Privat\020_Musik\040_musig_elgg\00_website\musig_elgg\backend\MusigElgg.Domain\bin\Debug\net9.0\MusigElgg.Domain.pdb
+C:\Daten\010_Privat\020_Musik\040_musig_elgg\00_website\musig_elgg\backend\MusigElgg.Domain\obj\Debug\net9.0\MusigElgg.Domain.GeneratedMSBuildEditorConfig.editorconfig
+C:\Daten\010_Privat\020_Musik\040_musig_elgg\00_website\musig_elgg\backend\MusigElgg.Domain\obj\Debug\net9.0\MusigElgg.Domain.AssemblyInfoInputs.cache
+C:\Daten\010_Privat\020_Musik\040_musig_elgg\00_website\musig_elgg\backend\MusigElgg.Domain\obj\Debug\net9.0\MusigElgg.Domain.AssemblyInfo.cs
+C:\Daten\010_Privat\020_Musik\040_musig_elgg\00_website\musig_elgg\backend\MusigElgg.Domain\obj\Debug\net9.0\MusigElgg.Domain.csproj.CoreCompileInputs.cache
+C:\Daten\010_Privat\020_Musik\040_musig_elgg\00_website\musig_elgg\backend\MusigElgg.Domain\obj\Debug\net9.0\MusigElgg.Domain.sourcelink.json
+C:\Daten\010_Privat\020_Musik\040_musig_elgg\00_website\musig_elgg\backend\MusigElgg.Domain\obj\Debug\net9.0\MusigElgg.Domain.dll
+C:\Daten\010_Privat\020_Musik\040_musig_elgg\00_website\musig_elgg\backend\MusigElgg.Domain\obj\Debug\net9.0\refint\MusigElgg.Domain.dll
+C:\Daten\010_Privat\020_Musik\040_musig_elgg\00_website\musig_elgg\backend\MusigElgg.Domain\obj\Debug\net9.0\MusigElgg.Domain.pdb
+C:\Daten\010_Privat\020_Musik\040_musig_elgg\00_website\musig_elgg\backend\MusigElgg.Domain\obj\Debug\net9.0\ref\MusigElgg.Domain.dll

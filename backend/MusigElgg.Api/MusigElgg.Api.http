@@ -1,6 +1,0 @@
-@MusigElgg.Api_HostAddress = http://localhost:5198
-
-GET {{MusigElgg.Api_HostAddress}}/weatherforecast/
-Accept: application/json
-
-###

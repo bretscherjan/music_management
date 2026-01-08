@@ -1,0 +1,173 @@
+@import "tailwindcss";
+
+/* =====================================================
+   MUSIG ELGG DESIGN SYSTEM
+   Color Palette & Theme Configuration
+   ===================================================== */
+
+@theme {
+  /* ===== PRIMARY (Burgundy) ===== */
+  --color-primary-50: #fdf2f2;
+  --color-primary-100: #fce4e4;
+  --color-primary-200: #facccc;
+  --color-primary-300: #f5a3a3;
+  --color-primary-400: #ed6b6b;
+  --color-primary-500: #e04040;
+  --color-primary-600: #cc2626;
+  --color-primary-700: #ab1d1d;
+  --color-primary-800: #801010;
+  /* Main Brand Color */
+  --color-primary-900: #6e1212;
+  --color-primary-950: #3d0606;
+
+  /* ===== SECONDARY (Gold) ===== */
+  --color-secondary-50: #fdfaf3;
+  --color-secondary-100: #faf3e1;
+  --color-secondary-200: #f4e5c2;
+  --color-secondary-300: #ecd299;
+  --color-secondary-400: #e2b96e;
+  --color-secondary-500: #C5A059;
+  /* Main Brand Color */
+  --color-secondary-600: #b38a3f;
+  --color-secondary-700: #956d35;
+  --color-secondary-800: #7a5730;
+  --color-secondary-900: #654929;
+  --color-secondary-950: #382614;
+
+  /* ===== NEUTRAL (Cream) ===== */
+  --color-neutral-50: #F9F7F2;
+  /* Main Brand Color */
+  --color-neutral-100: #f3efe6;
+  --color-neutral-200: #e6e0d1;
+  --color-neutral-300: #d5ccb7;
+  --color-neutral-400: #c2b49a;
+  --color-neutral-500: #b3a182;
+  --color-neutral-600: #a38f6c;
+  --color-neutral-700: #88755a;
+  --color-neutral-800: #70604c;
+  --color-neutral-900: #5c5040;
+  --color-neutral-950: #312a21;
+
+  /* ===== SEMANTIC COLORS ===== */
+  --color-success: #16a34a;
+  --color-warning: #ca8a04;
+  --color-error: #dc2626;
+  --color-info: #2563eb;
+
+  /* ===== TYPOGRAPHY ===== */
+  --font-family-display: 'Playfair Display', Georgia, serif;
+  --font-family-body: 'Inter', system-ui, -apple-system, sans-serif;
+
+  /* ===== SHADOWS ===== */
+  --shadow-elegant: 0 4px 6px -1px rgba(128, 16, 16, 0.1), 0 2px 4px -2px rgba(128, 16, 16, 0.1);
+  --shadow-card: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -4px rgba(0, 0, 0, 0.05);
+  --shadow-glow: 0 0 20px rgba(197, 160, 89, 0.3);
+
+  /* ===== BORDER RADIUS ===== */
+  --radius-sm: 0.375rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+}
+
+/* ===== BASE STYLES ===== */
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-family-body);
+  background-color: var(--color-neutral-50);
+  color: var(--color-neutral-950);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ===== TYPOGRAPHY DEFAULTS ===== */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: var(--font-family-display);
+  color: var(--color-primary-800);
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+h1 {
+  font-size: 2.5rem;
+}
+
+h2 {
+  font-size: 2rem;
+}
+
+h3 {
+  font-size: 1.5rem;
+}
+
+h4 {
+  font-size: 1.25rem;
+}
+
+/* ===== LINK DEFAULTS ===== */
+a {
+  color: var(--color-primary-700);
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+a:hover {
+  color: var(--color-primary-900);
+}
+
+/* ===== FOCUS STATES ===== */
+:focus-visible {
+  outline: 2px solid var(--color-secondary-500);
+  outline-offset: 2px;
+}
+
+/* ===== SCROLLBAR STYLING ===== */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--color-neutral-100);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-neutral-400);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-neutral-500);
+}
+
+/* ===== UTILITY CLASSES ===== */
+.gradient-primary {
+  background: linear-gradient(135deg, var(--color-primary-700), var(--color-primary-900));
+}
+
+.gradient-secondary {
+  background: linear-gradient(135deg, var(--color-secondary-400), var(--color-secondary-600));
+}
+
+.glass-effect {
+  background: rgba(249, 247, 242, 0.8);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.text-gradient {
+  background: linear-gradient(135deg, var(--color-primary-800), var(--color-secondary-500));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}

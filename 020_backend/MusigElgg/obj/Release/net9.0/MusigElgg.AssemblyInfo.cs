@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("MusigElgg")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Release")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+9f522519a59ba5b7f775107f9205921e6a8f62c7")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+03d2c036e54eca9b62e1a3dda0c81a419c35fc54")]
 [assembly: System.Reflection.AssemblyProductAttribute("MusigElgg")]
 [assembly: System.Reflection.AssemblyTitleAttribute("MusigElgg")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

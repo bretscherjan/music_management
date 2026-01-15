@@ -1,0 +1,5 @@
+src/components/admin/CreateUserDialog.tsx(9,1): error TS6133: 'Register' is declared but its value is never read.
+src/pages/admin/CreateEventPage.tsx(67,23): error TS6133: 'until' is declared but its value is never read.
+src/pages/admin/RegisterManagementPage.tsx(13,1): error TS6133: 'User' is declared but its value is never read.
+src/pages/admin/UserManagementPage.tsx(19,51): error TS6133: 'Phone' is declared but its value is never read.
+src/pages/admin/UserManagementPage.tsx(50,11): error TS6198: All destructured elements are unused.

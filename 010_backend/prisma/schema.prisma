@@ -1,0 +1,312 @@
+// Prisma Schema for Vereinsverwaltung
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================
+// ENUMS
+// ============================================
+
+enum UserStatus {
+  active
+  passive
+  former
+}
+
+enum UserRole {
+  member
+  admin
+}
+
+enum EventCategory {
+  rehearsal
+  performance
+  other
+}
+
+enum EventVisibility {
+  all
+  register
+  admin
+}
+
+enum AttendanceStatus {
+  yes
+  no
+  maybe
+}
+
+enum FileVisibility {
+  all
+  limit // changed from register/admin to limit for backward compat or just use the new system.
+  // actually, let's keep 'all' and just use 'restricted' or similar. 
+  // The plan said: "Adding FileAccess model ... Existing files will need migration logic"
+  // I will keep existing enums to avoid breaking immediate runtime, but logic will prefer FileAccess.
+  admin
+  register
+}
+
+enum AccessType {
+  ALLOW
+  DENY
+}
+
+enum AccessTargetType {
+  USER
+  REGISTER
+}
+
+// ============================================
+// MODELS
+// ============================================
+
+model User {
+  id             Int        @id @default(autoincrement())
+  email          String     @unique
+  password       String
+  firstName      String
+  lastName       String
+  phoneNumber    String?
+  profilePicture String?
+  status         UserStatus @default(active)
+  role           UserRole   @default(member)
+
+  // Relations
+  registerId  Int?
+  register    Register?    @relation(fields: [registerId], references: [id], onDelete: SetNull)
+  attendances Attendance[]
+  news        News[]
+  fileAccess  FileAccess[]
+  sheetMusicBookmarks SheetMusicBookmark[]
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([email])
+  @@index([registerId])
+}
+
+model Register {
+  id   Int    @id @default(autoincrement())
+  name String @unique
+
+  // Relations
+  users User[]
+  files File[]
+  fileAccess FileAccess[]
+
+  @@index([name])
+}
+
+model Event {
+  id          Int             @id @default(autoincrement())
+  title       String
+  description String?         @db.Text
+  location    String?
+  category    EventCategory   @default(other)
+  visibility  EventVisibility @default(all)
+
+  // Date and Time
+  date      DateTime
+  startTime String // Format: "HH:mm"
+  endTime   String // Format: "HH:mm"
+
+  // Response deadline - hours before event start (e.g., 2 = 2 hours before)
+  responseDeadlineHours Int @default(48) // Default: 48h = 2 days before
+
+  // Recurrence
+  isRecurring    Boolean @default(false)
+  recurrenceRule String? // RRule string (e.g., "FREQ=WEEKLY;INTERVAL=2;BYDAY=MO")
+  excludedDates  Json? // JSON array of date strings to exclude
+
+  // Relations
+  attendances Attendance[]
+  files       File[]
+  sheetMusic  EventSheetMusic[]
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([date])
+  @@index([category])
+}
+
+model Attendance {
+  id      Int              @id @default(autoincrement())
+  status  AttendanceStatus @default(maybe)
+  comment String?          @db.Text
+
+  // Relations
+  eventId Int
+  event   Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  userId  Int
+  user    User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Unique constraint: one attendance per user per event
+  @@unique([eventId, userId])
+  @@index([eventId])
+  @@index([userId])
+}
+
+model File {
+  id           Int            @id @default(autoincrement())
+  filename     String // Generated filename on disk
+  originalName String // Original uploaded filename
+  path         String // Full path to file
+  mimetype     String // MIME type (e.g., "application/pdf")
+  size         Int // File size in bytes
+  visibility   FileVisibility @default(all)
+  folder       String         @default("/") // Virtual folder path
+
+  // Access Control
+  accessRules  FileAccess[]
+
+  // Optional target associations (Deprecating these in favor of FileAccess but keeping for migration/compat)
+  targetRegisterId Int?
+  targetRegister   Register? @relation(fields: [targetRegisterId], references: [id], onDelete: SetNull)
+  eventId          Int?
+  event            Event?    @relation(fields: [eventId], references: [id], onDelete: SetNull)
+
+  // Timestamps
+  createdAt DateTime @default(now())
+
+  @@index([visibility])
+  @@index([targetRegisterId])
+  @@index([eventId])
+  @@index([folder])
+}
+
+model FileAccess {
+  id        Int              @id @default(autoincrement())
+  fileId    Int
+  file      File             @relation(fields: [fileId], references: [id], onDelete: Cascade)
+  
+  accessType AccessType      @default(ALLOW)
+  targetType AccessTargetType
+  
+  // Targets
+  userId    Int?
+  user      User?            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  registerId Int?
+  register  Register?        @relation(fields: [registerId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@index([fileId])
+  @@index([userId])
+  @@index([registerId])
+}
+
+model News {
+  id      Int    @id @default(autoincrement())
+  title   String
+  content String @db.Text
+
+  // Relations
+  authorId Int
+  author   User @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([authorId])
+  @@index([createdAt])
+}
+
+model Setting {
+  id    Int    @id @default(autoincrement())
+  key   String @unique
+  value String
+
+  @@index([key])
+}
+
+// ============================================
+// SHEET MUSIC MODELS
+// ============================================
+
+enum Difficulty {
+  easy
+  medium
+  hard
+}
+
+model SheetMusic {
+  id        Int         @id @default(autoincrement())
+  title     String
+  composer  String?
+  arranger  String?
+  genre     String?
+  difficulty Difficulty?
+  publisher String?     // Verlag/Quelle
+  notes     String?     @db.Text // Bemerkungen/Notizen
+
+  // Relations
+  bookmarks SheetMusicBookmark[]
+  events    EventSheetMusic[]
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([title])
+  @@index([genre])
+  @@index([difficulty])
+}
+
+model SheetMusicBookmark {
+  id           Int        @id @default(autoincrement())
+  userId       Int
+  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  sheetMusicId Int
+  sheetMusic   SheetMusic @relation(fields: [sheetMusicId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@unique([userId, sheetMusicId])
+  @@index([userId])
+  @@index([sheetMusicId])
+}
+
+model EventSheetMusic {
+  id           Int             @id @default(autoincrement())
+  eventId      Int
+  event        Event           @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  
+  // Type-specific fields
+  type         SetlistItemType @default(sheetMusic)
+  sheetMusicId Int?
+  sheetMusic   SheetMusic?     @relation(fields: [sheetMusicId], references: [id], onDelete: Cascade)
+  
+  // Custom item fields
+  customTitle       String? // For type=custom or pause
+  customDescription String? @db.Text // For type=custom
+  duration          Int? // Duration in minutes (for pauses)
+  
+  position     Int             @default(0) // Order in the setlist
+
+  createdAt DateTime @default(now())
+
+  @@unique([eventId, position])
+  @@index([eventId])
+  @@index([sheetMusicId])
+}
+
+enum SetlistItemType {
+  sheetMusic
+  pause
+  custom
+}

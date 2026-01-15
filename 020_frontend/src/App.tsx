@@ -1,0 +1,131 @@
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { AuthProvider } from '@/context/AuthContext';
+import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
+import { MainLayout } from '@/components/layout/MainLayout';
+import { PublicLayout } from '@/components/layout/PublicLayout';
+
+// Public Pages
+import { HomePage } from '@/pages/public/HomePage';
+import { AboutPage } from '@/pages/public/AboutPage';
+import { ContactPage } from '@/pages/public/ContactPage';
+import { LoginPage } from '@/pages/LoginPage';
+
+// Member Pages
+import { Dashboard } from '@/pages/Dashboard';
+import { EventListPage } from '@/pages/events/EventListPage';
+import { EventDetailPage } from '@/pages/events/EventDetailPage';
+import { UserManagementPage } from '@/pages/admin/UserManagementPage';
+import { FileListPage } from '@/pages/files/FileListPage';
+import { CreateEventPage } from '@/pages/admin/CreateEventPage';
+import { RegisterManagementPage } from '@/pages/admin/RegisterManagementPage';
+import { NewsManagementPage } from '@/pages/admin/NewsManagementPage';
+import { EventManagementPage } from '@/pages/admin/EventManagementPage';
+import { UserSettingsPage } from '@/pages/UserSettingsPage';
+import { SheetMusicManagementPage } from '@/pages/admin/SheetMusicManagementPage';
+
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 1000 * 60 * 5, // 5 minutes
+      retry: 1,
+    },
+  },
+});
+
+function App() {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <BrowserRouter>
+        <AuthProvider>
+          <Routes>
+            {/* Public Routes with PublicLayout */}
+            <Route element={<PublicLayout />}>
+              <Route path="/" element={<HomePage />} />
+              <Route path="/about" element={<AboutPage />} />
+              <Route path="/contact" element={<ContactPage />} />
+            </Route>
+
+            {/* Login Page (public but standalone) */}
+            <Route path="/login" element={<LoginPage />} />
+
+            {/* Protected Member Routes with MainLayout */}
+            <Route
+              path="/member"
+              element={
+                <ProtectedRoute>
+                  <MainLayout />
+                </ProtectedRoute>
+              }
+            >
+              <Route index element={<Dashboard />} />
+              <Route path="events" element={<EventListPage />} />
+              <Route path="events/:id" element={<EventDetailPage />} />
+              <Route path="files" element={<FileListPage />} />
+              <Route path="settings" element={<UserSettingsPage />} />
+              <Route path="members" element={<UserManagementPage />} />
+
+              {/* Admin Only Routes */}
+              <Route
+                path="admin/events/new"
+                element={
+                  <ProtectedRoute requireAdmin>
+                    <CreateEventPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="admin/events/:id/edit"
+                element={
+                  <ProtectedRoute requireAdmin>
+                    <CreateEventPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="admin/registers"
+                element={
+                  <ProtectedRoute requireAdmin>
+                    <RegisterManagementPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="admin/news"
+                element={
+                  <ProtectedRoute requireAdmin>
+                    <NewsManagementPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="admin/events"
+                element={
+                  <ProtectedRoute requireAdmin>
+                    <EventManagementPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="admin/sheet-music"
+                element={
+                  <ProtectedRoute requireAdmin>
+                    <SheetMusicManagementPage />
+                  </ProtectedRoute>
+                }
+              />
+            </Route>
+
+            {/* Fallback */}
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </AuthProvider>
+      </BrowserRouter>
+    </QueryClientProvider>
+  );
+}
+
+export default App;
+
+
+

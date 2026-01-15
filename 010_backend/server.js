@@ -10,7 +10,7 @@ const { errorHandler } = require('./src/middlewares/errorHandler.middleware');
 const { initializeDefaultSettings } = require('./src/controllers/settings.controller');
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3004;
 
 // Security Middleware
 app.use(helmet());

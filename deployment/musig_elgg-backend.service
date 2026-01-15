@@ -1,0 +1,18 @@
+[Unit]
+Description=Musig Elgg Backend API
+After=network.target mysql.service
+
+[Service]
+Type=simple
+User=www-data
+# Adjust this path to your installation directory
+WorkingDirectory=/var/www/jan-bretscher/04_musig-elgg/musig_elgg/010_backend
+# Adjust this path to your node executable (find with `which node`)
+ExecStart=/usr/bin/node server.js
+Restart=on-failure
+# Environment variables should be loaded from .env file, but can be overridden here
+# EnvironmentFile=/var/www/musig_elgg/010_backend/.env
+Environment=NODE_ENV=production
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,19 @@
+[Unit]
+Description=Musig Elgg Frontend
+After=network.target
+
+[Service]
+Type=simple
+User=www-data
+# Adjust this path to your installation directory
+WorkingDirectory=/var/www/jan-bretscher/04_musig-elgg/musig_elgg/020_frontend
+# We use 'serve' to host the static files. Ensure 'serve' is available.
+# Option 1: Install globally (npm install -g serve) and use full path
+# ExecStart=/usr/bin/serve -s dist -l 4000
+# Option 2: Use npx (requires internet or cached)
+ExecStart=/usr/bin/npx serve -s dist -l 3003 --single
+Restart=on-failure
+Environment=NODE_ENV=production
+
+[Install]
+WantedBy=multi-user.target

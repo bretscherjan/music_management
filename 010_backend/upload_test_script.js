@@ -2,7 +2,7 @@ const axios = require('axios');
 const fs = require('fs');
 const FormData = require('form-data');
 
-const API_URL = 'http://localhost:3000/api';
+const API_URL = 'http://localhost:3004/api';
 
 async function main() {
     try {

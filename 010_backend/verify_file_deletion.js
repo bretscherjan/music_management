@@ -3,7 +3,7 @@ const fs = require('fs');
 const FormData = require('form-data');
 const path = require('path');
 
-const API_URL = 'http://localhost:3000/api';
+const API_URL = 'http://localhost:3004/api';
 const UPLOAD_DIR = path.join(__dirname, 'uploads');
 
 async function main() {

@@ -19,6 +19,7 @@ router.use('/news', newsRoutes);
 router.use('/registers', registerRoutes);
 router.use('/settings', settingsRoutes);
 router.use('/sheet-music', sheetMusicRoutes);
+router.use('/calendar', require('./calendar.routes'));
 
 module.exports = router;
 

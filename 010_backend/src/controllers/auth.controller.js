@@ -3,6 +3,7 @@ const jwt = require('jsonwebtoken');
 const { PrismaClient } = require('@prisma/client');
 const { asyncHandler, AppError } = require('../middlewares/errorHandler.middleware');
 const { sendWelcomeEmail } = require('../services/email.service');
+const crypto = require('crypto');
 
 const prisma = new PrismaClient();
 
@@ -44,6 +45,7 @@ const register = asyncHandler(async (req, res) => {
             firstName,
             lastName,
             registerId,
+            calendarToken: crypto.randomBytes(32).toString('hex'),
         },
         select: {
             id: true,
@@ -159,11 +161,22 @@ const getMe = asyncHandler(async (req, res) => {
             },
             createdAt: true,
             updatedAt: true,
+            calendarToken: true,
         },
     });
 
     if (!user) {
         throw new AppError('Benutzer nicht gefunden', 404);
+    }
+
+    // Lazy generation of calendar token if missing
+    if (!user.calendarToken) {
+        const newToken = crypto.randomBytes(32).toString('hex');
+        await prisma.user.update({
+            where: { id: user.id },
+            data: { calendarToken: newToken }
+        });
+        user.calendarToken = newToken;
     }
 
     res.json({ user });

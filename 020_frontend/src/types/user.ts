@@ -19,6 +19,7 @@ export interface User {
     } | null;
     createdAt: string;
     updatedAt: string;
+    calendarToken?: string;
 }
 
 // DTOs for API operations

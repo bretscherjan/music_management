@@ -10,6 +10,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { MapPin, Clock, Plus, Filter, Users, CheckCircle, XCircle, HelpCircle } from 'lucide-react';
 import { formatTime, getCategoryLabel } from '@/lib/utils';
 import type { Event, EventCategory } from '@/types';
+import { CalendarExportDialog } from '@/components/events/CalendarExportDialog';
 
 const categories: { value: EventCategory | 'all'; label: string }[] = [
     { value: 'all', label: 'Alle' },
@@ -62,14 +63,18 @@ export function EventListPage() {
                     </p>
                 </div>
 
-                {isAdmin && (
-                    <Link to="/member/admin/events/new">
-                        <Button>
-                            <Plus className="h-4 w-4 mr-2" />
-                            Neuer Termin
-                        </Button>
-                    </Link>
-                )}
+                <div className="flex flex-wrap gap-2">
+                    <CalendarExportDialog events={filteredEvents} />
+
+                    {isAdmin && (
+                        <Link to="/member/admin/events/new">
+                            <Button>
+                                <Plus className="h-4 w-4 mr-2" />
+                                Neuer Termin
+                            </Button>
+                        </Link>
+                    )}
+                </div>
             </div>
 
             {/* Category Filter */}
@@ -89,61 +94,63 @@ export function EventListPage() {
             </div>
 
             {/* Events List */}
-            {isLoading ? (
-                <div className="space-y-4">
-                    {[1, 2, 3, 4].map((i) => (
-                        <Card key={i}>
-                            <CardContent className="p-6">
-                                <Skeleton className="h-6 w-3/4 mb-2" />
-                                <Skeleton className="h-4 w-1/2" />
-                            </CardContent>
-                        </Card>
-                    ))}
-                </div>
-            ) : error ? (
-                <Card>
-                    <CardContent className="p-6 text-center text-destructive">
-                        Fehler beim Laden der Termine
-                    </CardContent>
-                </Card>
-            ) : (
-                <div className="space-y-8">
-                    {/* Upcoming Events */}
-                    {upcomingEvents.length > 0 && (
-                        <section>
-                            <h2 className="text-lg font-semibold mb-4">Kommende Termine</h2>
-                            <div className="space-y-3">
-                                {upcomingEvents.map((event) => (
-                                    <EventListItem key={event.id} event={event} />
-                                ))}
-                            </div>
-                        </section>
-                    )}
+            {
+                isLoading ? (
+                    <div className="space-y-4">
+                        {[1, 2, 3, 4].map((i) => (
+                            <Card key={i}>
+                                <CardContent className="p-6">
+                                    <Skeleton className="h-6 w-3/4 mb-2" />
+                                    <Skeleton className="h-4 w-1/2" />
+                                </CardContent>
+                            </Card>
+                        ))}
+                    </div>
+                ) : error ? (
+                    <Card>
+                        <CardContent className="p-6 text-center text-destructive">
+                            Fehler beim Laden der Termine
+                        </CardContent>
+                    </Card>
+                ) : (
+                    <div className="space-y-8">
+                        {/* Upcoming Events */}
+                        {upcomingEvents.length > 0 && (
+                            <section>
+                                <h2 className="text-lg font-semibold mb-4">Kommende Termine</h2>
+                                <div className="space-y-3">
+                                    {upcomingEvents.map((event) => (
+                                        <EventListItem key={event.id} event={event} />
+                                    ))}
+                                </div>
+                            </section>
+                        )}
 
-                    {/* Past Events */}
-                    {pastEvents.length > 0 && (
-                        <section>
-                            <h2 className="text-lg font-semibold mb-4 text-muted-foreground">
-                                Vergangene Termine
-                            </h2>
-                            <div className="space-y-3 opacity-60">
-                                {pastEvents.slice(0, 10).map((event) => (
-                                    <EventListItem key={event.id} event={event} />
-                                ))}
-                            </div>
-                        </section>
-                    )}
+                        {/* Past Events */}
+                        {pastEvents.length > 0 && (
+                            <section>
+                                <h2 className="text-lg font-semibold mb-4 text-muted-foreground">
+                                    Vergangene Termine
+                                </h2>
+                                <div className="space-y-3 opacity-60">
+                                    {pastEvents.slice(0, 10).map((event) => (
+                                        <EventListItem key={event.id} event={event} />
+                                    ))}
+                                </div>
+                            </section>
+                        )}
 
-                    {sortedEvents.length === 0 && (
-                        <Card>
-                            <CardContent className="p-6 text-center text-muted-foreground">
-                                Keine Termine gefunden
-                            </CardContent>
-                        </Card>
-                    )}
-                </div>
-            )}
-        </div>
+                        {sortedEvents.length === 0 && (
+                            <Card>
+                                <CardContent className="p-6 text-center text-muted-foreground">
+                                    Keine Termine gefunden
+                                </CardContent>
+                            </Card>
+                        )}
+                    </div>
+                )
+            }
+        </div >
     );
 }
 

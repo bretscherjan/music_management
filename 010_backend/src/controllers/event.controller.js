@@ -54,18 +54,32 @@ const getAllEvents = asyncHandler(async (req, res) => {
         whereClause.visibility = 'all';
     }
 
+    // Get count of active members for calculating 'open' status
+    const activeMembersCount = await prisma.user.count({
+        where: { status: 'active' }
+    });
+
+    console.log('DEBUG: Active members count:', activeMembersCount);
+
     const events = await prisma.event.findMany({
         where: whereClause,
         include: {
             _count: {
                 select: { attendances: true },
             },
-            // Only include user's attendance if authenticated
+            // Include attendances to calculate summary
+            attendances: {
+                include: {
+                    user: {
+                        select: { status: true }
+                    }
+                }
+            },
+            // Only include user's specific attendance if authenticated (for My Attendance)
             ...(user ? {
-                attendances: {
-                    where: { userId: user.id },
-                    select: { status: true, comment: true },
-                },
+                // We can't easily include the SAME relation twice with different args in Prisma 
+                // straightforwardly in a way that maps nice to the same field name.
+                // But we fetched ALL attendances above. We can extract the user's attendance in memory.
             } : {}),
         },
         orderBy: { date: 'asc' },
@@ -81,9 +95,42 @@ const getAllEvents = asyncHandler(async (req, res) => {
         );
     }
 
+    // Process events to add summary and userStatus
+    const processedEvents = result.map(event => {
+        // Filter attendances for active users only
+        const activeAttendances = event.attendances.filter(a => a.user.status === 'active');
+
+        const yes = activeAttendances.filter(a => a.status === 'yes').length;
+        const no = activeAttendances.filter(a => a.status === 'no').length;
+        const maybe = activeAttendances.filter(a => a.status === 'maybe').length;
+        // Open = Total Active - (Yes + No + Maybe)
+        // Note: This matches existing logic where 'pending' means no record or null status.
+        // Prisma upsert ensures one record per user. If record missing, it's pending.
+        const respondedCount = yes + no + maybe;
+        const pending = Math.max(0, activeMembersCount - respondedCount);
+
+        // Find user's attendance
+        const userAttendance = user ? event.attendances.find(a => a.userId === user.id) : null;
+
+        const summary = {
+            yes,
+            no,
+            maybe,
+            pending,
+            total: activeMembersCount
+        };
+        // console.log(`DEBUG: Event ${event.id} summary:`, summary);
+
+        return {
+            ...event,
+            attendanceSummary: summary,
+            attendances: userAttendance ? [userAttendance] : [], // Restore expected behavior
+        };
+    });
+
     res.json({
-        events: result,
-        count: result.length,
+        events: processedEvents,
+        count: processedEvents.length,
     });
 });
 
@@ -136,12 +183,18 @@ const getEventById = asyncHandler(async (req, res) => {
         throw new AppError('Event nicht gefunden', 404);
     }
 
-    // Check visibility permissions
     if (event.visibility === 'admin' && user?.role !== 'admin') {
         throw new AppError('Keine Berechtigung für diesen Event', 403);
     }
 
-    res.json({ event });
+    // Map sheetMusic relation to setlist property for frontend consistency
+    const eventData = {
+        ...event,
+        setlist: event.sheetMusic,
+    };
+    delete eventData.sheetMusic;
+
+    res.json({ event: eventData });
 });
 
 /**
@@ -162,6 +215,7 @@ const createEvent = asyncHandler(async (req, res) => {
         recurrenceRule,
         responseDeadlineHours = 48, // Default 48 hours = 2 days before
         defaultAttendanceStatus,
+        setlistEnabled = false,
     } = req.body;
 
     const eventDate = new Date(date);
@@ -203,6 +257,7 @@ const createEvent = asyncHandler(async (req, res) => {
                     endTime,
                     responseDeadlineHours: parseInt(responseDeadlineHours),
                     isRecurring: false, // Each event is now individual
+                    setlistEnabled,
                 },
             });
             createdEvents.push(event);
@@ -247,6 +302,7 @@ const createEvent = asyncHandler(async (req, res) => {
             endTime,
             responseDeadlineHours: parseInt(responseDeadlineHours),
             isRecurring: false,
+            setlistEnabled,
         },
     });
 
@@ -675,7 +731,7 @@ const addItemToSetlist = asyncHandler(async (req, res) => {
             throw new AppError('Sheet Music ID ist erforderlich', 400);
         }
         const sheetMusic = await prisma.sheetMusic.findUnique({
-            where: { id: sheetMusicId },
+            where: { id: parseInt(sheetMusicId) },
         });
         if (!sheetMusic) {
             throw new AppError('Notenblatt nicht gefunden', 404);
@@ -698,7 +754,7 @@ const addItemToSetlist = asyncHandler(async (req, res) => {
         data: {
             eventId: parseInt(id),
             type,
-            sheetMusicId: type === 'sheetMusic' ? sheetMusicId : null,
+            sheetMusicId: type === 'sheetMusic' ? parseInt(sheetMusicId) : null,
             customTitle,
             customDescription,
             duration,
@@ -735,9 +791,10 @@ const updateSetlistItem = asyncHandler(async (req, res) => {
         throw new AppError('Element nicht gefunden', 404);
     }
 
-    if (item.type === 'sheetMusic') {
-        throw new AppError('Notenblätter können nicht bearbeitet werden', 400);
-    }
+    // Allow updating sheetMusic items (customTitle, customDescription, duration)
+    // if (item.type === 'sheetMusic') {
+    //    throw new AppError('Notenblätter können nicht bearbeitet werden', 400);
+    // }
 
     const updated = await prisma.eventSheetMusic.update({
         where: { id: parseInt(itemId) },
@@ -798,15 +855,23 @@ const reorderSetlist = asyncHandler(async (req, res) => {
     const { id } = req.params;
     const { items } = req.body;
 
-    // Update all positions in a transaction
-    await prisma.$transaction(
-        items.map((item) =>
+    // Update all positions in a transaction using a 2-step process to avoid unique constraint violations
+    // 1. Move to temporary negative positions
+    // 2. Move to final positions
+    await prisma.$transaction([
+        ...items.map((item) =>
+            prisma.eventSheetMusic.update({
+                where: { id: item.id },
+                data: { position: -1 * item.id }, // Temp position
+            })
+        ),
+        ...items.map((item) =>
             prisma.eventSheetMusic.update({
                 where: { id: item.id },
                 data: { position: item.position },
             })
-        )
-    );
+        ),
+    ]);
 
     res.json({
         message: 'Reihenfolge erfolgreich aktualisiert',

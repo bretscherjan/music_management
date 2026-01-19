@@ -61,7 +61,7 @@ export function EventSetlistSection({ event, isAdmin }: EventSetlistSectionProps
     const addMutation = useMutation({
         mutationFn: (data: AddSetlistItemDto) => eventService.addSetlistItem(event.id, data),
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['events', event.id] });
+            queryClient.invalidateQueries({ queryKey: ['event', event.id] });
             toast.success('Element zum Programm hinzugefügt');
             setSheetMusicDialogOpen(false);
             setPauseDialogOpen(false);
@@ -78,7 +78,7 @@ export function EventSetlistSection({ event, isAdmin }: EventSetlistSectionProps
         mutationFn: ({ itemId, data }: { itemId: number; data: UpdateSetlistItemDto }) =>
             eventService.updateSetlistItem(event.id, itemId, data),
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['events', event.id] });
+            queryClient.invalidateQueries({ queryKey: ['event', event.id] });
             toast.success('Element aktualisiert');
             setEditDialogOpen(false);
             setSelectedItem(null);
@@ -92,7 +92,7 @@ export function EventSetlistSection({ event, isAdmin }: EventSetlistSectionProps
     const removeMutation = useMutation({
         mutationFn: (itemId: number) => eventService.removeSetlistItem(event.id, itemId),
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['events', event.id] });
+            queryClient.invalidateQueries({ queryKey: ['event', event.id] });
             toast.success('Element aus dem Programm entfernt');
         },
         onError: (error: any) => {
@@ -105,7 +105,7 @@ export function EventSetlistSection({ event, isAdmin }: EventSetlistSectionProps
             eventService.reorderSetlist(event.id, { items }),
         onError: (error: any) => {
             toast.error(error.response?.data?.message || 'Fehler beim Sortieren');
-            queryClient.invalidateQueries({ queryKey: ['events', event.id] });
+            queryClient.invalidateQueries({ queryKey: ['event', event.id] });
         },
     });
 
@@ -135,12 +135,9 @@ export function EventSetlistSection({ event, isAdmin }: EventSetlistSectionProps
             const newItems = arrayMove(items, oldIndex, newIndex);
 
             // Optimistic update
-            queryClient.setQueryData(['events', event.id], (old: any) => ({
+            queryClient.setQueryData(['event', event.id], (old: any) => ({
                 ...old,
-                event: {
-                    ...old.event,
-                    setlist: newItems.map((item, idx) => ({ ...item, position: idx })),
-                },
+                setlist: newItems.map((item, idx) => ({ ...item, position: idx })),
             }));
 
             // Server update
@@ -369,8 +366,12 @@ export function EventSetlistSection({ event, isAdmin }: EventSetlistSectionProps
                             ) : (
                                 <>
                                     <div>
-                                        <Label>Titel</Label>
-                                        <Input value={customTitle} onChange={(e) => setCustomTitle(e.target.value)} />
+                                        <Label>Titel {selectedItem.type === 'sheetMusic' && '(Optional, überschreibt Original)'}</Label>
+                                        <Input
+                                            value={customTitle}
+                                            onChange={(e) => setCustomTitle(e.target.value)}
+                                            placeholder={selectedItem.type === 'sheetMusic' ? selectedItem.sheetMusic?.title : ''}
+                                        />
                                     </div>
                                     <div>
                                         <Label>Beschreibung</Label>
@@ -378,6 +379,15 @@ export function EventSetlistSection({ event, isAdmin }: EventSetlistSectionProps
                                             value={customDescription}
                                             onChange={(e) => setCustomDescription(e.target.value)}
                                             rows={3}
+                                        />
+                                    </div>
+                                    <div>
+                                        <Label>Dauer (Minuten)</Label>
+                                        <Input
+                                            type="number"
+                                            min="0"
+                                            value={pauseMinutes}
+                                            onChange={(e) => setPauseMinutes(parseInt(e.target.value) || 0)}
                                         />
                                     </div>
                                 </>
@@ -392,6 +402,7 @@ export function EventSetlistSection({ event, isAdmin }: EventSetlistSectionProps
                                     } else {
                                         data.customTitle = customTitle;
                                         data.customDescription = customDescription || undefined;
+                                        data.duration = pauseMinutes || undefined;
                                     }
                                     updateMutation.mutate({ itemId: selectedItem.id, data });
                                 }}
@@ -444,14 +455,19 @@ function SetlistItem({ item, index, isAdmin, onEdit, onRemove }: SetlistItemProp
                 <>
                     <Music className="h-5 w-5 text-primary" />
                     <div className="flex-1">
-                        <div className="font-medium">{item.sheetMusic.title}</div>
+                        <div className="font-medium">
+                            {item.customTitle || item.sheetMusic.title}
+                            {item.customTitle && <span className="text-xs text-muted-foreground ml-2">(Original: {item.sheetMusic.title})</span>}
+                        </div>
                         <div className="text-sm text-muted-foreground">
+                            {item.customDescription && <div className="mb-1 italic">{item.customDescription}</div>}
                             {item.sheetMusic.composer && <span>{item.sheetMusic.composer}</span>}
                             {item.sheetMusic.composer && item.sheetMusic.arranger && <span> • Arr.: {item.sheetMusic.arranger}</span>}
                             {!item.sheetMusic.composer && item.sheetMusic.arranger && <span>Arr.: {item.sheetMusic.arranger}</span>}
+                            {item.duration && <span> • {item.duration} Min.</span>}
                         </div>
                     </div>
-                    <div className="flex gap-2">
+                    <div className="flex gap-2 items-center">
                         {item.sheetMusic.genre && <Badge variant="secondary">{item.sheetMusic.genre}</Badge>}
                         {item.sheetMusic.difficulty && (
                             <Badge
@@ -469,6 +485,11 @@ function SetlistItem({ item, index, isAdmin, onEdit, onRemove }: SetlistItemProp
                                         ? 'Mittel'
                                         : 'Schwer'}
                             </Badge>
+                        )}
+                        {isAdmin && (
+                            <Button size="icon" variant="ghost" onClick={() => onEdit(item)}>
+                                <Edit2 className="h-4 w-4" />
+                            </Button>
                         )}
                     </div>
                 </>
@@ -500,13 +521,16 @@ function SetlistItem({ item, index, isAdmin, onEdit, onRemove }: SetlistItemProp
                         </Button>
                     )}
                 </>
-            )}
+            )
+            }
 
-            {isAdmin && (
-                <Button size="icon" variant="ghost" onClick={() => onRemove(item)}>
-                    <Trash2 className="h-4 w-4" />
-                </Button>
-            )}
-        </div>
+            {
+                isAdmin && (
+                    <Button size="icon" variant="ghost" onClick={() => onRemove(item)}>
+                        <Trash2 className="h-4 w-4" />
+                    </Button>
+                )
+            }
+        </div >
     );
 }

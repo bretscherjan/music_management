@@ -10,10 +10,6 @@ node_modules/
 prisma/*.db
 prisma/*.db-journal
 
-# Uploads
-uploads/*
-!uploads/.gitkeep
-
 # Logs
 logs/
 *.log

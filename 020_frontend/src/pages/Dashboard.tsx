@@ -12,6 +12,7 @@ import { Calendar, MapPin, Clock, ChevronRight, Newspaper, Plus } from 'lucide-r
 import { formatDate, formatTime, getCategoryLabel } from '@/lib/utils';
 import type { Event, News } from '@/types';
 import { QuickAttendance } from '@/components/dashboard/QuickAttendance';
+import { AttendanceSummary } from '@/components/events/AttendanceSummary';
 import { useState } from 'react';
 
 export function Dashboard() {
@@ -171,6 +172,13 @@ function EventCard({ event }: { event: Event }) {
                                     </span>
                                 )}
                             </div>
+
+                            {/* Attendance Summary */}
+                            {event.attendanceSummary && (
+                                <div className="mt-3 pt-3 border-t">
+                                    <AttendanceSummary summary={event.attendanceSummary} />
+                                </div>
+                            )}
                         </div>
 
                         <ChevronRight className="h-5 w-5 text-muted-foreground hidden sm:block" />

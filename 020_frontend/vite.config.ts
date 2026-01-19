@@ -44,7 +44,7 @@ export default defineConfig({
   server: {
     proxy: {
       '/api': {
-        target: 'http://musig-elgg:3004/api',
+        target: 'http://localhost:3004',
         changeOrigin: true,
       },
     },

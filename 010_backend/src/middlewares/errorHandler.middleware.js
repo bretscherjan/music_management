@@ -22,7 +22,8 @@ const errorHandler = (err, req, res, next) => {
                 // Unique constraint violation
                 statusCode = 409;
                 message = 'A record with this value already exists';
-                error = `Duplicate field: ${err.meta?.target?.join(', ')}`;
+                const target = err.meta?.target;
+                error = `Duplicate field: ${Array.isArray(target) ? target.join(', ') : target}`;
                 break;
             case 'P2025':
                 // Record not found

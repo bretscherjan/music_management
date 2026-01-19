@@ -138,8 +138,10 @@ export function EventDetailPage() {
                 </CardContent>
             </Card>
 
-            {/* Setlist Section */}
-            <EventSetlistSection event={event} isAdmin={isAdmin} />
+            {/* Setlist Section - Only if enabled */}
+            {event.setlistEnabled && (
+                <EventSetlistSection event={event} isAdmin={isAdmin} />
+            )}
 
             {/* Attendance Section */}
             <AttendanceSection

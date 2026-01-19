@@ -7,7 +7,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { MapPin, Clock, Plus, Filter } from 'lucide-react';
+import { MapPin, Clock, Plus, Filter, Users, CheckCircle, XCircle, HelpCircle } from 'lucide-react';
 import { formatTime, getCategoryLabel } from '@/lib/utils';
 import type { Event, EventCategory } from '@/types';
 
@@ -28,6 +28,13 @@ export function EventListPage() {
             selectedCategory !== 'all' ? { category: selectedCategory } : undefined
         ),
     });
+
+    if (events) {
+        console.log('Events Data:', events);
+        events.forEach(e => {
+            console.log(`Event ${e.id} summary:`, e.attendanceSummary);
+        });
+    }
 
     const filteredEvents = events?.filter(event => {
         if (selectedCategory === 'all') return true;
@@ -159,6 +166,10 @@ function EventListItem({ event }: { event: Event }) {
 
     const borderColor = status ? statusBorderColor[status as keyof typeof statusBorderColor] : 'border-l-transparent';
 
+    console.log(event);
+
+    const summary = event.attendanceSummary || { yes: 0, no: 0, maybe: 0, pending: 0, total: 0 };
+
     return (
         <Link to={`/member/events/${event.id}`}>
             <Card className={`transition-all hover:shadow-md hover:border-primary/50 border-l-4 ${borderColor}`}>
@@ -202,6 +213,33 @@ function EventListItem({ event }: { event: Event }) {
                                         {event.location}
                                     </span>
                                 )}
+                            </div>
+
+                            <div className="mt-4 flex items-center justify-between flex-wrap gap-4 pt-3 border-t">
+                                <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+                                    <Users className="h-4 w-4" />
+                                    Anwesenheit
+                                </div>
+
+                                {/* Summary Badges */}
+                                <div className="flex gap-2 flex-wrap">
+                                    <Badge variant="success" className="gap-1">
+                                        <CheckCircle className="h-3 w-3" />
+                                        {summary.yes}
+                                    </Badge>
+                                    <Badge variant="destructive" className="gap-1">
+                                        <XCircle className="h-3 w-3" />
+                                        {summary.no}
+                                    </Badge>
+                                    <Badge variant="warning" className="gap-1">
+                                        <HelpCircle className="h-3 w-3" />
+                                        {summary.maybe}
+                                    </Badge>
+                                    <Badge variant="outline" className="gap-1">
+                                        <Clock className="h-3 w-3" />
+                                        {summary.pending ?? 0}
+                                    </Badge>
+                                </div>
                             </div>
                         </div>
                     </div>

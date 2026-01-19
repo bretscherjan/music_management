@@ -68,6 +68,18 @@ export function SheetMusicManagementPage() {
     const [csvMode, setCsvMode] = useState<'add' | 'update'>('add');
     const [csvData, setCsvData] = useState('');
 
+    const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const text = e.target?.result as string;
+            setCsvData(text);
+        };
+        reader.readAsText(file, 'UTF-8');
+    };
+
     // Build query params
     const queryParams: SheetMusicQueryParams = {
         search: search || undefined,
@@ -329,13 +341,24 @@ export function SheetMusicManagementPage() {
                                         </label>
                                     </div>
                                 </div>
+
                                 <div>
-                                    <Label>CSV Daten</Label>
+                                    <Label>Datei hochladen</Label>
+                                    <Input
+                                        type="file"
+                                        accept=".csv"
+                                        onChange={handleFileUpload}
+                                        className="mt-2"
+                                    />
+                                </div>
+                                <div>
+                                    <Label>Oder CSV Daten manuell eingeben</Label>
                                     <Textarea
                                         rows={10}
                                         value={csvData}
                                         onChange={(e) => setCsvData(e.target.value)}
                                         placeholder="title,composer,arranger,genre,difficulty,publisher,notes&#10;Test Marsch,Johann Strauss,,,medium,Musikverlag XY,Klassischer Marsch"
+                                        className="mt-2"
                                     />
                                 </div>
                             </div>
@@ -358,141 +381,145 @@ export function SheetMusicManagementPage() {
             </div>
 
             {/* Table */}
-            {isLoading ? (
-                <div className="text-center py-8">Lädt...</div>
-            ) : (
-                <>
-                    <div className="border rounded-lg overflow-hidden">
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead>Titel</TableHead>
-                                    <TableHead>Komponist</TableHead>
-                                    <TableHead>Arrangeur</TableHead>
-                                    <TableHead>Genre</TableHead>
-                                    <TableHead>Schwierigkeit</TableHead>
-                                    <TableHead>Verlag</TableHead>
-                                    <TableHead>Markierungen</TableHead>
-                                    <TableHead className="text-right">Aktionen</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {data?.sheetMusic.map((sheet) => (
-                                    <TableRow key={sheet.id}>
-                                        <TableCell className="font-medium">{sheet.title}</TableCell>
-                                        <TableCell>{sheet.composer || '-'}</TableCell>
-                                        <TableCell>{sheet.arranger || '-'}</TableCell>
-                                        <TableCell>{sheet.genre || '-'}</TableCell>
-                                        <TableCell>
-                                            {sheet.difficulty ? (
-                                                <Badge
-                                                    variant={
-                                                        sheet.difficulty === 'easy'
-                                                            ? 'secondary'
-                                                            : sheet.difficulty === 'medium'
-                                                                ? 'default'
-                                                                : 'destructive'
-                                                    }
-                                                >
-                                                    {sheet.difficulty === 'easy'
-                                                        ? 'Leicht'
-                                                        : sheet.difficulty === 'medium'
-                                                            ? 'Mittel'
-                                                            : 'Schwer'}
-                                                </Badge>
-                                            ) : (
-                                                '-'
-                                            )}
-                                        </TableCell>
-                                        <TableCell>{sheet.publisher || '-'}</TableCell>
-                                        <TableCell>
-                                            <div className="flex gap-1">
-                                                {sheet.bookmarks?.map((bookmark) => (
-                                                    <div
-                                                        key={bookmark.id}
-                                                        title={`${bookmark.user.firstName} ${bookmark.user.lastName}`}
-                                                        className="w-6 h-6 rounded-full flex items-center justify-center"
-                                                        style={{ backgroundColor: getAdminColor(bookmark.userId) }}
-                                                    >
-                                                        <Star className="h-3 w-3 text-white fill-white" />
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        </TableCell>
-                                        <TableCell className="text-right">
-                                            <div className="flex justify-end gap-2">
-                                                <Button
-                                                    size="icon"
-                                                    variant={isBookmarkedByMe(sheet) ? 'default' : 'ghost'}
-                                                    onClick={() => bookmarkMutation.mutate(sheet.id)}
-                                                >
-                                                    <Star
-                                                        className={`h-4 w-4 ${isBookmarkedByMe(sheet) ? 'fill-white' : ''
-                                                            }`}
-                                                    />
-                                                </Button>
-                                                <Button
-                                                    size="icon"
-                                                    variant="ghost"
-                                                    onClick={() => handleEdit(sheet)}
-                                                >
-                                                    <Edit2 className="h-4 w-4" />
-                                                </Button>
-                                                <Button
-                                                    size="icon"
-                                                    variant="ghost"
-                                                    onClick={() => handleDelete(sheet.id, sheet.title)}
-                                                >
-                                                    <Trash2 className="h-4 w-4" />
-                                                </Button>
-                                            </div>
-                                        </TableCell>
+            {
+                isLoading ? (
+                    <div className="text-center py-8">Lädt...</div>
+                ) : (
+                    <>
+                        <div className="border rounded-lg overflow-hidden">
+                            <Table>
+                                <TableHeader>
+                                    <TableRow>
+                                        <TableHead>Titel</TableHead>
+                                        <TableHead>Komponist</TableHead>
+                                        <TableHead>Arrangeur</TableHead>
+                                        <TableHead>Genre</TableHead>
+                                        <TableHead>Schwierigkeit</TableHead>
+                                        <TableHead>Verlag</TableHead>
+                                        <TableHead>Markierungen</TableHead>
+                                        <TableHead className="text-right">Aktionen</TableHead>
                                     </TableRow>
-                                ))}
-                            </TableBody>
-                        </Table>
-                    </div>
-
-                    {/* Pagination */}
-                    {data && data.pagination.totalPages > 1 && (
-                        <div className="flex justify-center gap-2 mt-4">
-                            <Button
-                                variant="outline"
-                                disabled={currentPage === 1}
-                                onClick={() => setCurrentPage((p) => p - 1)}
-                            >
-                                Zurück
-                            </Button>
-                            <span className="flex items-center px-4">
-                                Seite {currentPage} von {data.pagination.totalPages}
-                            </span>
-                            <Button
-                                variant="outline"
-                                disabled={currentPage === data.pagination.totalPages}
-                                onClick={() => setCurrentPage((p) => p + 1)}
-                            >
-                                Weiter
-                            </Button>
+                                </TableHeader>
+                                <TableBody>
+                                    {data?.sheetMusic.map((sheet) => (
+                                        <TableRow key={sheet.id}>
+                                            <TableCell className="font-medium">{sheet.title}</TableCell>
+                                            <TableCell>{sheet.composer || '-'}</TableCell>
+                                            <TableCell>{sheet.arranger || '-'}</TableCell>
+                                            <TableCell>{sheet.genre || '-'}</TableCell>
+                                            <TableCell>
+                                                {sheet.difficulty ? (
+                                                    <Badge
+                                                        variant={
+                                                            sheet.difficulty === 'easy'
+                                                                ? 'secondary'
+                                                                : sheet.difficulty === 'medium'
+                                                                    ? 'default'
+                                                                    : 'destructive'
+                                                        }
+                                                    >
+                                                        {sheet.difficulty === 'easy'
+                                                            ? 'Leicht'
+                                                            : sheet.difficulty === 'medium'
+                                                                ? 'Mittel'
+                                                                : 'Schwer'}
+                                                    </Badge>
+                                                ) : (
+                                                    '-'
+                                                )}
+                                            </TableCell>
+                                            <TableCell>{sheet.publisher || '-'}</TableCell>
+                                            <TableCell>
+                                                <div className="flex gap-1">
+                                                    {sheet.bookmarks?.map((bookmark) => (
+                                                        <div
+                                                            key={bookmark.id}
+                                                            title={`${bookmark.user.firstName} ${bookmark.user.lastName}`}
+                                                            className="w-6 h-6 rounded-full flex items-center justify-center"
+                                                            style={{ backgroundColor: getAdminColor(bookmark.userId) }}
+                                                        >
+                                                            <Star className="h-3 w-3 text-white fill-white" />
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </TableCell>
+                                            <TableCell className="text-right">
+                                                <div className="flex justify-end gap-2">
+                                                    <Button
+                                                        size="icon"
+                                                        variant={isBookmarkedByMe(sheet) ? 'default' : 'ghost'}
+                                                        onClick={() => bookmarkMutation.mutate(sheet.id)}
+                                                    >
+                                                        <Star
+                                                            className={`h-4 w-4 ${isBookmarkedByMe(sheet) ? 'fill-white' : ''
+                                                                }`}
+                                                        />
+                                                    </Button>
+                                                    <Button
+                                                        size="icon"
+                                                        variant="ghost"
+                                                        onClick={() => handleEdit(sheet)}
+                                                    >
+                                                        <Edit2 className="h-4 w-4" />
+                                                    </Button>
+                                                    <Button
+                                                        size="icon"
+                                                        variant="ghost"
+                                                        onClick={() => handleDelete(sheet.id, sheet.title)}
+                                                    >
+                                                        <Trash2 className="h-4 w-4" />
+                                                    </Button>
+                                                </div>
+                                            </TableCell>
+                                        </TableRow>
+                                    ))}
+                                </TableBody>
+                            </Table>
                         </div>
-                    )}
-                </>
-            )}
+
+                        {/* Pagination */}
+                        {data && data.pagination.totalPages > 1 && (
+                            <div className="flex justify-center gap-2 mt-4">
+                                <Button
+                                    variant="outline"
+                                    disabled={currentPage === 1}
+                                    onClick={() => setCurrentPage((p) => p - 1)}
+                                >
+                                    Zurück
+                                </Button>
+                                <span className="flex items-center px-4">
+                                    Seite {currentPage} von {data.pagination.totalPages}
+                                </span>
+                                <Button
+                                    variant="outline"
+                                    disabled={currentPage === data.pagination.totalPages}
+                                    onClick={() => setCurrentPage((p) => p + 1)}
+                                >
+                                    Weiter
+                                </Button>
+                            </div>
+                        )}
+                    </>
+                )
+            }
 
             {/* Edit Dialog */}
-            {selectedSheet && (
-                <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
-                    <CreateEditDialog
-                        title="Note bearbeiten"
-                        formData={formData}
-                        setFormData={setFormData}
-                        onSubmit={() =>
-                            updateMutation.mutate({ id: selectedSheet.id, data: formData })
-                        }
-                        isLoading={updateMutation.isPending}
-                    />
-                </Dialog>
-            )}
-        </div>
+            {
+                selectedSheet && (
+                    <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+                        <CreateEditDialog
+                            title="Note bearbeiten"
+                            formData={formData}
+                            setFormData={setFormData}
+                            onSubmit={() =>
+                                updateMutation.mutate({ id: selectedSheet.id, data: formData })
+                            }
+                            isLoading={updateMutation.isPending}
+                        />
+                    </Dialog>
+                )
+            }
+        </div >
     );
 }
 

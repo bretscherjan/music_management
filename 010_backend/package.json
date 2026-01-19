@@ -1,5 +1,5 @@
 {
-    "name": "vereinsverwaltung-api",
+    "name": "musig-elgg-api",
     "version": "1.0.0",
     "description": "Web API für Vereinsverwaltung mit Express, Prisma und MySQL",
     "main": "server.js",

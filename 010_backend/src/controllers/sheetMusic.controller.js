@@ -189,15 +189,60 @@ const deleteSheetMusic = asyncHandler(async (req, res) => {
 });
 
 /**
+ * Helper to parse CSV line respecting quotes
+ */
+const parseCsvLine = (line) => {
+    const values = [];
+    let currentValue = '';
+    let insideQuotes = false;
+
+    for (let i = 0; i < line.length; i++) {
+        const char = line[i];
+
+        if (char === '"') {
+            if (insideQuotes && line[i + 1] === '"') {
+                // Escaped quote
+                currentValue += '"';
+                i++; // Skip next quote
+            } else {
+                // Toggle quotes
+                insideQuotes = !insideQuotes;
+            }
+        } else if (char === ',' && !insideQuotes) {
+            // End of value
+            values.push(currentValue.trim());
+            currentValue = '';
+        } else {
+            currentValue += char;
+        }
+    }
+    values.push(currentValue.trim());
+    return values;
+};
+
+/**
  * Import sheet music from CSV
  * POST /sheet-music/import-csv
  */
 const importCsv = asyncHandler(async (req, res) => {
     const { mode, data } = req.body;
 
-    // Parse CSV data (simple parsing, expects: title,composer,arranger,genre,difficulty,publisher,notes)
-    const lines = data.trim().split('\n');
-    const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
+    // Split by newlines but handle potential newlines inside quotes
+    const lines = data.split(/\r?\n/).filter(line => line.trim());
+
+    if (lines.length === 0) {
+        return res.json({
+            message: 'Keine Daten gefunden',
+            imported: 0,
+            updated: 0,
+            errors: 0,
+            errorDetails: [],
+        });
+    }
+
+    // Parse headers from first line
+    const headerLine = lines[0];
+    const headers = parseCsvLine(headerLine).map(h => h.toLowerCase());
 
     const importedSheets = [];
     const updatedSheets = [];
@@ -205,9 +250,12 @@ const importCsv = asyncHandler(async (req, res) => {
 
     for (let i = 1; i < lines.length; i++) {
         try {
-            const values = lines[i].split(',').map(v => v.trim());
-            const row = {};
+            const values = parseCsvLine(lines[i]);
 
+            // Skip empty lines
+            if (values.length === 1 && values[0] === '') continue;
+
+            const row = {};
             headers.forEach((header, index) => {
                 row[header] = values[index] || null;
             });
@@ -236,32 +284,31 @@ const importCsv = asyncHandler(async (req, res) => {
             };
 
             if (mode === 'update') {
-                // Try to find existing by title (case-insensitive)
                 const existing = await prisma.sheetMusic.findFirst({
                     where: {
                         title: {
                             equals: row.title,
-                            mode: 'insensitive',
                         },
                     },
+                }) || await prisma.sheetMusic.findFirst({
+                    where: {
+                        title: row.title
+                    }
                 });
 
                 if (existing) {
-                    // Update existing
                     const updated = await prisma.sheetMusic.update({
                         where: { id: existing.id },
                         data: sheetData,
                     });
                     updatedSheets.push(updated);
                 } else {
-                    // Create new
                     const created = await prisma.sheetMusic.create({
                         data: sheetData,
                     });
                     importedSheets.push(created);
                 }
             } else {
-                // Mode 'add' - only create new
                 const created = await prisma.sheetMusic.create({
                     data: sheetData,
                 });
@@ -288,7 +335,6 @@ const importCsv = asyncHandler(async (req, res) => {
 const exportCsv = asyncHandler(async (req, res) => {
     const { search, genre, difficulty, bookmarkedBy } = req.query;
 
-    // Build where clause (same as getAllSheetMusic)
     const whereClause = {};
 
     if (search) {
@@ -320,19 +366,27 @@ const exportCsv = asyncHandler(async (req, res) => {
         orderBy: { title: 'asc' },
     });
 
-    // Generate CSV
     const headers = ['title', 'composer', 'arranger', 'genre', 'difficulty', 'publisher', 'notes'];
-    let csv = headers.join(',') + '\n';
+
+    // Add BOM for Excel
+    let csv = '\uFEFF' + headers.join(',') + '\n';
 
     sheetMusic.forEach(sheet => {
         const row = headers.map(header => {
-            const value = sheet[header];
-            return value ? `"${value.toString().replace(/"/g, '""')}"` : '';
+            let value = sheet[header];
+            if (value === null || value === undefined) {
+                return '';
+            }
+            value = value.toString();
+            if (value.includes(',') || value.includes('"') || value.includes('\n')) {
+                return `"${value.replace(/"/g, '""')}"`;
+            }
+            return value;
         });
         csv += row.join(',') + '\n';
     });
 
-    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
     res.setHeader('Content-Disposition', 'attachment; filename=sheet-music-export.csv');
     res.send(csv);
 });
@@ -345,7 +399,6 @@ const toggleBookmark = asyncHandler(async (req, res) => {
     const { id } = req.params;
     const userId = req.user.id;
 
-    // Check if bookmark exists
     const existingBookmark = await prisma.sheetMusicBookmark.findUnique({
         where: {
             userId_sheetMusicId: {
@@ -356,7 +409,6 @@ const toggleBookmark = asyncHandler(async (req, res) => {
     });
 
     if (existingBookmark) {
-        // Remove bookmark
         await prisma.sheetMusicBookmark.delete({
             where: {
                 userId_sheetMusicId: {
@@ -371,7 +423,6 @@ const toggleBookmark = asyncHandler(async (req, res) => {
             bookmarked: false,
         });
     } else {
-        // Add bookmark
         await prisma.sheetMusicBookmark.create({
             data: {
                 userId,
@@ -385,6 +436,7 @@ const toggleBookmark = asyncHandler(async (req, res) => {
         });
     }
 });
+
 
 module.exports = {
     getAllSheetMusic,

@@ -32,6 +32,7 @@ export function CreateEventPage() {
             responseDeadlineHours: 48, // 2 days before by default
             isRecurring: false,
             defaultAttendanceStatus: 'none',
+            setlistEnabled: false,
         };
     });
 
@@ -62,6 +63,7 @@ export function CreateEventPage() {
                 responseDeadlineHours: eventData.responseDeadlineHours || 48,
                 isRecurring: eventData.isRecurring,
                 defaultAttendanceStatus: 'none',
+                setlistEnabled: eventData.setlistEnabled || false,
             });
 
             if (eventData.isRecurring && eventData.recurrenceRule) {
@@ -310,6 +312,28 @@ export function CreateEventPage() {
                                 placeholder="Details zum Termin..."
                                 rows={4}
                             />
+                        </div>
+
+                        {/* Setlist/Ablauf Toggle */}
+                        <div className="p-4 border rounded-lg bg-muted/20 space-y-4">
+                            <div className="flex items-center gap-2">
+                                <input
+                                    type="checkbox"
+                                    id="setlistEnabled"
+                                    name="setlistEnabled"
+                                    checked={formData.setlistEnabled}
+                                    onChange={handleChange}
+                                    className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+                                />
+                                <div className="grid gap-1.5 leading-none">
+                                    <Label htmlFor="setlistEnabled" className="font-semibold cursor-pointer">
+                                        Ablauf/Programm planen?
+                                    </Label>
+                                    <p className="text-sm text-muted-foreground">
+                                        Aktivieren, um Noten, Pausen und Ablauf-Punkte für diesen Termin zu verwalten.
+                                    </p>
+                                </div>
+                            </div>
                         </div>
 
                         {/* Recurrence Settings */}

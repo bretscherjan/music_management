@@ -19,7 +19,15 @@ export interface Event {
     excludedDates?: string[] | null;
     createdAt: string;
     updatedAt: string;
+    setlistEnabled: boolean;
     setlist?: EventSetlistItem[];
+    attendanceSummary?: {
+        yes: number;
+        no: number;
+        maybe: number;
+        pending: number;
+        total: number;
+    };
 }
 
 // Setlist item types
@@ -74,6 +82,7 @@ export interface CreateEventDto {
     responseDeadlineHours?: number;
     isRecurring?: boolean;
     recurrenceRule?: string;
+    setlistEnabled?: boolean;
 }
 
 export interface UpdateEventDto {
@@ -88,6 +97,7 @@ export interface UpdateEventDto {
     responseDeadlineHours?: number;
     isRecurring?: boolean;
     recurrenceRule?: string;
+    setlistEnabled?: boolean;
 }
 
 export interface EventQueryParams {

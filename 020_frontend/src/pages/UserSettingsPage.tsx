@@ -11,6 +11,7 @@ export function UserSettingsPage() {
     const queryClient = useQueryClient();
     const [firstName, setFirstName] = useState('');
     const [lastName, setLastName] = useState('');
+    const [phoneNumber, setPhoneNumber] = useState('');
 
     const [currentPassword, setCurrentPassword] = useState('');
     const [newPassword, setNewPassword] = useState('');
@@ -32,6 +33,7 @@ export function UserSettingsPage() {
         if (user) {
             setFirstName(user.firstName);
             setLastName(user.lastName);
+            setPhoneNumber(user.phoneNumber || '');
         }
     }, [user]);
 
@@ -69,7 +71,7 @@ export function UserSettingsPage() {
 
     const handleProfileSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        updateProfileMutation.mutate({ firstName, lastName });
+        updateProfileMutation.mutate({ firstName, lastName, phoneNumber });
     };
 
     const handlePasswordSubmit = (e: React.FormEvent) => {
@@ -152,6 +154,17 @@ export function UserSettingsPage() {
                                         required
                                     />
                                 </div>
+                            </div>
+
+                            <div className="space-y-2">
+                                <Label htmlFor="phoneNumber">Telefonnummer</Label>
+                                <Input
+                                    id="phoneNumber"
+                                    type="tel"
+                                    value={phoneNumber}
+                                    onChange={(e) => setPhoneNumber(e.target.value)}
+                                    placeholder="+41 79 123 45 67"
+                                />
                             </div>
 
                             {profileError && (

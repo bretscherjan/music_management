@@ -58,6 +58,7 @@ const createEventSchema = {
             .min(0, 'Rückmeldefrist muss mindestens 0 Stunden sein')
             .max(720, 'Rückmeldefrist darf maximal 720 Stunden (30 Tage) sein')
             .default(48),
+        setlistEnabled: z.boolean().default(false),
     }).refine(
         (data) => {
             // Validate that endTime is after startTime
@@ -118,6 +119,7 @@ const updateEventSchema = {
         isRecurring: z.boolean().optional(),
         recurrenceRule: z.string().max(500).optional().nullable(),
         excludedDates: z.array(z.string()).optional().nullable(),
+        setlistEnabled: z.boolean().optional(),
         responseDeadlineHours: z
             .number()
             .int()

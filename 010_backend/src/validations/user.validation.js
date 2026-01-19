@@ -23,6 +23,10 @@ const updateProfileSchema = {
             .positive()
             .optional()
             .nullable(),
+        phoneNumber: z
+            .string()
+            .optional()
+            .nullable(),
     }),
 };
 
@@ -99,6 +103,10 @@ const adminUpdateUserSchema = {
             .positive()
             .optional()
             .nullable(),
+        phoneNumber: z
+            .string()
+            .optional()
+            .nullable(),
     }),
 };
 
@@ -133,6 +141,10 @@ const createUserSchema = {
         email: z
             .string({ required_error: 'E-Mail ist erforderlich' })
             .email('Ungültige E-Mail-Adresse'),
+        phoneNumber: z
+            .string()
+            .optional()
+            .nullable(),
         password: z
             .string({ required_error: 'Passwort ist erforderlich' })
             .min(8, 'Passwort muss mindestens 8 Zeichen lang sein'),

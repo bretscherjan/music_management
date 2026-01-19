@@ -16,6 +16,7 @@ const getProfile = asyncHandler(async (req, res) => {
             email: true,
             firstName: true,
             lastName: true,
+            phoneNumber: true,
             profilePicture: true,
             role: true,
             status: true,
@@ -43,7 +44,7 @@ const getProfile = asyncHandler(async (req, res) => {
  * PUT /users/profile
  */
 const updateProfile = asyncHandler(async (req, res) => {
-    const { firstName, lastName, registerId } = req.body;
+    const { firstName, lastName, phoneNumber, registerId } = req.body;
 
     // Validate registerId if provided
     if (registerId !== undefined && registerId !== null) {
@@ -60,6 +61,7 @@ const updateProfile = asyncHandler(async (req, res) => {
         data: {
             ...(firstName && { firstName }),
             ...(lastName && { lastName }),
+            ...(phoneNumber !== undefined && { phoneNumber }), // Allow setting to null/string
             ...(registerId !== undefined && { registerId }),
         },
         select: {
@@ -67,6 +69,7 @@ const updateProfile = asyncHandler(async (req, res) => {
             email: true,
             firstName: true,
             lastName: true,
+            phoneNumber: true,
             profilePicture: true,
             role: true,
             status: true,
@@ -144,7 +147,7 @@ const changePassword = asyncHandler(async (req, res) => {
  * POST /users
  */
 const createUser = asyncHandler(async (req, res) => {
-    const { firstName, lastName, email, password, status, role, registerId } = req.body;
+    const { firstName, lastName, email, phoneNumber, password, status, role, registerId } = req.body;
 
     // Check if user exists
     const userExists = await prisma.user.findUnique({
@@ -175,6 +178,7 @@ const createUser = asyncHandler(async (req, res) => {
             firstName,
             lastName,
             email: email.toLowerCase(),
+            phoneNumber,
             password: hashedPassword,
             status: status || 'active',
             role: role || 'member',
@@ -237,6 +241,7 @@ const getAllUsers = asyncHandler(async (req, res) => {
             email: true,
             firstName: true,
             lastName: true,
+            phoneNumber: true,
             profilePicture: true,
             role: true,
             status: true,
@@ -272,6 +277,7 @@ const getUserById = asyncHandler(async (req, res) => {
             email: true,
             firstName: true,
             lastName: true,
+            phoneNumber: true,
             profilePicture: true,
             role: true,
             status: true,

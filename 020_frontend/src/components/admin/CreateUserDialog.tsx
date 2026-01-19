@@ -21,6 +21,7 @@ export function CreateUserDialog({ open, onOpenChange }: CreateUserDialogProps) 
         password: '',
         firstName: '',
         lastName: '',
+        phoneNumber: '',
         registerId: '' as string | number,
         role: 'member'
     });
@@ -70,6 +71,7 @@ export function CreateUserDialog({ open, onOpenChange }: CreateUserDialogProps) 
             password: '',
             firstName: '',
             lastName: '',
+            phoneNumber: '',
             registerId: '',
             role: 'member'
         });
@@ -110,6 +112,17 @@ export function CreateUserDialog({ open, onOpenChange }: CreateUserDialogProps) 
                                 value={formData.lastName}
                                 onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
                                 required
+                            />
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label htmlFor="phoneNumber">Telefonnummer</Label>
+                            <Input
+                                id="phoneNumber"
+                                type="tel"
+                                value={formData.phoneNumber}
+                                onChange={(e) => setFormData({ ...formData, phoneNumber: e.target.value })}
+                                placeholder="+41 79 123 45 67"
                             />
                         </div>
                     </div>

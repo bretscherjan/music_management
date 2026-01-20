@@ -31,13 +31,13 @@ export function Dashboard() {
     });
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-8">
             {/* Welcome Header */}
-            <div className="space-y-2">
-                <h1 className="text-3xl font-bold tracking-tight">
+            <div className="space-y-1">
+                <h1 className="text-3xl font-bold tracking-tight text-primary">
                     Willkommen, {user?.firstName}!
                 </h1>
-                <p className="text-muted-foreground">
+                <p className="text-muted-foreground text-lg">
                     Hier ist deine Übersicht für die kommenden Termine und Neuigkeiten.
                 </p>
             </div>

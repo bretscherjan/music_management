@@ -5,7 +5,8 @@ import type {
     ChangePasswordDto,
     UpdateUserStatusDto,
     UpdateUserRoleDto,
-    AdminUpdateUserDto
+    AdminUpdateUserDto,
+    NotificationSettings
 } from '@/types';
 
 interface UsersQueryParams {
@@ -35,6 +36,16 @@ export const userService = {
             profilePicture: pictureUrl
         });
         return response.data.user;
+    },
+
+    async getNotificationSettings(): Promise<NotificationSettings> {
+        const response = await api.get<{ settings: NotificationSettings }>('/users/me/notifications');
+        return response.data.settings;
+    },
+
+    async updateNotificationSettings(settings: Partial<NotificationSettings>): Promise<NotificationSettings> {
+        const response = await api.put<{ settings: NotificationSettings }>('/users/me/notifications', settings);
+        return response.data.settings;
     },
 
     // Admin routes

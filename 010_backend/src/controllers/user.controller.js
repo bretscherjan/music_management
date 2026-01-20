@@ -108,6 +108,106 @@ const updateProfilePicture = asyncHandler(async (req, res) => {
         message: 'Profilbild erfolgreich aktualisiert',
         user,
     });
+    res.json({
+        message: 'Profilbild erfolgreich aktualisiert',
+        user,
+    });
+});
+
+/**
+ * Get notification settings
+ * GET /users/me/notifications
+ */
+const getNotificationSettings = asyncHandler(async (req, res) => {
+    const user = await prisma.user.findUnique({
+        where: { id: req.user.id },
+        include: { notificationSettings: true },
+    });
+
+    if (!user) {
+        throw new AppError('Benutzer nicht gefunden', 404);
+    }
+
+    res.json({
+        settings: user.notificationSettings || {
+            userId: user.id,
+            notifyOnEventCreate: true,
+            notifyOnEventUpdate: true,
+            notifyOnEventDelete: true,
+            notifyOnFileUpload: true,
+            notifyOnFileDelete: false,
+            notifyEventReminder: true,
+            reminderTimeBeforeHours: 24,
+            pushNewEvents: true,
+            pushEventUpdates: true,
+            pushEventCancellations: true,
+            pushNewFiles: true,
+            pushFileDeleted: false,
+            pushReminders: true
+        }
+    });
+});
+
+/**
+ * Update notification settings
+ * PUT /users/me/notifications
+ */
+const updateNotificationSettings = asyncHandler(async (req, res) => {
+    const {
+        notifyOnEventCreate,
+        notifyOnEventUpdate,
+        notifyOnEventDelete,
+        notifyOnFileUpload,
+        notifyOnFileDelete,
+        notifyEventReminder,
+        reminderTimeBeforeHours,
+        pushNewEvents,
+        pushEventUpdates,
+        pushEventCancellations,
+        pushNewFiles,
+        pushFileDeleted,
+        pushReminders
+    } = req.body;
+
+    const settings = await prisma.notificationSettings.upsert({
+        where: { userId: req.user.id },
+        update: {
+            notifyOnEventCreate,
+            notifyOnEventUpdate,
+            notifyOnEventDelete,
+            notifyOnFileUpload,
+            notifyOnFileDelete,
+            notifyEventReminder,
+            reminderTimeBeforeHours: parseInt(reminderTimeBeforeHours),
+            pushNewEvents,
+            pushEventUpdates,
+            pushEventCancellations,
+            pushNewFiles,
+            pushFileDeleted,
+            pushReminders
+        },
+        create: {
+            userId: req.user.id,
+            notifyOnEventCreate,
+            notifyOnEventUpdate,
+            notifyOnEventDelete,
+            notifyOnFileUpload,
+            notifyOnFileDelete,
+            notifyEventReminder,
+            reminderTimeBeforeHours: parseInt(reminderTimeBeforeHours),
+            pushNewEvents,
+            pushEventUpdates,
+            pushEventCancellations,
+            pushNewFiles,
+            pushFileDeleted,
+            pushReminders
+        }
+    });
+
+    res.json({
+        message: 'Benachrichtigungseinstellungen aktualisiert',
+        settings
+    });
 });
 
 /**
@@ -524,5 +624,8 @@ module.exports = {
     updateUserRole,
     deleteUser,
     getAttendanceStats,
+    getAttendanceStats,
     createUser,
+    getNotificationSettings,
+    updateNotificationSettings,
 };

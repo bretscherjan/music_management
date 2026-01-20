@@ -5,7 +5,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Loader2, Save, Key, User as UserIcon, AlertCircle, CheckCircle } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
+import { Loader2, Save, Key, User as UserIcon, AlertCircle, CheckCircle, Bell } from 'lucide-react';
+import type { NotificationSettings } from '@/types';
+import { pushNotificationService } from '@/services/pushNotificationService';
 
 export function UserSettingsPage() {
     const queryClient = useQueryClient();
@@ -260,8 +263,309 @@ export function UserSettingsPage() {
                         </form>
                     </CardContent>
                 </Card>
+
+                {/* Notification Settings */}
+                <NotificationSettingsCard />
+
             </div>
-        </div >
+        </div>
+    );
+}
+
+function NotificationSettingsCard() {
+    const queryClient = useQueryClient();
+    const [success, setSuccess] = useState(false);
+    const [isPushSubscribed, setIsPushSubscribed] = useState(false);
+
+    // Fetch Settings
+    const { data: settings, isLoading } = useQuery({
+        queryKey: ['notificationSettings'],
+        queryFn: userService.getNotificationSettings,
+    });
+
+    // Check push subscription status on mount and when settings change
+    useEffect(() => {
+        const checkPushStatus = async () => {
+            const hasSubscription = await pushNotificationService.hasActiveSubscription();
+            console.log('Push subscription status:', hasSubscription);
+            setIsPushSubscribed(hasSubscription);
+
+            // Log details if subscribed
+            if (hasSubscription) {
+                try {
+                    const reg = await navigator.serviceWorker.getRegistration();
+                    const sub = await reg?.pushManager?.getSubscription();
+                    console.log('Current Browser Subscription:', sub);
+
+                    // Sync with backend to ensure it exists there too
+                    await pushNotificationService.syncSubscription();
+                } catch (e) {
+                    console.error('Error getting detailed sub info:', e);
+                }
+            }
+        };
+        checkPushStatus();
+    }, [settings]);
+
+    const handleTestPush = async () => {
+        try {
+            console.log('Sending test push notification...');
+            await pushNotificationService.sendTestNotification();
+            console.log('Test push request sent.');
+        } catch (error) {
+            console.error('Test push failed:', error);
+        }
+    };
+
+    // Update Settings Mutation
+    const mutation = useMutation({
+        mutationFn: userService.updateNotificationSettings,
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['notificationSettings'] });
+            setSuccess(true);
+            setTimeout(() => setSuccess(false), 3000);
+        },
+    });
+
+    const handleToggle = (key: keyof NotificationSettings) => {
+        if (!settings) return;
+        mutation.mutate({
+            ...settings,
+            [key]: !settings[key]
+        });
+    };
+
+    const handleReminderTimeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+        if (!settings) return;
+        mutation.mutate({
+            ...settings,
+            reminderTimeBeforeHours: parseInt(e.target.value)
+        });
+    };
+
+    if (isLoading || !settings) {
+        return (
+            <Card>
+                <CardContent className="py-6 flex justify-center">
+                    <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                </CardContent>
+            </Card>
+        );
+    }
+
+    return (
+        <Card>
+            <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                    <Bell className="h-5 w-5" />
+                    Benachrichtigungen
+                </CardTitle>
+                <CardDescription>
+                    Wählen Sie für jede Benachrichtigung, ob Sie per E-Mail und/oder Push benachrichtigt werden möchten.
+                </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+
+                {isPushSubscribed && (
+                    <div className="flex justify-end mb-4">
+                        <Button variant="outline" size="sm" onClick={handleTestPush}>
+                            <Bell className="mr-2 h-4 w-4" />
+                            Test Push senden
+                        </Button>
+                    </div>
+                )}
+
+                <div className="space-y-4">
+                    <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Events</h3>
+
+                    <div className="space-y-2">
+                        <Label className="text-sm font-medium">Neue Termine</Label>
+                        <p className="text-xs text-muted-foreground">Wenn ein neuer Termin erstellt wird</p>
+                        <div className="flex items-center gap-6 mt-2">
+                            <div className="flex items-center space-x-2">
+                                <Switch
+                                    id="email-new-events"
+                                    checked={settings.notifyOnEventCreate}
+                                    onCheckedChange={() => handleToggle('notifyOnEventCreate')}
+                                    disabled={mutation.isPending}
+                                />
+                                <Label htmlFor="email-new-events" className="text-sm cursor-pointer">E-Mail</Label>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                                <Switch
+                                    id="push-new-events"
+                                    checked={settings.pushNewEvents}
+                                    onCheckedChange={() => handleToggle('pushNewEvents')}
+                                    disabled={mutation.isPending || !isPushSubscribed}
+                                />
+                                <Label htmlFor="push-new-events" className="text-sm cursor-pointer">Push</Label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="space-y-2">
+                        <Label className="text-sm font-medium">Terminänderungen</Label>
+                        <p className="text-xs text-muted-foreground">Wenn ein Termin bearbeitet wird</p>
+                        <div className="flex items-center gap-6 mt-2">
+                            <div className="flex items-center space-x-2">
+                                <Switch
+                                    id="email-event-updates"
+                                    checked={settings.notifyOnEventUpdate}
+                                    onCheckedChange={() => handleToggle('notifyOnEventUpdate')}
+                                    disabled={mutation.isPending}
+                                />
+                                <Label htmlFor="email-event-updates" className="text-sm cursor-pointer">E-Mail</Label>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                                <Switch
+                                    id="push-event-updates"
+                                    checked={settings.pushEventUpdates}
+                                    onCheckedChange={() => handleToggle('pushEventUpdates')}
+                                    disabled={mutation.isPending || !isPushSubscribed}
+                                />
+                                <Label htmlFor="push-event-updates" className="text-sm cursor-pointer">Push</Label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="space-y-2">
+                        <Label className="text-sm font-medium">Terminabsagen</Label>
+                        <p className="text-xs text-muted-foreground">Wenn ein Termin gelöscht wird</p>
+                        <div className="flex items-center gap-6 mt-2">
+                            <div className="flex items-center space-x-2">
+                                <Switch
+                                    id="email-event-cancel"
+                                    checked={settings.notifyOnEventDelete}
+                                    onCheckedChange={() => handleToggle('notifyOnEventDelete')}
+                                    disabled={mutation.isPending}
+                                />
+                                <Label htmlFor="email-event-cancel" className="text-sm cursor-pointer">E-Mail</Label>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                                <Switch
+                                    id="push-event-cancel"
+                                    checked={settings.pushEventCancellations}
+                                    onCheckedChange={() => handleToggle('pushEventCancellations')}
+                                    disabled={mutation.isPending || !isPushSubscribed}
+                                />
+                                <Label htmlFor="push-event-cancel" className="text-sm cursor-pointer">Push</Label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="space-y-4">
+                    <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Dateien</h3>
+
+                    <div className="space-y-2">
+                        <Label className="text-sm font-medium">Neue Dateien</Label>
+                        <p className="text-xs text-muted-foreground">Wenn eine neue Datei hochgeladen wird</p>
+                        <div className="flex items-center gap-6 mt-2">
+                            <div className="flex items-center space-x-2">
+                                <Switch
+                                    id="email-new-files"
+                                    checked={settings.notifyOnFileUpload}
+                                    onCheckedChange={() => handleToggle('notifyOnFileUpload')}
+                                    disabled={mutation.isPending}
+                                />
+                                <Label htmlFor="email-new-files" className="text-sm cursor-pointer">E-Mail</Label>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                                <Switch
+                                    id="push-new-files"
+                                    checked={settings.pushNewFiles}
+                                    onCheckedChange={() => handleToggle('pushNewFiles')}
+                                    disabled={mutation.isPending || !isPushSubscribed}
+                                />
+                                <Label htmlFor="push-new-files" className="text-sm cursor-pointer">Push</Label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="space-y-2">
+                        <Label className="text-sm font-medium">Datei gelöscht</Label>
+                        <p className="text-xs text-muted-foreground">Wenn eine Datei gelöscht wird</p>
+                        <div className="flex items-center gap-6 mt-2">
+                            <div className="flex items-center space-x-2">
+                                <Switch
+                                    id="email-file-deleted"
+                                    checked={settings.notifyOnFileDelete}
+                                    onCheckedChange={() => handleToggle('notifyOnFileDelete')}
+                                    disabled={mutation.isPending}
+                                />
+                                <Label htmlFor="email-file-deleted" className="text-sm cursor-pointer">E-Mail</Label>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                                <Switch
+                                    id="push-file-deleted"
+                                    checked={settings.pushFileDeleted}
+                                    onCheckedChange={() => handleToggle('pushFileDeleted')}
+                                    disabled={mutation.isPending || !isPushSubscribed}
+                                />
+                                <Label htmlFor="push-file-deleted" className="text-sm cursor-pointer">Push</Label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="space-y-4">
+                    <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Erinnerungen</h3>
+
+                    <div className="space-y-2">
+                        <Label className="text-sm font-medium">Terminerinnerungen</Label>
+                        <p className="text-xs text-muted-foreground">Automatische Erinnerung vor dem Termin</p>
+                        <div className="flex items-center gap-6 mt-2">
+                            <div className="flex items-center space-x-2">
+                                <Switch
+                                    id="email-reminders"
+                                    checked={settings.notifyEventReminder}
+                                    onCheckedChange={() => handleToggle('notifyEventReminder')}
+                                    disabled={mutation.isPending}
+                                />
+                                <Label htmlFor="email-reminders" className="text-sm cursor-pointer">E-Mail</Label>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                                <Switch
+                                    id="push-reminders"
+                                    checked={settings.pushReminders}
+                                    onCheckedChange={() => handleToggle('pushReminders')}
+                                    disabled={mutation.isPending || !isPushSubscribed}
+                                />
+                                <Label htmlFor="push-reminders" className="text-sm cursor-pointer">Push</Label>
+                            </div>
+                        </div>
+                    </div>
+
+                    {settings.notifyEventReminder && (
+                        <div className="grid gap-2">
+                            <Label htmlFor="reminderTimeBeforeHours">Zeitpunkt der Erinnerung</Label>
+                            <select
+                                id="reminderTimeBeforeHours"
+                                className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                                value={settings.reminderTimeBeforeHours}
+                                onChange={handleReminderTimeChange}
+                                disabled={mutation.isPending}
+                            >
+                                <option value="1">1 Stunde vorher</option>
+                                <option value="2">2 Stunden vorher</option>
+                                <option value="12">12 Stunden vorher</option>
+                                <option value="24">24 Stunden vorher</option>
+                                <option value="48">48 Stunden vorher</option>
+                                <option value="168">1 Woche vorher</option>
+                            </select>
+                        </div>
+                    )}
+                </div>
+
+                {success && (
+                    <div className="p-3 rounded-md bg-green-50 text-green-700 dark:bg-green-900/20 dark:text-green-400 text-sm flex items-center gap-2">
+                        <CheckCircle className="h-4 w-4" />
+                        <span>Einstellungen gespeichert</span>
+                    </div>
+                )}
+            </CardContent>
+        </Card>
+
     );
 }
 

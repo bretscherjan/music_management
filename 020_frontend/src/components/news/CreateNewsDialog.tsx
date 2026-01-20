@@ -50,7 +50,7 @@ export function CreateNewsDialog({ open, onOpenChange }: CreateNewsDialogProps) 
 
     return (
         <Dialog open={open} onOpenChange={handleClose}>
-            <DialogContent className="sm:max-w-lg">
+            <DialogContent className="sm:max-w-2xl">
                 <DialogHeader>
                     <DialogTitle>Neuigkeit erstellen</DialogTitle>
                 </DialogHeader>

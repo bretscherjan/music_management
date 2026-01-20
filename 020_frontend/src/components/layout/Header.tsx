@@ -46,13 +46,13 @@ export function Header() {
     const filteredNavItems = navItems.filter(item => !item.adminOnly || isAdmin);
 
     return (
-        <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+        <header className="sticky top-0 z-50 w-full border-b bg-background/80 backdrop-blur-md supports-[backdrop-filter]:bg-background/80">
             <div className="container-app flex h-16 items-center justify-between">
                 {/* Logo */}
-                <Link to="/member" className="flex items-center gap-2">
+                <Link to="/member" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
                     <Music className="h-8 w-8 text-primary" />
                     <div className="hidden sm:flex flex-col">
-                        <span className="font-bold text-lg leading-tight">Konzertmeister</span>
+                        <span className="font-bold text-lg leading-tight">Musig Elgg</span>
                         <span className="text-xs text-muted-foreground">Mitgliederbereich</span>
                     </div>
                 </Link>
@@ -64,10 +64,10 @@ export function Header() {
                             key={item.href}
                             to={item.href}
                             className={cn(
-                                "flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors",
+                                "flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-all duration-200",
                                 location.pathname === item.href
-                                    ? "bg-primary text-primary-foreground"
-                                    : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+                                    ? "bg-primary/10 text-primary font-semibold"
+                                    : "text-muted-foreground hover:bg-primary/5 hover:text-primary"
                             )}
                         >
                             {item.icon}

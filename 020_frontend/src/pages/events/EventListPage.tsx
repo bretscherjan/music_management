@@ -53,22 +53,22 @@ export function EventListPage() {
     const pastEvents = sortedEvents.filter(e => new Date(e.date) < now).reverse();
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-8">
             {/* Header */}
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6 border-b pb-6">
                 <div>
-                    <h1 className="text-3xl font-bold tracking-tight">Termine</h1>
-                    <p className="text-muted-foreground">
+                    <h1 className="text-3xl font-bold tracking-tight text-primary">Termine</h1>
+                    <p className="text-muted-foreground mt-1 text-lg">
                         Übersicht aller Veranstaltungen und Proben
                     </p>
                 </div>
 
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap gap-3">
                     <CalendarExportDialog events={filteredEvents} />
 
                     {isAdmin && (
                         <Link to="/member/admin/events/new">
-                            <Button>
+                            <Button className="shadow-sm">
                                 <Plus className="h-4 w-4 mr-2" />
                                 Neuer Termin
                             </Button>

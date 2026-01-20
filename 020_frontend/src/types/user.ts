@@ -17,10 +17,32 @@ export interface User {
         id: number;
         name: string;
     } | null;
+    notificationSettings?: NotificationSettings;
     createdAt: string;
     updatedAt: string;
     calendarToken?: string;
 }
+
+export interface NotificationSettings {
+    id: number;
+    userId: number;
+    // Email notifications
+    notifyOnEventCreate: boolean;
+    notifyOnEventUpdate: boolean;
+    notifyOnEventDelete: boolean;
+    notifyOnFileUpload: boolean;
+    notifyOnFileDelete: boolean;
+    notifyEventReminder: boolean;
+    reminderTimeBeforeHours: number;
+    // Push notifications
+    pushNewEvents: boolean;
+    pushEventUpdates: boolean;
+    pushEventCancellations: boolean;
+    pushNewFiles: boolean;
+    pushFileDeleted: boolean;
+    pushReminders: boolean;
+}
+
 
 // DTOs for API operations
 export interface UpdateProfileDto {

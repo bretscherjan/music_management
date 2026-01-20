@@ -2,6 +2,7 @@ const { PrismaClient } = require('@prisma/client');
 const { asyncHandler, AppError } = require('../middlewares/errorHandler.middleware');
 const { expandRecurringEvents, addExcludedDate } = require('../services/recurrence.service');
 const { sendBulkEventReminders } = require('../services/email.service');
+const notificationService = require('../services/notification.service');
 
 const prisma = new PrismaClient();
 
@@ -59,7 +60,6 @@ const getAllEvents = asyncHandler(async (req, res) => {
         where: { status: 'active' }
     });
 
-    console.log('DEBUG: Active members count:', activeMembersCount);
 
     const events = await prisma.event.findMany({
         where: whereClause,
@@ -306,6 +306,8 @@ const createEvent = asyncHandler(async (req, res) => {
         },
     });
 
+    notificationService.notifyEventCreated(event);
+
     // Auto-create attendance entries for all active users based on the selected status
     if (defaultAttendanceStatus && defaultAttendanceStatus !== 'none') {
         const activeUsers = await prisma.user.findMany({
@@ -354,6 +356,8 @@ const updateEvent = asyncHandler(async (req, res) => {
         message: 'Event erfolgreich aktualisiert',
         event,
     });
+
+    notificationService.notifyEventUpdated(event);
 });
 
 /**
@@ -363,9 +367,17 @@ const updateEvent = asyncHandler(async (req, res) => {
 const deleteEvent = asyncHandler(async (req, res) => {
     const { id } = req.params;
 
+    const event = await prisma.event.findUnique({
+        where: { id: parseInt(id) },
+    });
+
     await prisma.event.delete({
         where: { id: parseInt(id) },
     });
+
+    if (event) {
+        notificationService.notifyEventDeleted(event);
+    }
 
     res.json({
         message: 'Event erfolgreich gelöscht',
@@ -695,12 +707,28 @@ const sendReminders = asyncHandler(async (req, res) => {
 const bulkDeleteEvents = asyncHandler(async (req, res) => {
     const { ids } = req.body;
 
+    // Fetch events before deletion to send notifications
+    const eventsToDelete = await prisma.event.findMany({
+        where: {
+            id: { in: ids },
+        },
+    });
+
     // Delete all events with the given IDs
     const result = await prisma.event.deleteMany({
         where: {
             id: { in: ids },
         },
     });
+
+    // Send notifications for each deleted event
+    // We do this asynchronously to not block the response too long, 
+    // but we use Promise.allSettled to ideally ensure they are triggered
+    if (eventsToDelete.length > 0) {
+        Promise.allSettled(eventsToDelete.map(event =>
+            notificationService.notifyEventDeleted(event)
+        )).catch(err => console.error('Error sending bulk delete notifications:', err));
+    }
 
     res.json({
         message: `${result.count} Termine erfolgreich gelöscht`,

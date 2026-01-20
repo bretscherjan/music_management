@@ -25,7 +25,7 @@ export function CreateEventPage() {
             date: new Date().toISOString().split('T')[0],
             startTime: '19:30',
             endTime: '21:30',
-            location: 'Gemeindesaal Elgg',
+            location: '',
             category: 'rehearsal',
             visibility: 'all',
             description: '',

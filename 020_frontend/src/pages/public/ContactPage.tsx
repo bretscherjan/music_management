@@ -1,6 +1,29 @@
-import { Mail, MapPin, Phone, Clock } from 'lucide-react';
+import { Mail, MapPin, Clock } from 'lucide-react';
+import { useState } from 'react';
+import api from '../../lib/api';
 
 export function ContactPage() {
+    const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
+    const [formData, setFormData] = useState({
+        name: '',
+        email: '',
+        subject: '',
+        message: ''
+    });
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setStatus('loading');
+
+        try {
+            await api.post('/contact', formData);
+            setStatus('success');
+            setFormData({ name: '', email: '', subject: '', message: '' });
+        } catch (error) {
+            console.error('Error sending message:', error);
+            setStatus('error');
+        }
+    };
     return (
         <div>
             {/* Hero Section */}
@@ -33,25 +56,26 @@ export function ContactPage() {
                                     link="mailto:info@musig-elgg.ch"
                                 />
 
+                                {/*
                                 <ContactItem
                                     icon={<Phone className="h-6 w-6" />}
                                     title="Telefon"
                                     content="+41 52 XXX XX XX"
                                     link="tel:+41521234567"
                                 />
-
+*/}
                                 <ContactItem
                                     icon={<MapPin className="h-6 w-6" />}
                                     title="Adresse"
-                                    content="Probelokal Musig Elgg"
+                                    content="Singsaal Primarschule Im See"
                                     subtitle="8353 Elgg, Schweiz"
                                 />
 
                                 <ContactItem
                                     icon={<Clock className="h-6 w-6" />}
                                     title="Probenzeiten"
-                                    content="Jeden Montag, 20:00 Uhr"
-                                    subtitle="Gäste sind herzlich willkommen!"
+                                    content="jeden 2. Montag, 20:00 Uhr"
+                                    subtitle="Schnupperproben sind mit vorangegangener Anmeldung möglich."
                                 />
                             </div>
 
@@ -59,11 +83,10 @@ export function ContactPage() {
                             <div className="mt-8 bg-gradient-to-br from-[hsl(var(--musig-gold))]/10 to-[hsl(var(--musig-burgundy))]/10 rounded-xl border-2 border-[hsl(var(--musig-gold))]/30 p-8 text-center">
                                 <MapPin className="h-12 w-12 text-[hsl(var(--musig-burgundy))] mx-auto mb-4" />
                                 <h3 className="text-xl font-bold text-[hsl(var(--musig-burgundy))] mb-2">
-                                    Besuchen Sie uns
+                                    Unser Probelokal
                                 </h3>
-                                <p className="text-[hsl(var(--muted-foreground))]">
-                                    Unser Probelokal befindet sich im Herzen von Elgg
-                                </p>
+                                <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d697.3061700364333!2d8.867176345141536!3d47.49589626201634!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x479a96abf445a797%3A0x26bc98540a0ccac1!2sSeegartenstrasse%2021%2C%208353%20Elgg!5e1!3m2!1sde!2sch!4v1768857013028!5m2!1sde!2sch" className="w-full h-100" loading="lazy"></iframe>
+
                             </div>
                         </div>
 
@@ -73,82 +96,124 @@ export function ContactPage() {
                                 Nachricht senden
                             </h2>
 
-                            <form className="space-y-6">
-                                <div>
-                                    <label
-                                        htmlFor="name"
-                                        className="block text-sm font-medium text-[hsl(var(--foreground))] mb-2"
+                            {status === 'success' ? (
+                                <div className="bg-green-500/10 border border-green-500/20 rounded-xl p-8 text-center">
+                                    <div className="w-16 h-16 bg-green-500/20 text-green-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                                        <Mail className="h-8 w-8" />
+                                    </div>
+                                    <h3 className="text-2xl font-bold text-green-500 mb-2">Nachricht gesendet!</h3>
+                                    <p className="text-[hsl(var(--muted-foreground))] mb-6">
+                                        Vielen Dank für deine Nachricht. Wir werden uns so schnell wie möglich bei dir melden.
+                                    </p>
+                                    <button
+                                        onClick={() => setStatus('idle')}
+                                        className="text-[hsl(var(--musig-burgundy))] font-medium hover:underline"
                                     >
-                                        Name
-                                    </label>
-                                    <input
-                                        type="text"
-                                        id="name"
-                                        className="w-full px-4 py-3 rounded-lg border border-[hsl(var(--border))] focus:ring-2 focus:ring-[hsl(var(--musig-burgundy))] focus:border-transparent outline-none transition-all"
-                                        placeholder="Ihr Name"
-                                    />
+                                        Weitere Nachricht senden
+                                    </button>
                                 </div>
+                            ) : (
+                                <form onSubmit={handleSubmit} className="space-y-6">
+                                    <div>
+                                        <label
+                                            htmlFor="name"
+                                            className="block text-sm font-medium text-[hsl(var(--foreground))] mb-2"
+                                        >
+                                            Name
+                                        </label>
+                                        <input
+                                            type="text"
+                                            id="name"
+                                            required
+                                            value={formData.name}
+                                            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                                            className="w-full px-4 py-3 rounded-lg border border-[hsl(var(--border))] focus:ring-2 focus:ring-[hsl(var(--musig-burgundy))] focus:border-transparent outline-none transition-all"
+                                            placeholder="Ihr Name"
+                                        />
+                                    </div>
 
-                                <div>
-                                    <label
-                                        htmlFor="email"
-                                        className="block text-sm font-medium text-[hsl(var(--foreground))] mb-2"
+                                    <div>
+                                        <label
+                                            htmlFor="email"
+                                            className="block text-sm font-medium text-[hsl(var(--foreground))] mb-2"
+                                        >
+                                            E-Mail
+                                        </label>
+                                        <input
+                                            type="email"
+                                            id="email"
+                                            required
+                                            value={formData.email}
+                                            onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                                            className="w-full px-4 py-3 rounded-lg border border-[hsl(var(--border))] focus:ring-2 focus:ring-[hsl(var(--musig-burgundy))] focus:border-transparent outline-none transition-all"
+                                            placeholder="ihre.email@beispiel.ch"
+                                        />
+                                    </div>
+
+                                    <div>
+                                        <label
+                                            htmlFor="subject"
+                                            className="block text-sm font-medium text-[hsl(var(--foreground))] mb-2"
+                                        >
+                                            Betreff
+                                        </label>
+                                        <input
+                                            type="text"
+                                            id="subject"
+                                            required
+                                            value={formData.subject}
+                                            onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
+                                            className="w-full px-4 py-3 rounded-lg border border-[hsl(var(--border))] focus:ring-2 focus:ring-[hsl(var(--musig-burgundy))] focus:border-transparent outline-none transition-all"
+                                            placeholder="Worum geht es?"
+                                        />
+                                    </div>
+
+                                    <div>
+                                        <label
+                                            htmlFor="message"
+                                            className="block text-sm font-medium text-[hsl(var(--foreground))] mb-2"
+                                        >
+                                            Nachricht
+                                        </label>
+                                        <textarea
+                                            id="message"
+                                            rows={6}
+                                            required
+                                            minLength={10}
+                                            value={formData.message}
+                                            onChange={(e) => setFormData({ ...formData, message: e.target.value })}
+                                            className="w-full px-4 py-3 rounded-lg border border-[hsl(var(--border))] focus:ring-2 focus:ring-[hsl(var(--musig-burgundy))] focus:border-transparent outline-none transition-all resize-none"
+                                            placeholder="Ihre Nachricht an uns..."
+                                        />
+                                    </div>
+
+                                    {status === 'error' && (
+                                        <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-lg text-red-500 text-sm">
+                                            Es ist ein Fehler aufgetreten. Bitte versuche es später erneut oder schreibe uns direkt eine E-Mail.
+                                        </div>
+                                    )}
+
+                                    <button
+                                        type="submit"
+                                        disabled={status === 'loading'}
+                                        className="w-full bg-[hsl(var(--musig-burgundy))] text-white px-6 py-3 rounded-lg hover:bg-[hsl(var(--musig-burgundy))]/90 transition-colors font-medium flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                                     >
-                                        E-Mail
-                                    </label>
-                                    <input
-                                        type="email"
-                                        id="email"
-                                        className="w-full px-4 py-3 rounded-lg border border-[hsl(var(--border))] focus:ring-2 focus:ring-[hsl(var(--musig-burgundy))] focus:border-transparent outline-none transition-all"
-                                        placeholder="ihre.email@beispiel.ch"
-                                    />
-                                </div>
+                                        {status === 'loading' ? (
+                                            <>
+                                                <div className="h-5 w-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                                                Wird gesendet...
+                                            </>
+                                        ) : (
+                                            <>
+                                                <Mail className="h-5 w-5" />
+                                                Nachricht senden
+                                            </>
+                                        )}
+                                    </button>
+                                </form>
+                            )}
 
-                                <div>
-                                    <label
-                                        htmlFor="subject"
-                                        className="block text-sm font-medium text-[hsl(var(--foreground))] mb-2"
-                                    >
-                                        Betreff
-                                    </label>
-                                    <input
-                                        type="text"
-                                        id="subject"
-                                        className="w-full px-4 py-3 rounded-lg border border-[hsl(var(--border))] focus:ring-2 focus:ring-[hsl(var(--musig-burgundy))] focus:border-transparent outline-none transition-all"
-                                        placeholder="Worum geht es?"
-                                    />
-                                </div>
 
-                                <div>
-                                    <label
-                                        htmlFor="message"
-                                        className="block text-sm font-medium text-[hsl(var(--foreground))] mb-2"
-                                    >
-                                        Nachricht
-                                    </label>
-                                    <textarea
-                                        id="message"
-                                        rows={6}
-                                        className="w-full px-4 py-3 rounded-lg border border-[hsl(var(--border))] focus:ring-2 focus:ring-[hsl(var(--musig-burgundy))] focus:border-transparent outline-none transition-all resize-none"
-                                        placeholder="Ihre Nachricht an uns..."
-                                    />
-                                </div>
-
-                                <button
-                                    type="submit"
-                                    className="w-full bg-[hsl(var(--musig-burgundy))] text-white px-6 py-3 rounded-lg hover:bg-[hsl(var(--musig-burgundy))]/90 transition-colors font-medium flex items-center justify-center gap-2"
-                                >
-                                    <Mail className="h-5 w-5" />
-                                    Nachricht senden
-                                </button>
-                            </form>
-
-                            <div className="mt-6 p-4 bg-[hsl(var(--musig-gold))]/10 rounded-lg border border-[hsl(var(--musig-gold))]/30">
-                                <p className="text-sm text-[hsl(var(--muted-foreground))]">
-                                    <strong className="text-[hsl(var(--musig-burgundy))]">Hinweis:</strong> Das Kontaktformular
-                                    wird zurzeit noch implementiert. In der Zwischenzeit können Sie uns direkt per E-Mail erreichen.
-                                </p>
-                            </div>
                         </div>
                     </div>
                 </div>
@@ -163,11 +228,11 @@ export function ContactPage() {
                         </h2>
                         <p className="text-lg text-[hsl(var(--muted-foreground))] mb-6 leading-relaxed">
                             Sie möchten uns persönlich kennenlernen? Kommen Sie doch einfach bei einer unserer
-                            Proben vorbei – jeden Montag um 20:00 Uhr. Eine Anmeldung ist nicht erforderlich!
+                            Proben vorbei – jeden 2. Montag um 20:00 Uhr. Wir wären froh um eine kurze Anmeldung!
                         </p>
                         <div className="inline-flex items-center gap-2 text-[hsl(var(--musig-burgundy))] font-medium">
                             <Clock className="h-5 w-5" />
-                            Montag, 20:00 Uhr im Probelokal Elgg
+                            Jeden 2. Montag (jeweils ungerade Kalenderwochen), 20:00 Uhr im Probelokal
                         </div>
                     </div>
                 </div>

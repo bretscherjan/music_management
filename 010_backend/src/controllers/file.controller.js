@@ -2,8 +2,10 @@ const path = require('path');
 const fs = require('fs');
 const multer = require('multer');
 const { PrismaClient } = require('@prisma/client');
+
 const { asyncHandler, AppError } = require('../middlewares/errorHandler.middleware');
 const { allowedMimeTypes } = require('../validations/file.validation');
+const notificationService = require('../services/notification.service');
 
 const prisma = new PrismaClient();
 
@@ -120,6 +122,8 @@ const uploadFile = asyncHandler(async (req, res) => {
             accessRules: true
         }
     });
+
+    notificationService.notifyFileUploaded(file);
 
     res.status(201).json({
         message: 'Datei erfolgreich hochgeladen',
@@ -323,6 +327,10 @@ const deleteFile = asyncHandler(async (req, res) => {
     await prisma.file.delete({
         where: { id: parseInt(id) },
     });
+
+    if (file) {
+        notificationService.notifyFileDeleted(file);
+    }
 
     res.json({
         message: 'Datei erfolgreich gelöscht',

@@ -91,9 +91,42 @@ model User {
   
   calendarToken String? @unique
 
+  notificationSettings NotificationSettings?
+  pushSubscriptions    PushSubscription[]
+
   @@index([email])
   @@index([registerId])
 }
+
+model NotificationSettings {
+  id     Int  @id @default(autoincrement())
+  userId Int  @unique
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Event Notifications (Email)
+  notifyOnEventCreate Boolean @default(true)
+  notifyOnEventUpdate Boolean @default(true)
+  notifyOnEventDelete Boolean @default(true)
+
+  // File Notifications (Email)
+  notifyOnFileUpload Boolean @default(true)
+  notifyOnFileDelete Boolean @default(false)
+
+  // Reminder Settings (Email)
+  notifyEventReminder       Boolean @default(true)
+  reminderTimeBeforeHours   Int     @default(24) // Hours before event start
+
+  // Push Notification Settings
+  pushNewEvents         Boolean @default(true)
+  pushEventUpdates      Boolean @default(true)
+  pushEventCancellations Boolean @default(true)
+  pushNewFiles          Boolean @default(true)
+  pushFileDeleted       Boolean @default(false)
+  pushReminders         Boolean @default(true)
+
+  updatedAt DateTime @updatedAt
+}
+
 
 model Register {
   id   Int    @id @default(autoincrement())
@@ -314,3 +347,27 @@ enum SetlistItemType {
   pause
   custom
 }
+
+// ============================================
+// WEB PUSH NOTIFICATIONS
+// ============================================
+
+model PushSubscription {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // PushSubscription Object Fields
+  endpoint  String   @unique @db.VarChar(500)  // Changed from Text to VarChar for unique constraint
+  p256dh    String   @db.Text  // Public key for encryption
+  auth      String   @db.Text  // Auth secret for encryption
+  
+  // Device/Browser Info (optional, for management)
+  userAgent String?  @db.Text
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@index([userId])
+}
+

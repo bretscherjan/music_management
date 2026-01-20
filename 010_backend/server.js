@@ -56,7 +56,24 @@ app.listen(PORT, async () => {
     console.log('✅ Default settings initialized');
   } catch (error) {
     console.error('⚠️ Failed to initialize default settings:', error.message);
+    console.log('⚠️ Failed to initialize default settings:', error.message);
   }
+
+  // Initialize Push Service
+  try {
+    const pushService = require('./src/services/push.service');
+    pushService.initializePushService();
+  } catch (error) {
+    console.error('⚠️ Failed to initialize Push Service:', error.message);
+  }
+
+  // Initialize Cron Jobs
+  const { initializeCronJobs } = require('./src/services/cron.service');
+  initializeCronJobs();
+
+  // Run once immediately on startup for testing/development (Optional, maybe remove in prod)
+  // const notificationService = require('./src/services/notification.service');
+  // notificationService.sendEventReminders(); // Call explicitly if needed for debug
 
   console.log(`🚀 Server running on port ${PORT}`);
   console.log(`📍 Environment: ${process.env.NODE_ENV || 'development'}`);

@@ -15,6 +15,16 @@ const errorHandler = (err, req, res, next) => {
 
     // Handle specific error types
 
+    // Zod Validation Errors
+    if (err.issues) {
+        statusCode = 400;
+        message = 'Validation Error';
+        error = err.issues.map(issue => ({
+            field: issue.path.join('.'),
+            message: issue.message
+        }));
+    }
+
     // Prisma errors
     if (err.code) {
         switch (err.code) {

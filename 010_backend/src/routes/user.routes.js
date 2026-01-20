@@ -48,6 +48,21 @@ router.put('/profile/password', authMiddleware, validate(changePasswordSchema), 
  */
 router.put('/profile/picture', authMiddleware, userController.updateProfilePicture);
 
+/**
+ * @route   GET /api/users/me/notifications
+ * @desc    Get notification settings
+ * @access  Private
+ */
+router.get('/me/notifications', authMiddleware, userController.getNotificationSettings);
+
+/**
+ * @route   PUT /api/users/me/notifications
+ * @desc    Update notification settings
+ * @access  Private
+ */
+router.put('/me/notifications', authMiddleware, userController.updateNotificationSettings);
+
+
 // ============================================
 // Admin routes
 // ============================================

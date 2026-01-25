@@ -1,4 +1,5 @@
 import type { Attendance, AttendanceStatus } from './attendance';
+import type { SheetMusic } from './sheetMusic';
 
 export type EventCategory = 'rehearsal' | 'performance' | 'other';
 export type EventVisibility = 'all' | 'register' | 'admin';
@@ -46,11 +47,7 @@ export interface EventSetlistItem {
     customTitle?: string | null;
     customDescription?: string | null;
     duration?: number | null; // Changed from customDurationMinutes to match backend
-    sheetMusic?: {
-        id: number;
-        title: string;
-        composer?: string | null;
-    };
+    sheetMusic?: SheetMusic | null;
     createdAt: string;
     updatedAt: string;
 }

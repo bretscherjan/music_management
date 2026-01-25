@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { Calendar, MapPin, Music2, ArrowRight } from 'lucide-react';
+import { formatTime } from '@/lib/utils';
 import { eventService } from '@/services/eventService';
 import type { Event } from '@/types';
 
@@ -162,10 +163,7 @@ function EventCard({ event }: EventCardProps) {
         month: 'long',
         day: 'numeric',
     });
-    const formattedTime = eventDate.toLocaleTimeString('de-CH', {
-        hour: '2-digit',
-        minute: '2-digit',
-    });
+    const formattedTime = formatTime(event.startTime);
 
     return (
         <div className="bg-white rounded-xl border border-[hsl(var(--border))] overflow-hidden hover:shadow-lg transition-shadow group">

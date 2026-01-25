@@ -11,6 +11,8 @@ import { HomePage } from '@/pages/public/HomePage';
 import { AboutPage } from '@/pages/public/AboutPage';
 import { ContactPage } from '@/pages/public/ContactPage';
 import { LoginPage } from '@/pages/LoginPage';
+import { ForgotPasswordPage } from '@/pages/ForgotPasswordPage';
+import { ResetPasswordPage } from '@/pages/ResetPasswordPage';
 
 // Member Pages
 import { Dashboard } from '@/pages/Dashboard';
@@ -60,8 +62,10 @@ function App() {
               <Route path="/contact" element={<ContactPage />} />
             </Route>
 
-            {/* Login Page (public but standalone) */}
+            {/* Login and Auth Pages (public but standalone) */}
             <Route path="/login" element={<LoginPage />} />
+            <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+            <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
 
             {/* Protected Member Routes with MainLayout */}
             <Route

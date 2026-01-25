@@ -60,6 +60,7 @@ enum AccessType {
 enum AccessTargetType {
   USER
   REGISTER
+  ADMIN_ONLY
 }
 
 // ============================================
@@ -83,13 +84,16 @@ model User {
   attendances Attendance[]
   news        News[]
   fileAccess  FileAccess[]
+  folderAccess FolderAccess[]
   sheetMusicBookmarks SheetMusicBookmark[]
 
   // Timestamps
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   
-  calendarToken String? @unique
+  calendarToken    String? @unique
+  resetToken       String? @unique
+  resetTokenExpiry DateTime?
 
   notificationSettings NotificationSettings?
   pushSubscriptions    PushSubscription[]
@@ -112,9 +116,9 @@ model NotificationSettings {
   notifyOnFileUpload Boolean @default(true)
   notifyOnFileDelete Boolean @default(false)
 
-  // Reminder Settings (Email)
-  notifyEventReminder       Boolean @default(true)
-  reminderTimeBeforeHours   Int     @default(24) // Hours before event start
+  // User-Individual Reminder Settings (JSON)
+  // Structure: { rehearsal: {...}, performance: {...}, other: {...} }
+  reminderSettings  Json?
 
   // Push Notification Settings
   pushNewEvents         Boolean @default(true)
@@ -122,7 +126,6 @@ model NotificationSettings {
   pushEventCancellations Boolean @default(true)
   pushNewFiles          Boolean @default(true)
   pushFileDeleted       Boolean @default(false)
-  pushReminders         Boolean @default(true)
 
   updatedAt DateTime @updatedAt
 }
@@ -136,6 +139,8 @@ model Register {
   users User[]
   files File[]
   fileAccess FileAccess[]
+  folderAccess FolderAccess[]
+  events Event[] // Implicit Many-to-Many for event visibility targets
 
   @@index([name])
 }
@@ -171,6 +176,10 @@ model Event {
   updatedAt DateTime @updatedAt
 
   setlistEnabled Boolean @default(false) // Toggle for showing the setlist/schedule
+  
+  // Visibility Extensions
+  isPublic         Boolean @default(false) // Show on public website
+  targetRegisters  Register[] // Specific registers this event is visible to (if empty, visible to all members)
 
   @@index([date])
   @@index([category])
@@ -205,7 +214,10 @@ model File {
   mimetype     String // MIME type (e.g., "application/pdf")
   size         Int // File size in bytes
   visibility   FileVisibility @default(all)
-  folder       String         @default("/") // Virtual folder path
+  folder       String         @default("/") // Virtual folder path (Deprecating in favor of real Folder relation, but keeping for now)
+  
+  folderId     Int?
+  realFolder   Folder?        @relation(fields: [folderId], references: [id], onDelete: SetNull)
 
   // Access Control
   accessRules  FileAccess[]
@@ -369,5 +381,52 @@ model PushSubscription {
   updatedAt DateTime @updatedAt
   
   @@index([userId])
+}
+
+// ============================================
+// FOLDER MANAGEMENT
+// ============================================
+
+model Folder {
+  id        Int      @id @default(autoincrement())
+  name      String
+  
+  // Hierarchy
+  parentId  Int?
+  parent    Folder?  @relation("FolderToFolder", fields: [parentId], references: [id], onDelete: Cascade)
+  children  Folder[] @relation("FolderToFolder")
+
+  // Content
+  files     File[]
+  
+  // Access Control
+  accessRules FolderAccess[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([name, parentId]) // Prevent duplicate folder names in same parent
+  @@index([parentId])
+}
+
+model FolderAccess {
+  id        Int              @id @default(autoincrement())
+  folderId  Int
+  folder    Folder           @relation(fields: [folderId], references: [id], onDelete: Cascade)
+  
+  accessType AccessType      @default(ALLOW)
+  targetType AccessTargetType
+  
+  // Targets
+  userId    Int?
+  user      User?            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  registerId Int?
+  register  Register?        @relation(fields: [registerId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@index([folderId])
+  @@index([userId])
+  @@index([registerId])
 }
 

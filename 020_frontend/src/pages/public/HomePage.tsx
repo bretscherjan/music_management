@@ -5,22 +5,26 @@ import { eventService } from '@/services/eventService';
 import type { Event } from '@/types';
 
 export function HomePage() {
-    // Fetch upcoming events
+    // Fetch upcoming public events only (no auth token)
     const { data: events = [] } = useQuery({
-        queryKey: ['events'],
-        queryFn: () => eventService.getAll(),
+        queryKey: ['publicEvents'],
+        queryFn: () => eventService.getPublicEvents(),
     });
 
     // Filter to only show future events, sorted by date
+    // Create 'today' at midnight to include events happening today
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
     const upcomingEvents = events
-        .filter((event: Event) => new Date(event.date) >= new Date())
+        .filter((event: Event) => new Date(event.date) >= today)
         .sort((a: Event, b: Event) => new Date(a.date).getTime() - new Date(b.date).getTime())
         .slice(0, 6);
 
     return (
         <div>
             {/* Hero Section */}
-            <section className="relative bg-gradient-to-br from-[hsl(var(--musig-burgundy))] to-[hsl(var(--musig-burgundy))]/80 text-white py-16 md:py-24 overflow-hidden">
+            <section className="relative bg-gradient-to-br from-[hsl(var(--musig-primary))] to-[hsl(var(--musig-primary))]/80 text-white py-16 md:py-24 overflow-hidden">
                 <div className="absolute inset-0 opacity-10">
                     <div className="absolute top-10 left-10 animate-pulse">
                         <Music2 className="h-24 w-24 md:h-32 md:w-32" />
@@ -38,7 +42,7 @@ export function HomePage() {
                             className="h-28 w-auto md:h-40 mx-auto mb-8 drop-shadow-2xl transition-transform hover:scale-105 duration-300"
                         />
                         <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 tracking-tight">
-                            Willkommen bei der Musig Elgg
+                            Willkommen bei der <br />Musig Elgg
                         </h1>
                         <p className="text-lg md:text-xl lg:text-2xl text-white/90 mb-8 leading-relaxed max-w-2xl mx-auto">
                             Tradition trifft Leidenschaft
@@ -46,14 +50,14 @@ export function HomePage() {
                         <div className="flex flex-col sm:flex-row gap-4 justify-center">
                             <Link
                                 to="/about"
-                                className="inline-flex items-center justify-center gap-2 px-6 py-3 md:px-8 bg-white text-[hsl(var(--musig-burgundy))] rounded-lg hover:bg-white/90 transition-all font-medium text-base md:text-lg shadow-lg hover:shadow-xl active:scale-95"
+                                className="inline-flex items-center justify-center gap-2 px-6 py-3 md:px-8 bg-white text-[hsl(var(--musig-primary))] rounded-lg hover:bg-white/90 transition-all font-medium text-base md:text-lg shadow-lg hover:shadow-xl active:scale-95"
                             >
                                 Mehr über uns erfahren
                                 <ArrowRight className="h-5 w-5" />
                             </Link>
                             <Link
                                 to="/contact"
-                                className="inline-flex items-center justify-center gap-2 px-6 py-3 md:px-8 bg-[hsl(var(--musig-gold))] text-[hsl(var(--musig-dark))] rounded-lg hover:bg-[hsl(var(--musig-gold))]/90 transition-all font-medium text-base md:text-lg shadow-lg hover:shadow-xl active:scale-95"
+                                className="inline-flex items-center justify-center gap-2 px-6 py-3 md:px-8 bg-[hsl(var(--musig-contrast))] text-[hsl(var(--musig-light))] rounded-lg hover:bg-[hsl(var(--musig-contrast))]/90 transition-all font-medium text-base md:text-lg shadow-lg hover:shadow-xl active:scale-95"
                             >
                                 Kontakt aufnehmen
                             </Link>
@@ -66,12 +70,12 @@ export function HomePage() {
             <section className="py-16 md:py-24 bg-[hsl(var(--background))]">
                 <div className="container-app">
                     <div className="text-center mb-12 md:mb-16">
-                        <h2 className="text-3xl md:text-4xl font-bold text-[hsl(var(--musig-burgundy))] mb-4">
+                        <p className="text-lg text-[hsl(var(--muted-foreground))] text-xl max-w-2xl mx-auto px-4 pb-6">
+                            Wir Proben jeden 2. Montag (jeweils ungerade Kalenderwochen) um 20:00 Uhr im Singsaal der Primarschule Im See
+                        </p>
+                        <h2 className="text-3xl md:text-4xl font-bold text-[hsl(var(--musig-primary))] mb-4">
                             Kommende Termine
                         </h2>
-                        <p className="text-lg text-[hsl(var(--muted-foreground))] max-w-2xl mx-auto px-4">
-                            Wir sind mit viel Fleiss und Engagement am Proben für Auftritte und Ständchen.
-                        </p>
                     </div>
 
                     {upcomingEvents.length > 0 ? (
@@ -95,10 +99,10 @@ export function HomePage() {
             </section>
 
             {/* Call to Action */}
-            <section className="py-16 md:py-24 bg-gradient-to-r from-[hsl(var(--musig-burgundy))]/5 to-[hsl(var(--musig-gold))]/5">
+            <section className="py-16 md:py-24 bg-gradient-to-r from-[hsl(var(--musig-primary))]/5 to-[hsl(var(--musig-contrast))]/5">
                 <div className="container-app">
                     <div className="max-w-5xl mx-auto px-4 text-center">
-                        <h2 className="text-3xl md:text-5xl font-bold text-[hsl(var(--musig-burgundy))] mb-6">
+                        <h2 className="text-3xl md:text-5xl font-bold text-[hsl(var(--musig-primary))] mb-6">
                             Wie kannst du mitmachen?
                         </h2>
                         <p className="text-lg md:text-xl text-[hsl(var(--muted-foreground))] mb-12 max-w-2xl mx-auto">
@@ -113,7 +117,7 @@ export function HomePage() {
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12 text-left">
                             {[
                                 {
-                                    title: "Punktuell",
+                                    title: "Projekt",
                                     desc: "Einzelne Auftritte, Flexibilität für Kurzentschlossene.",
                                 },
                                 {
@@ -125,8 +129,8 @@ export function HomePage() {
                                     desc: "Vollwertiges Mitglied im Verein mit allen Rechten und Pflichten.",
                                 }
                             ].map((item, index) => (
-                                <div key={index} className="bg-white/50 backdrop-blur-sm p-6 rounded-xl border border-[hsl(var(--musig-burgundy))]/10 shadow-sm">
-                                    <h3 className="text-xl font-bold text-[hsl(var(--musig-burgundy))] mb-2">{item.title}</h3>
+                                <div key={index} className="bg-white/50 backdrop-blur-sm p-6 rounded-xl border border-[hsl(var(--musig-primary))]/10 shadow-sm">
+                                    <h3 className="text-xl font-bold text-[hsl(var(--musig-primary))] mb-2">{item.title}</h3>
                                     <p className="text-[hsl(var(--muted-foreground))] leading-snug">{item.desc}</p>
                                 </div>
                             ))}
@@ -134,7 +138,7 @@ export function HomePage() {
 
                         <Link
                             to="/contact"
-                            className="inline-flex items-center gap-2 px-10 py-4 bg-[hsl(var(--musig-burgundy))] text-white rounded-full hover:bg-[hsl(var(--musig-burgundy))]/90 transition-all font-semibold text-lg shadow-lg hover:shadow-xl hover:-translate-y-1"
+                            className="inline-flex items-center gap-2 px-10 py-4 bg-[hsl(var(--musig-primary))] text-white rounded-full hover:bg-[hsl(var(--musig-primary))]/90 transition-all font-semibold text-lg shadow-lg hover:shadow-xl hover:-translate-y-1"
                         >
                             Jetzt Kontakt aufnehmen
                             <ArrowRight className="h-6 w-6" />
@@ -165,30 +169,30 @@ function EventCard({ event }: EventCardProps) {
 
     return (
         <div className="bg-white rounded-xl border border-[hsl(var(--border))] overflow-hidden hover:shadow-lg transition-shadow group">
-            <div className="bg-gradient-to-br from-[hsl(var(--musig-burgundy))] to-[hsl(var(--musig-burgundy))]/80 p-6 text-white">
+            <div className="bg-gradient-to-br from-[hsl(var(--musig-primary))] to-[hsl(var(--musig-primary))]/80 p-6 text-white">
                 <div className="flex items-start justify-between mb-2">
-                    <div className="bg-[hsl(var(--musig-gold))] text-[hsl(var(--musig-dark))] px-3 py-1 rounded-full text-sm font-medium">
+                    <div className="bg-[hsl(var(--musig-contrast))] text-[hsl(var(--musig-light))] px-3 py-1 rounded-full text-sm font-medium">
                         {eventDate.toLocaleDateString('de-CH', { month: 'short', day: 'numeric' })}
                     </div>
                     <Music2 className="h-6 w-6 opacity-60" />
                 </div>
-                <h3 className="text-xl font-bold mb-1 group-hover:text-[hsl(var(--musig-gold))] transition-colors">
+                <h3 className="text-xl font-bold mb-1 group-hover:text-[hsl(var(--musig-contrast))] transition-colors">
                     {event.title}
                 </h3>
             </div>
             <div className="p-6">
                 <div className="space-y-3 text-sm text-[hsl(var(--muted-foreground))]">
                     <div className="flex items-center gap-2">
-                        <Calendar className="h-4 w-4 text-[hsl(var(--musig-burgundy))]" />
+                        <Calendar className="h-4 w-4 text-[hsl(var(--musig-primary))]" />
                         <span>{formattedDate}</span>
                     </div>
                     <div className="flex items-center gap-2">
-                        <Calendar className="h-4 w-4 text-[hsl(var(--musig-burgundy))]" />
+                        <Calendar className="h-4 w-4 text-[hsl(var(--musig-primary))]" />
                         <span>{formattedTime} Uhr</span>
                     </div>
                     {event.location && (
                         <div className="flex items-center gap-2">
-                            <MapPin className="h-4 w-4 text-[hsl(var(--musig-burgundy))]" />
+                            <MapPin className="h-4 w-4 text-[hsl(var(--musig-primary))]" />
                             <span>{event.location}</span>
                         </div>
                     )}

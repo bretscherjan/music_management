@@ -32,15 +32,29 @@ export interface NotificationSettings {
     notifyOnEventDelete: boolean;
     notifyOnFileUpload: boolean;
     notifyOnFileDelete: boolean;
-    notifyEventReminder: boolean;
-    reminderTimeBeforeHours: number;
+    // User-Individual Reminder Settings
+    reminderSettings?: ReminderSettingsPerCategory;
+
     // Push notifications
     pushNewEvents: boolean;
     pushEventUpdates: boolean;
     pushEventCancellations: boolean;
     pushNewFiles: boolean;
     pushFileDeleted: boolean;
-    pushReminders: boolean;
+}
+
+export interface ReminderSettingsPerCategory {
+    rehearsal?: CategoryReminderSettings;
+    performance?: CategoryReminderSettings;
+    other?: CategoryReminderSettings;
+}
+
+export interface CategoryReminderSettings {
+    enabled: boolean;
+    emailEnabled: boolean;
+    pushEnabled: boolean;
+    minutesBefore: number[]; // Array of minutes (e.g. [60, 1440])
+    onlyIfAttending: boolean; // false = all invited, true = only "yes"
 }
 
 

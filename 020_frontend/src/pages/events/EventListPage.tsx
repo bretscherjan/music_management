@@ -57,7 +57,7 @@ export function EventListPage() {
             {/* Header */}
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6 border-b pb-6">
                 <div>
-                    <h1 className="text-3xl font-bold tracking-tight text-primary">Termine</h1>
+                    <h1 className="text-3xl font-bold tracking-tight text-secondary">Termine</h1>
                     <p className="text-muted-foreground mt-1 text-lg">
                         Übersicht aller Veranstaltungen und Proben
                     </p>
@@ -183,14 +183,14 @@ function EventListItem({ event }: { event: Event }) {
                 <CardContent className="p-4 sm:p-6">
                     <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
                         {/* Date Badge */}
-                        <div className="flex-shrink-0 text-center bg-primary/10 rounded-lg p-2 w-16">
-                            <div className="text-xs text-muted-foreground uppercase">
+                        <div className="flex-shrink-0 text-center bg-primary/20 rounded-lg p-2 w-16 flex flex-col items-center justify-center">
+                            <div className="text-xs text-secondary/80 uppercase font-semibold">
                                 {new Date(event.date).toLocaleDateString('de-CH', { weekday: 'short' })}
                             </div>
-                            <div className="text-xl font-bold text-primary">
+                            <div className="text-xl font-bold text-secondary">
                                 {new Date(event.date).getDate()}
                             </div>
-                            <div className="text-xs text-muted-foreground">
+                            <div className="text-xs text-secondary/80">
                                 {new Date(event.date).toLocaleDateString('de-CH', { month: 'short' })}
                             </div>
                         </div>

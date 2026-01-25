@@ -108,10 +108,6 @@ const updateProfilePicture = asyncHandler(async (req, res) => {
         message: 'Profilbild erfolgreich aktualisiert',
         user,
     });
-    res.json({
-        message: 'Profilbild erfolgreich aktualisiert',
-        user,
-    });
 });
 
 /**
@@ -148,6 +144,8 @@ const getNotificationSettings = asyncHandler(async (req, res) => {
     });
 });
 
+const reminderQueueService = require('../services/reminder.queue.service');
+
 /**
  * Update notification settings
  * PUT /users/me/notifications
@@ -159,14 +157,12 @@ const updateNotificationSettings = asyncHandler(async (req, res) => {
         notifyOnEventDelete,
         notifyOnFileUpload,
         notifyOnFileDelete,
-        notifyEventReminder,
-        reminderTimeBeforeHours,
         pushNewEvents,
         pushEventUpdates,
         pushEventCancellations,
         pushNewFiles,
         pushFileDeleted,
-        pushReminders
+        reminderSettings
     } = req.body;
 
     const settings = await prisma.notificationSettings.upsert({
@@ -177,14 +173,12 @@ const updateNotificationSettings = asyncHandler(async (req, res) => {
             notifyOnEventDelete,
             notifyOnFileUpload,
             notifyOnFileDelete,
-            notifyEventReminder,
-            reminderTimeBeforeHours: parseInt(reminderTimeBeforeHours),
             pushNewEvents,
             pushEventUpdates,
             pushEventCancellations,
             pushNewFiles,
             pushFileDeleted,
-            pushReminders
+            reminderSettings
         },
         create: {
             userId: req.user.id,
@@ -193,16 +187,18 @@ const updateNotificationSettings = asyncHandler(async (req, res) => {
             notifyOnEventDelete,
             notifyOnFileUpload,
             notifyOnFileDelete,
-            notifyEventReminder,
-            reminderTimeBeforeHours: parseInt(reminderTimeBeforeHours),
             pushNewEvents,
             pushEventUpdates,
             pushEventCancellations,
             pushNewFiles,
             pushFileDeleted,
-            pushReminders
+            reminderSettings
         }
     });
+
+    // Re-sync reminders to apply new settings to existing events
+    // This runs in background to not delay response too much
+    reminderQueueService.syncReminders().catch(err => console.error('Error syncing reminders after settings update:', err));
 
     res.json({
         message: 'Benachrichtigungseinstellungen aktualisiert',
@@ -623,7 +619,6 @@ module.exports = {
     updateUserStatus,
     updateUserRole,
     deleteUser,
-    getAttendanceStats,
     getAttendanceStats,
     createUser,
     getNotificationSettings,

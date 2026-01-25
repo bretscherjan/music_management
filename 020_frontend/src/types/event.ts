@@ -1,4 +1,4 @@
-// Event Types - mirrors Prisma Event model
+import type { Attendance, AttendanceStatus } from './attendance';
 
 export type EventCategory = 'rehearsal' | 'performance' | 'other';
 export type EventVisibility = 'all' | 'register' | 'admin';
@@ -10,6 +10,8 @@ export interface Event {
     location?: string | null;
     category: EventCategory;
     visibility: EventVisibility;
+    isPublic: boolean;
+    targetRegisters?: { id: number; name: string }[];
     date: string; // ISO date string
     startTime: string; // Format: "HH:mm"
     endTime: string; // Format: "HH:mm"
@@ -21,6 +23,7 @@ export interface Event {
     updatedAt: string;
     setlistEnabled: boolean;
     setlist?: EventSetlistItem[];
+    attendances?: Attendance[]; // List of attendances (usually just current user's or all depending on context)
     attendanceSummary?: {
         yes: number;
         no: number;
@@ -30,7 +33,8 @@ export interface Event {
     };
 }
 
-// Setlist item types
+// Setlist Types
+// Setlist Types
 export type SetlistItemType = 'sheetMusic' | 'pause' | 'custom';
 
 export interface EventSetlistItem {
@@ -38,17 +42,55 @@ export interface EventSetlistItem {
     eventId: number;
     type: SetlistItemType;
     position: number;
-
-    // Sheet music
-    sheetMusicId?: number;
-    sheetMusic?: import('./sheetMusic').SheetMusic;
-
-    // Custom/Pause
-    customTitle?: string;
-    customDescription?: string;
-    duration?: number; // minutes
-
+    sheetMusicId?: number | null;
+    customTitle?: string | null;
+    customDescription?: string | null;
+    duration?: number | null; // Changed from customDurationMinutes to match backend
+    sheetMusic?: {
+        id: number;
+        title: string;
+        composer?: string | null;
+    };
     createdAt: string;
+    updatedAt: string;
+}
+
+// DTOs for API operations
+export interface CreateEventDto {
+    title: string;
+    description?: string;
+    location?: string;
+    category: EventCategory;
+    visibility?: EventVisibility;
+    date: string;
+    startTime: string;
+    endTime: string;
+    responseDeadlineHours?: number;
+    isRecurring?: boolean;
+    recurrenceRule?: string;
+    setlistEnabled?: boolean;
+    isPublic?: boolean;
+    targetRegisters?: number[];
+    reminderIntervals?: number[];
+    defaultAttendanceStatus?: AttendanceStatus | 'none';
+}
+
+export interface UpdateEventDto {
+    title?: string;
+    description?: string;
+    location?: string;
+    category?: EventCategory;
+    visibility?: EventVisibility;
+    date?: string;
+    startTime?: string;
+    endTime?: string;
+    responseDeadlineHours?: number;
+    isRecurring?: boolean;
+    recurrenceRule?: string;
+    setlistEnabled?: boolean;
+    isPublic?: boolean;
+    targetRegisters?: number[];
+    reminderIntervals?: number[];
 }
 
 export interface AddSetlistItemDto {
@@ -66,38 +108,10 @@ export interface UpdateSetlistItemDto {
 }
 
 export interface ReorderSetlistDto {
-    items: Array<{ id: number; position: number }>;
-}
-
-// DTOs for API operations
-export interface CreateEventDto {
-    title: string;
-    description?: string;
-    location?: string;
-    category: EventCategory;
-    visibility?: EventVisibility;
-    date: string;
-    startTime: string;
-    endTime: string;
-    responseDeadlineHours?: number;
-    isRecurring?: boolean;
-    recurrenceRule?: string;
-    setlistEnabled?: boolean;
-}
-
-export interface UpdateEventDto {
-    title?: string;
-    description?: string;
-    location?: string;
-    category?: EventCategory;
-    visibility?: EventVisibility;
-    date?: string;
-    startTime?: string;
-    endTime?: string;
-    responseDeadlineHours?: number;
-    isRecurring?: boolean;
-    recurrenceRule?: string;
-    setlistEnabled?: boolean;
+    items: {
+        id: number;
+        position: number;
+    }[];
 }
 
 export interface EventQueryParams {

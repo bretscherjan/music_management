@@ -59,6 +59,9 @@ const createEventSchema = {
             .max(720, 'Rückmeldefrist darf maximal 720 Stunden (30 Tage) sein')
             .default(48),
         setlistEnabled: z.boolean().default(false),
+        isPublic: z.boolean().default(false),
+        reminderIntervals: z.array(z.number().int().positive()).optional(), // Array of minutes
+        targetRegisters: z.array(z.number()).optional(),
     }).refine(
         (data) => {
             // Validate that endTime is after startTime
@@ -120,12 +123,15 @@ const updateEventSchema = {
         recurrenceRule: z.string().max(500).optional().nullable(),
         excludedDates: z.array(z.string()).optional().nullable(),
         setlistEnabled: z.boolean().optional(),
+        isPublic: z.boolean().optional(),
         responseDeadlineHours: z
             .number()
             .int()
             .min(0)
             .max(720)
             .optional(),
+        reminderIntervals: z.array(z.number().int().positive()).optional(),
+        targetRegisters: z.array(z.number()).optional(), // Add validation for targetRegisters too if missing
     }),
 };
 

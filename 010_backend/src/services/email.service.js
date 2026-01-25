@@ -8,10 +8,16 @@ const nodemailer = require('nodemailer');
 // Create transporter with SMTP configuration
 // Create transporter with SMTP configuration
 const createTransporter = () => {
-  const port = parseInt(process.env.SMTP_PORT) || 587;
-  // Default to secure=true if port is 465.
-  // We force this because connecting to 465 without SSL (secure: false) always times out waiting for a greeting.
-  const isSecure = port === 465 || process.env.SMTP_SECURE === 'true';
+  let port = parseInt(process.env.SMTP_PORT) || 25;
+
+  // FIX: Force Port 25 if 465 is detected, because 465 is blocked/broken on this server environment
+  if (port === 465) {
+    console.warn('⚠️ DETECTED BROKEN PORT 465. FORCING FALLBACK TO PORT 25 (Unencrypted).');
+    port = 25;
+  }
+
+  // Secure is false for port 25
+  const isSecure = false;
 
   console.log(`📧 Initializing Email Transporter: Host=${process.env.SMTP_HOST} Port=${port} Secure=${isSecure} User=${process.env.SMTP_USER}`);
 
@@ -24,12 +30,13 @@ const createTransporter = () => {
       pass: process.env.SMTP_PASS,
     },
     // Connection settings
-    connectionTimeout: 10000, // 10 seconds
-    greetingTimeout: 10000,   // 10 seconds
-    socketTimeout: 20000,     // 20 seconds
+    connectionTimeout: 10000,
+    greetingTimeout: 10000,
+    socketTimeout: 20000,
     tls: {
-      rejectUnauthorized: false // Allow self-signed certs for now (often needed for some hosting providers)
-    }
+      rejectUnauthorized: false
+    },
+    ignoreTLS: true // Always force true for Port 25 fallback
   });
 };
 
@@ -394,10 +401,16 @@ ${message}
 </html>
   `.trim();
 
+  // Determine valid Sender address
+  let fromAddress = process.env.SMTP_FROM || process.env.SMTP_USER;
+  if (!fromAddress.includes('@')) {
+    fromAddress = 'noreply@musig-elgg.ch';
+  }
+
   // Create custom transporter options to set Reply-To
   const transporter = createTransporter();
   const mailOptions = {
-    from: process.env.SMTP_FROM || process.env.SMTP_USER,
+    from: fromAddress,
     to,
     replyTo: email, // Set Reply-To to the sender's email
     subject: emailSubject,
@@ -415,6 +428,128 @@ ${message}
   }
 };
 
+/**
+ * Send password reset email
+ * @param {Object} user - User object
+ * @param {string} resetUrl - Password reset URL
+ */
+const sendPasswordResetEmail = async (user, resetUrl) => {
+  const subject = 'Passwort zurücksetzen - Musig Elgg';
+
+  const text = `
+Hallo ${user.firstName},
+
+Du hast das Zurücksetzen deines Passworts angefordert.
+Bitte klicke auf den folgenden Link, um ein neues Passwort zu erstellen:
+
+${resetUrl}
+
+Dieser Link ist 1 Stunde gültig.
+Falls du dies nicht angefordert hast, kannst du diese E-Mail ignorieren.
+
+Freundliche Grüsse
+Musig Elgg
+  `.trim();
+
+  const html = `
+<!DOCTYPE html>
+<html>
+<head>
+  <style>
+    body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+    .container { max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 8px; }
+    .button { display: inline-block; padding: 10px 20px; background-color: #1a365d; color: white; text-decoration: none; border-radius: 5px; margin: 20px 0; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>Passwort zurücksetzen</h2>
+    <p>Hallo ${user.firstName},</p>
+    <p>Du hast das Zurücksetzen deines Passworts angefordert.</p>
+    <p>Bitte klicke auf den folgenden Button, um ein neues Passwort zu erstellen:</p>
+    <a href="${resetUrl}" class="button">Passwort zurücksetzen</a>
+    <p>Oder verwende diesen Link:</p>
+    <p><a href="${resetUrl}">${resetUrl}</a></p>
+    <p>Dieser Link ist 1 Stunde gültig.</p>
+    <hr>
+    <p style="font-size: 12px; color: #666;">Falls du dies nicht angefordert hast, kannst du diese E-Mail ignorieren.</p>
+  </div>
+</body>
+</html>
+  `.trim();
+
+  return sendEmail({ to: user.email, subject, text, html });
+};
+
+/**
+ * Send personalized event reminder to user
+ * @param {Object} user - User object
+ * @param {Object} event - Event object
+ * @param {string} timeDisplay - e.g. "2 Stunden" or "1 Tag"
+ */
+const sendPersonalEventReminder = async (user, event, timeDisplay) => {
+  const formattedDate = new Date(event.date).toLocaleDateString('de-CH', {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
+  });
+
+  const subject = `Erinnerung: ${event.title}`;
+
+  const text = `
+Hallo ${user.firstName},
+
+Dies ist eine Erinnerung an folgenden Termin in ${timeDisplay}:
+
+${event.title}
+Datum: ${formattedDate}
+Zeit: ${event.startTime} - ${event.endTime}
+${event.location ? `Ort: ${event.location}` : ''}
+${event.description ? `\nDetails: ${event.description}` : ''}
+
+Freundliche Grüsse
+Musig Elgg
+  `.trim();
+
+  const html = `
+<!DOCTYPE html>
+<html>
+<head>
+  <style>
+    body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+    .container { max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 8px; }
+    .event-box { background-color: #f8fafc; border-left: 4px solid #1a365d; padding: 15px; margin: 20px 0; }
+    .button { display: inline-block; padding: 10px 20px; background-color: #1a365d; color: white; text-decoration: none; border-radius: 5px; margin-top: 20px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>Erinnerung: ${event.title}</h2>
+    <p>Hallo ${user.firstName},</p>
+    <p>Dies ist deine persönliche Erinnerung an einen Termin in <strong>${timeDisplay}</strong>:</p>
+    
+    <div class="event-box">
+      <h3 style="margin-top: 0;">${event.title}</h3>
+      <p><strong>Datum:</strong> ${formattedDate}</p>
+      <p><strong>Zeit:</strong> ${event.startTime} - ${event.endTime}</p>
+      ${event.location ? `<p><strong>Ort:</strong> ${event.location}</p>` : ''}
+    </div>
+
+    ${event.description ? `<p>${event.description}</p>` : ''}
+
+    <a href="${process.env.FRONTEND_URL}/events/${event.id}" class="button">Zum Termin</a>
+    
+    <hr>
+    <p style="font-size: 12px; color: #666;">Du erhältst diese E-Mail aufgrund deiner persönlichen Erinnerungs-Einstellungen.</p>
+  </div>
+</body>
+</html>
+  `.trim();
+
+  return sendEmail({ to: user.email, subject, text, html });
+};
+
 module.exports = {
   sendEmail,
   sendEventReminder,
@@ -425,6 +560,7 @@ module.exports = {
   sendEventDeletedEmail,
   sendFileUploadedEmail,
   sendFileDeletedEmail,
-  sendEventReminderNotification,
-  sendContactFormEmail
+  sendPersonalEventReminder, // New function
+  sendContactFormEmail,
+  sendPasswordResetEmail
 };

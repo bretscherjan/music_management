@@ -1,4 +1,5 @@
 import api from '@/lib/api';
+import { publicApi } from '@/lib/api';
 import type {
     Event,
     CreateEventDto,
@@ -15,6 +16,12 @@ import type {
 export const eventService = {
     async getAll(params?: EventQueryParams): Promise<Event[]> {
         const response = await api.get<{ events: Event[] }>('/events', { params });
+        return response.data.events;
+    },
+
+    // Get only public events (for unauthenticated/public pages)
+    async getPublicEvents(params?: EventQueryParams): Promise<Event[]> {
+        const response = await publicApi.get<{ events: Event[] }>('/events', { params });
         return response.data.events;
     },
 

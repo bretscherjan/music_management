@@ -19,7 +19,7 @@ interface ManageAccessDialogProps {
 
 export function ManageAccessDialog({ open, onOpenChange, file }: ManageAccessDialogProps) {
     const queryClient = useQueryClient();
-    const [mode, setMode] = useState<'all' | 'custom'>('all');
+    const [mode, setMode] = useState<'all' | 'admin' | 'custom'>('all');
     const [allowedRegisters, setAllowedRegisters] = useState<number[]>([]);
     const [allowedUsers, setAllowedUsers] = useState<number[]>([]);
     const [deniedUsers, setDeniedUsers] = useState<number[]>([]);
@@ -35,7 +35,18 @@ export function ManageAccessDialog({ open, onOpenChange, file }: ManageAccessDia
     // Initialize state when file opens
     useEffect(() => {
         if (open && file) {
-            setMode(file.visibility === 'limit' ? 'custom' : 'all');
+            // Check for admin-only mode
+            const isAdminOnly = file.accessRules?.some(r =>
+                r.targetType === 'ADMIN_ONLY' && r.accessType === 'ALLOW'
+            );
+
+            if (isAdminOnly) {
+                setMode('admin');
+            } else if (file.visibility === 'limit' || file.visibility === 'admin') {
+                setMode('custom');
+            } else {
+                setMode('all');
+            }
 
             const initialAllowedRegs: number[] = [];
             const initialAllowedUsers: number[] = [];
@@ -92,6 +103,7 @@ export function ManageAccessDialog({ open, onOpenChange, file }: ManageAccessDia
         mutationFn: (data: any) => fileService.updateAccess(file!.id, data),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['files'] });
+            queryClient.invalidateQueries({ queryKey: ['folderContents'] });
             handleClose();
         },
         onError: (err: any) => {
@@ -109,7 +121,10 @@ export function ManageAccessDialog({ open, onOpenChange, file }: ManageAccessDia
 
         const accessRules: any[] = [];
 
-        if (mode === 'custom') {
+        if (mode === 'admin') {
+            // Admin-only marker
+            accessRules.push({ accessType: 'ALLOW', targetType: 'ADMIN_ONLY' });
+        } else if (mode === 'custom') {
             allowedRegisters.forEach(regId => {
                 accessRules.push({ accessType: 'ALLOW', targetType: 'REGISTER', registerId: regId });
             });
@@ -136,14 +151,18 @@ export function ManageAccessDialog({ open, onOpenChange, file }: ManageAccessDia
 
                 <div className="space-y-6 py-4">
                     {/* Mode Selection */}
-                    <RadioGroup value={mode} onValueChange={(v: 'all' | 'custom') => setMode(v)}>
+                    <RadioGroup value={mode} onValueChange={(v: 'all' | 'admin' | 'custom') => setMode(v)}>
                         <div className="flex items-center space-x-2">
                             <RadioGroupItem value="all" id="r1" />
                             <Label htmlFor="r1">Öffentlich (Alle Mitglieder)</Label>
                         </div>
                         <div className="flex items-center space-x-2">
+                            <RadioGroupItem value="admin" id="r-admin" />
+                            <Label htmlFor="r-admin">Nur Admins</Label>
+                        </div>
+                        <div className="flex items-center space-x-2">
                             <RadioGroupItem value="custom" id="r2" />
-                            <Label htmlFor="r2">Benutzerdefiniert (Standard: Keine Berechtigung)</Label>
+                            <Label htmlFor="r2">Benutzerdefiniert (Bestimmte Register/Benutzer)</Label>
                         </div>
                     </RadioGroup>
 

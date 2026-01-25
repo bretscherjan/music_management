@@ -4,7 +4,7 @@ export type FileVisibility = 'all' | 'admin' | 'register' | 'limit';
 
 // Access Types
 export type AccessType = 'ALLOW' | 'DENY';
-export type AccessTargetType = 'USER' | 'REGISTER';
+export type AccessTargetType = 'USER' | 'REGISTER' | 'ADMIN_ONLY';
 
 export interface FileAccessRule {
     id?: number;
@@ -35,6 +35,7 @@ export interface UploadFileDto {
     targetRegisterId?: number;
     eventId?: number;
     folder?: string;
+    folderId?: number | null;
     accessRules?: string; // JSON string because of FormData
 }
 
@@ -43,4 +44,34 @@ export interface FileQueryParams {
     targetRegisterId?: number;
     eventId?: number;
     folder?: string;
+    folderId?: number | null;
+}
+
+export interface Folder {
+    id: number;
+    name: string;
+    parentId: number | null;
+    createdAt: string;
+    updatedAt: string;
+    accessRules?: FileAccessRule[];
+    _count?: {
+        files: number;
+        children: number;
+    };
+}
+
+export interface FolderBreadcrumb {
+    id: number;
+    name: string;
+}
+
+export interface FolderContentsResponse {
+    folders: Folder[];
+    files: FileEntity[];
+    breadcrumbs: FolderBreadcrumb[];
+    currentFolder: {
+        id: number | null;
+        name: string;
+        parentId: number | null;
+    };
 }

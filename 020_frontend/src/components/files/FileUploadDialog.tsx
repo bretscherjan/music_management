@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { fileService } from '@/services/fileService';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -11,27 +11,21 @@ import type { UploadFileDto } from '@/types';
 interface FileUploadDialogProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
-    currentFolder?: string;
+    currentFolderId: number | null;
+    currentFolderName: string;
 }
 
-export function FileUploadDialog({ open, onOpenChange, currentFolder = '/' }: FileUploadDialogProps) {
+export function FileUploadDialog({ open, onOpenChange, currentFolderId, currentFolderName }: FileUploadDialogProps) {
     const queryClient = useQueryClient();
     const [file, setFile] = useState<File | null>(null);
-    const [folder, setFolder] = useState(currentFolder);
     const [isUploading, setIsUploading] = useState(false);
     const [error, setError] = useState<string | null>(null);
-
-    const { data: folders = [] } = useQuery({
-        queryKey: ['folders'],
-        queryFn: () => fileService.getFolders(),
-        enabled: open,
-    });
 
     const uploadMutation = useMutation({
         mutationFn: (data: { file: File, options?: UploadFileDto }) =>
             fileService.upload(data.file, data.options),
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['files'] });
+            queryClient.invalidateQueries({ queryKey: ['folderContents'] });
             handleClose();
         },
         onError: (err: any) => {
@@ -42,7 +36,6 @@ export function FileUploadDialog({ open, onOpenChange, currentFolder = '/' }: Fi
 
     const handleClose = () => {
         setFile(null);
-        setFolder(currentFolder);
         setError(null);
         setIsUploading(false);
         onOpenChange(false);
@@ -61,13 +54,11 @@ export function FileUploadDialog({ open, onOpenChange, currentFolder = '/' }: Fi
         setIsUploading(true);
         setError(null);
 
-        // Files are uploaded as 'admin' only by default.
-        // Permissions are managed via the "Manage Access" dialog.
         uploadMutation.mutate({
             file,
             options: {
                 visibility: 'admin',
-                folder,
+                folderId: currentFolderId,
             },
         });
     };
@@ -94,25 +85,16 @@ export function FileUploadDialog({ open, onOpenChange, currentFolder = '/' }: Fi
                         )}
                     </div>
 
-                    {/* Folder */}
+                    {/* Folder Info */}
                     <div className="space-y-2">
-                        <Label htmlFor="folder">Speicherort</Label>
-                        <div className="flex flex-col gap-2">
-                            <select
-                                id="folder"
-                                value={folder}
-                                onChange={(e) => setFolder(e.target.value)}
-                                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                            >
-                                <option value="/">/ (Root)</option>
-                                {folders.filter(f => f !== '/').map((f) => (
-                                    <option key={f} value={f}>{f}</option>
-                                ))}
-                            </select>
-                            <p className="text-xs text-muted-foreground">
-                                Neue Dateien sind nur für Admins sichtbar. Berechtigungen können nachträglich über "Berechtigungen verwalten" angepasst werden.
-                            </p>
+                        <Label>Speicherort</Label>
+                        <div className="p-2 bg-muted rounded-md text-sm font-medium flex items-center gap-2">
+                            <Upload className="h-4 w-4" />
+                            {currentFolderName}
                         </div>
+                        <p className="text-xs text-muted-foreground">
+                            Neue Dateien sind nur für Admins sichtbar. Berechtigungen können nachträglich über "Berechtigungen verwalten" angepasst werden.
+                        </p>
                     </div>
 
                     {error && (
@@ -136,3 +118,4 @@ export function FileUploadDialog({ open, onOpenChange, currentFolder = '/' }: Fi
         </Dialog>
     );
 }
+

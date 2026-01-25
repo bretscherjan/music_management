@@ -10,6 +10,7 @@ import { Loader2, Save, Key, User as UserIcon, AlertCircle, CheckCircle, Bell } 
 import type { NotificationSettings } from '@/types';
 import { pushNotificationService } from '@/services/pushNotificationService';
 
+
 export function UserSettingsPage() {
     const queryClient = useQueryClient();
     const [firstName, setFirstName] = useState('');
@@ -335,13 +336,27 @@ function NotificationSettingsCard() {
         });
     };
 
-    const handleReminderTimeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const handlePushToggle = async (key: keyof NotificationSettings) => {
         if (!settings) return;
-        mutation.mutate({
-            ...settings,
-            reminderTimeBeforeHours: parseInt(e.target.value)
-        });
+        const willEnable = !settings[key];
+
+        // If trying to enable push and not subscribed, try to subscribe first
+        if (willEnable && !isPushSubscribed) {
+            try {
+                // This triggers browser permission prompt if needed
+                await pushNotificationService.subscribeToPushNotifications();
+                setIsPushSubscribed(true);
+            } catch (error) {
+                console.error("Failed to subscribe to push", error);
+                // Can't enable setting if subscription failed
+                return;
+            }
+        }
+
+        handleToggle(key);
     };
+
+
 
     if (isLoading || !settings) {
         return (
@@ -395,8 +410,8 @@ function NotificationSettingsCard() {
                                 <Switch
                                     id="push-new-events"
                                     checked={settings.pushNewEvents}
-                                    onCheckedChange={() => handleToggle('pushNewEvents')}
-                                    disabled={mutation.isPending || !isPushSubscribed}
+                                    onCheckedChange={() => handlePushToggle('pushNewEvents')}
+                                    disabled={mutation.isPending}
                                 />
                                 <Label htmlFor="push-new-events" className="text-sm cursor-pointer">Push</Label>
                             </div>
@@ -420,8 +435,8 @@ function NotificationSettingsCard() {
                                 <Switch
                                     id="push-event-updates"
                                     checked={settings.pushEventUpdates}
-                                    onCheckedChange={() => handleToggle('pushEventUpdates')}
-                                    disabled={mutation.isPending || !isPushSubscribed}
+                                    onCheckedChange={() => handlePushToggle('pushEventUpdates')}
+                                    disabled={mutation.isPending}
                                 />
                                 <Label htmlFor="push-event-updates" className="text-sm cursor-pointer">Push</Label>
                             </div>
@@ -445,8 +460,8 @@ function NotificationSettingsCard() {
                                 <Switch
                                     id="push-event-cancel"
                                     checked={settings.pushEventCancellations}
-                                    onCheckedChange={() => handleToggle('pushEventCancellations')}
-                                    disabled={mutation.isPending || !isPushSubscribed}
+                                    onCheckedChange={() => handlePushToggle('pushEventCancellations')}
+                                    disabled={mutation.isPending}
                                 />
                                 <Label htmlFor="push-event-cancel" className="text-sm cursor-pointer">Push</Label>
                             </div>
@@ -474,8 +489,8 @@ function NotificationSettingsCard() {
                                 <Switch
                                     id="push-new-files"
                                     checked={settings.pushNewFiles}
-                                    onCheckedChange={() => handleToggle('pushNewFiles')}
-                                    disabled={mutation.isPending || !isPushSubscribed}
+                                    onCheckedChange={() => handlePushToggle('pushNewFiles')}
+                                    disabled={mutation.isPending}
                                 />
                                 <Label htmlFor="push-new-files" className="text-sm cursor-pointer">Push</Label>
                             </div>
@@ -499,8 +514,8 @@ function NotificationSettingsCard() {
                                 <Switch
                                     id="push-file-deleted"
                                     checked={settings.pushFileDeleted}
-                                    onCheckedChange={() => handleToggle('pushFileDeleted')}
-                                    disabled={mutation.isPending || !isPushSubscribed}
+                                    onCheckedChange={() => handlePushToggle('pushFileDeleted')}
+                                    disabled={mutation.isPending}
                                 />
                                 <Label htmlFor="push-file-deleted" className="text-sm cursor-pointer">Push</Label>
                             </div>
@@ -508,53 +523,25 @@ function NotificationSettingsCard() {
                     </div>
                 </div>
 
-                <div className="space-y-4">
-                    <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Erinnerungen</h3>
+                <div className="space-y-4 pt-6 border-t">
+                    <h3 className="text-lg font-medium">Termin-Erinnerungen</h3>
+                    <p className="text-sm text-muted-foreground">
+                        Konfigurieren Sie hier, wann und wie Sie an Termine erinnert werden möchten.
+                    </p>
 
-                    <div className="space-y-2">
-                        <Label className="text-sm font-medium">Terminerinnerungen</Label>
-                        <p className="text-xs text-muted-foreground">Automatische Erinnerung vor dem Termin</p>
-                        <div className="flex items-center gap-6 mt-2">
-                            <div className="flex items-center space-x-2">
-                                <Switch
-                                    id="email-reminders"
-                                    checked={settings.notifyEventReminder}
-                                    onCheckedChange={() => handleToggle('notifyEventReminder')}
-                                    disabled={mutation.isPending}
-                                />
-                                <Label htmlFor="email-reminders" className="text-sm cursor-pointer">E-Mail</Label>
-                            </div>
-                            <div className="flex items-center space-x-2">
-                                <Switch
-                                    id="push-reminders"
-                                    checked={settings.pushReminders}
-                                    onCheckedChange={() => handleToggle('pushReminders')}
-                                    disabled={mutation.isPending || !isPushSubscribed}
-                                />
-                                <Label htmlFor="push-reminders" className="text-sm cursor-pointer">Push</Label>
-                            </div>
-                        </div>
-                    </div>
-
-                    {settings.notifyEventReminder && (
-                        <div className="grid gap-2">
-                            <Label htmlFor="reminderTimeBeforeHours">Zeitpunkt der Erinnerung</Label>
-                            <select
-                                id="reminderTimeBeforeHours"
-                                className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                                value={settings.reminderTimeBeforeHours}
-                                onChange={handleReminderTimeChange}
-                                disabled={mutation.isPending}
-                            >
-                                <option value="1">1 Stunde vorher</option>
-                                <option value="2">2 Stunden vorher</option>
-                                <option value="12">12 Stunden vorher</option>
-                                <option value="24">24 Stunden vorher</option>
-                                <option value="48">48 Stunden vorher</option>
-                                <option value="168">1 Woche vorher</option>
-                            </select>
-                        </div>
-                    )}
+                    <ReminderConfig
+                        settings={settings}
+                        onUpdate={mutation.mutate}
+                        isPushSubscribed={isPushSubscribed}
+                        onSubscribeRequest={async () => {
+                            try {
+                                await pushNotificationService.subscribeToPushNotifications();
+                                setIsPushSubscribed(true);
+                            } catch (error) {
+                                console.error("Failed to subscribe", error);
+                            }
+                        }}
+                    />
                 </div>
 
                 {success && (
@@ -564,8 +551,256 @@ function NotificationSettingsCard() {
                     </div>
                 )}
             </CardContent>
-        </Card>
+        </Card >
+    );
+}
 
+function ReminderConfig({ settings, onUpdate, isPushSubscribed, onSubscribeRequest }: {
+    settings: NotificationSettings,
+    onUpdate: (s: NotificationSettings) => void,
+    isPushSubscribed: boolean,
+    onSubscribeRequest: () => Promise<void>
+}) {
+    const [activeTab, setActiveTab] = useState<'rehearsal' | 'performance' | 'other'>('rehearsal');
+
+    // Helper to get current category settings or defaults
+    const getCatSettings = (cat: 'rehearsal' | 'performance' | 'other') => {
+        return settings.reminderSettings?.[cat] || {
+            enabled: false,
+            emailEnabled: false,
+            pushEnabled: false,
+            minutesBefore: [],
+            onlyIfAttending: false
+        };
+    };
+
+    const updateCatSettings = (updates: Partial<any>) => {
+        const current = getCatSettings(activeTab);
+        const updatedCrypto = { ...current, ...updates };
+
+        const newReminderSettings = {
+            ...(settings.reminderSettings || {}),
+            [activeTab]: updatedCrypto
+        };
+
+        onUpdate({
+            ...settings,
+            reminderSettings: newReminderSettings
+        });
+    };
+
+    const currentSettings = getCatSettings(activeTab);
+
+    // Time handling
+    const [customTime, setCustomTime] = useState('');
+    const [customUnit, setCustomUnit] = useState('minutes'); // minutes, hours, days
+
+    const addTime = () => {
+        const val = parseInt(customTime);
+        if (isNaN(val) || val <= 0) return;
+
+        let minutes = val;
+        if (customUnit === 'hours') minutes = val * 60;
+        if (customUnit === 'days') minutes = val * 1440;
+
+        if (currentSettings.minutesBefore.includes(minutes)) return;
+
+        updateCatSettings({
+            minutesBefore: [...currentSettings.minutesBefore, minutes].sort((a, b) => a - b)
+        });
+        setCustomTime('');
+    };
+
+    const removeTime = (min: number) => {
+        updateCatSettings({
+            minutesBefore: currentSettings.minutesBefore.filter(m => m !== min)
+        });
+    };
+
+    const formatMinutes = (min: number) => {
+        if (min >= 1440 && min % 1440 === 0) return `${min / 1440} Tag${min / 1440 > 1 ? 'e' : ''}`;
+        if (min >= 60 && min % 60 === 0) return `${min / 60} Std.`;
+        return `${min} Min.`;
+    };
+
+    return (
+        <div className="space-y-4">
+            {/* Custom Tabs */}
+            <div className="flex space-x-2 border-b">
+                {[
+                    { id: 'rehearsal', label: 'Proben' },
+                    { id: 'performance', label: 'Auftritte' },
+                    { id: 'other', label: 'Sonstiges' }
+                ].map(tab => (
+                    <button
+                        key={tab.id}
+                        onClick={() => setActiveTab(tab.id as any)}
+                        className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${activeTab === tab.id
+                            ? 'border-primary text-primary'
+                            : 'border-transparent text-muted-foreground hover:text-foreground'
+                            }`}
+                        type="button"
+                    >
+                        {tab.label}
+                    </button>
+                ))}
+            </div>
+
+            <div className="space-y-6 pt-2 animate-in fade-in slide-in-from-top-2">
+
+                {/* Enable Switch */}
+                <div className="flex items-center justify-between p-4 border rounded-lg bg-muted/20">
+                    <div className="space-y-0.5">
+                        <Label className="text-base">Erinnerungen aktivieren</Label>
+                        <p className="text-xs text-muted-foreground">
+                            Für {activeTab === 'rehearsal' ? 'Proben' : activeTab === 'performance' ? 'Auftritte' : 'sonstige Termine'}
+                        </p>
+                    </div>
+                    <Switch
+                        checked={currentSettings.enabled}
+                        onCheckedChange={(c) => updateCatSettings({ enabled: c })}
+                    />
+                </div>
+
+                {currentSettings.enabled && (
+                    <>
+                        {/* Channels */}
+                        <div className="grid gap-4 sm:grid-cols-2">
+                            <div className="p-4 border rounded-lg space-y-3">
+                                <Label>Benachrichtigungsweg</Label>
+                                <div className="space-y-3">
+                                    <div className="flex items-center justify-between">
+                                        <Label htmlFor="cat-email" className="font-normal cursor-pointer">Per E-Mail</Label>
+                                        <Switch
+                                            id="cat-email"
+                                            checked={currentSettings.emailEnabled}
+                                            onCheckedChange={(c) => updateCatSettings({ emailEnabled: c })}
+                                        />
+                                    </div>
+                                    <div className="flex items-center justify-between">
+                                        <Label htmlFor="cat-push" className="font-normal cursor-pointer">Per Push</Label>
+                                        <Switch
+                                            id="cat-push"
+                                            checked={currentSettings.pushEnabled}
+                                            onCheckedChange={async (c) => {
+                                                if (c && !isPushSubscribed) {
+                                                    await onSubscribeRequest();
+                                                }
+                                                updateCatSettings({ pushEnabled: c })
+                                            }}
+                                        />
+                                    </div>
+                                    {!isPushSubscribed && (
+                                        <p className="text-[10px] text-destructive">Push im Browser nicht aktiviert</p>
+                                    )}
+                                </div>
+                            </div>
+
+                            {/* Attendance Filter */}
+                            <div className="p-4 border rounded-lg space-y-3">
+                                <Label>Bedingung</Label>
+                                <div className="space-y-2">
+                                    <div className="flex items-center space-x-2">
+                                        <input
+                                            type="radio"
+                                            id="filter-all"
+                                            name="att-filter"
+                                            checked={!currentSettings.onlyIfAttending}
+                                            onChange={() => updateCatSettings({ onlyIfAttending: false })}
+                                            className="h-4 w-4"
+                                        />
+                                        <Label htmlFor="filter-all" className="font-normal cursor-pointer">
+                                            Immer (wenn eingeladen)
+                                        </Label>
+                                    </div>
+                                    <div className="flex items-center space-x-2">
+                                        <input
+                                            type="radio"
+                                            id="filter-yes"
+                                            name="att-filter"
+                                            checked={currentSettings.onlyIfAttending}
+                                            onChange={() => updateCatSettings({ onlyIfAttending: true })}
+                                            className="h-4 w-4"
+                                        />
+                                        <Label htmlFor="filter-yes" className="font-normal cursor-pointer">
+                                            Nur wenn ich zugesagt habe
+                                        </Label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Times */}
+                        <div className="space-y-3">
+                            <Label>Erinnerungszeitpunkte</Label>
+
+                            {/* Tags */}
+                            <div className="flex flex-wrap gap-2">
+                                {currentSettings.minutesBefore.map((min: number) => (
+                                    <div key={min} className="flex items-center gap-1 bg-secondary text-secondary-foreground px-3 py-1 rounded-full text-sm">
+                                        <span>{formatMinutes(min)} vorher</span>
+                                        <button
+                                            onClick={() => removeTime(min)}
+                                            className="ml-1 text-muted-foreground hover:text-foreground"
+                                            type="button"
+                                        >
+                                            ×
+                                        </button>
+                                    </div>
+                                ))}
+                                {currentSettings.minutesBefore.length === 0 && (
+                                    <span className="text-sm text-muted-foreground italic">Keine Zeiten festgelegt</span>
+                                )}
+                            </div>
+
+                            {/* Add Time */}
+                            <div className="flex items-end gap-2 max-w-sm pt-2">
+                                <div className="grid gap-1 flex-1">
+                                    <Label className="text-xs">Wert</Label>
+                                    <Input
+                                        type="number"
+                                        placeholder="z.B. 1"
+                                        value={customTime}
+                                        onChange={(e) => setCustomTime(e.target.value)}
+                                        min="1"
+                                    />
+                                </div>
+                                <div className="grid gap-1 w-24">
+                                    <Label className="text-xs">Einheit</Label>
+                                    <select
+                                        className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                                        value={customUnit}
+                                        onChange={(e) => setCustomUnit(e.target.value)}
+                                    >
+                                        <option value="minutes">Min.</option>
+                                        <option value="hours">Std.</option>
+                                        <option value="days">Tage</option>
+                                    </select>
+                                </div>
+                                <Button type="button" variant="secondary" onClick={addTime} disabled={!customTime}>
+                                    Hinzufügen
+                                </Button>
+                            </div>
+
+                            <div className="flex flex-wrap gap-2 pt-2">
+                                <Button variant="outline" size="sm" onClick={() => {
+                                    if (!currentSettings.minutesBefore.includes(60))
+                                        updateCatSettings({ minutesBefore: [...currentSettings.minutesBefore, 60].sort((a, b) => a - b) })
+                                }} type="button">+ 1 Std.</Button>
+                                <Button variant="outline" size="sm" onClick={() => {
+                                    if (!currentSettings.minutesBefore.includes(1440))
+                                        updateCatSettings({ minutesBefore: [...currentSettings.minutesBefore, 1440].sort((a, b) => a - b) })
+                                }} type="button">+ 1 Tag</Button>
+                                <Button variant="outline" size="sm" onClick={() => {
+                                    if (!currentSettings.minutesBefore.includes(2880))
+                                        updateCatSettings({ minutesBefore: [...currentSettings.minutesBefore, 2880].sort((a, b) => a - b) })
+                                }} type="button">+ 2 Tage</Button>
+                            </div>
+                        </div>
+                    </>
+                )}
+            </div>
+        </div>
     );
 }
 

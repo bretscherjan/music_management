@@ -71,6 +71,16 @@ app.listen(PORT, async () => {
   const { initializeCronJobs } = require('./src/services/cron.service');
   initializeCronJobs();
 
+  // Initialize Reminder Queue
+  try {
+    const { initializeReminderQueue, syncReminders } = require('./src/services/reminder.queue.service');
+    initializeReminderQueue();
+    // Sync reminders after initialization (async)
+    syncReminders().catch(err => console.error('⚠️ Reminder sync failed:', err));
+  } catch (error) {
+    console.error('⚠️ Failed to initialize Reminder Queue:', error.message);
+  }
+
   // Run once immediately on startup for testing/development (Optional, maybe remove in prod)
   // const notificationService = require('./src/services/notification.service');
   // notificationService.sendEventReminders(); // Call explicitly if needed for debug

@@ -12,6 +12,7 @@ import {
     Trash2,
     Loader2,
     FolderPlus,
+    CornerUpLeft
 } from 'lucide-react';
 import {
     DropdownMenu,
@@ -48,43 +49,41 @@ import type { FileEntity } from '@/types';
 import { FileUploadDialog } from '@/components/files/FileUploadDialog';
 import { CreateFolderDialog } from '@/components/files/CreateFolderDialog';
 import { ManageAccessDialog } from '@/components/files/ManageAccessDialog';
+import { ManageFolderAccessDialog } from '@/components/files/ManageFolderAccessDialog';
 
 export function FileListPage() {
     const isAdmin = useIsAdmin();
     const queryClient = useQueryClient();
-    const [currentFolder, setCurrentFolder] = useState('/');
+
+    // State now tracks Folder ID (null = root)
+    const [currentFolderId, setCurrentFolderId] = useState<number | null>(null);
+
     const [downloading, setDownloading] = useState<number | null>(null);
     const [isUploadOpen, setIsUploadOpen] = useState(false);
     const [isCreateFolderOpen, setIsCreateFolderOpen] = useState(false);
     const [manageAccessFile, setManageAccessFile] = useState<FileEntity | null>(null);
+    const [manageAccessFolder, setManageAccessFolder] = useState<any | null>(null);
     const [deleteFileId, setDeleteFileId] = useState<number | null>(null);
-    const [deleteFolderTarget, setDeleteFolderTarget] = useState<string | null>(null);
+    const [deleteFolderId, setDeleteFolderId] = useState<number | null>(null);
 
-    const { data: files, isLoading } = useQuery({
-        queryKey: ['files', currentFolder],
-        queryFn: () => fileService.getAll({ folder: currentFolder }),
-    });
-
-    const { data: allFolders = [] } = useQuery({
-        queryKey: ['folders'],
-        queryFn: () => fileService.getFolders(),
+    const { data: folderContents, isLoading } = useQuery({
+        queryKey: ['folderContents', currentFolderId],
+        queryFn: () => fileService.getFolderContents(currentFolderId ?? 'root'),
     });
 
     const deleteFileMutation = useMutation({
         mutationFn: (id: number) => fileService.delete(id),
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['files'] });
-            queryClient.invalidateQueries({ queryKey: ['folders'] });
+            queryClient.invalidateQueries({ queryKey: ['folderContents'] });
             setDeleteFileId(null);
         },
     });
 
     const deleteFolderMutation = useMutation({
-        mutationFn: (folder: string) => fileService.deleteFolder(folder),
+        mutationFn: (id: number) => fileService.deleteFolder(id),
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['files'] });
-            queryClient.invalidateQueries({ queryKey: ['folders'] });
-            setDeleteFolderTarget(null);
+            queryClient.invalidateQueries({ queryKey: ['folderContents'] });
+            setDeleteFolderId(null);
         },
     });
 
@@ -106,40 +105,20 @@ export function FileListPage() {
     };
 
     const handleDeleteFolder = () => {
-        if (deleteFolderTarget) {
-            deleteFolderMutation.mutate(deleteFolderTarget);
+        if (deleteFolderId) {
+            deleteFolderMutation.mutate(deleteFolderId);
         }
     };
 
-    // Get subfolders logic
-    const subfolders = Array.from(new Set(
-        allFolders.map(path => {
-            if (currentFolder === '/') {
-                if (path === '/') return null;
-                return '/' + path.split('/').filter(Boolean)[0];
-            }
-            if (path.startsWith(currentFolder + '/') && path !== currentFolder) {
-                const suffix = path.slice(currentFolder.length);
-                const nextSegment = suffix.split('/').filter(Boolean)[0];
-                return currentFolder + '/' + nextSegment;
-            }
-            return null;
-        }).filter(Boolean) as string[]
-    )).sort();
-
-    // Breadcrumbs
-    const breadcrumbs = currentFolder === '/' ? [] : currentFolder.split('/').filter(Boolean);
-
-    const navigateToFolder = (folder: string) => {
-        setCurrentFolder(folder);
+    const navigateToFolder = (folderId: number | null) => {
+        setCurrentFolderId(folderId);
     };
 
-    const navigateUp = (index: number) => {
-        if (index === -1) {
-            setCurrentFolder('/');
+    const navigateUp = () => {
+        if (folderContents?.currentFolder?.parentId !== undefined) {
+            setCurrentFolderId(folderContents.currentFolder.parentId);
         } else {
-            const parts = currentFolder.split('/').filter(Boolean);
-            setCurrentFolder('/' + parts.slice(0, index + 1).join('/'));
+            setCurrentFolderId(null);
         }
     };
 
@@ -151,8 +130,14 @@ export function FileListPage() {
         return '📎';
     };
 
+    // Derived from API response
+    const folders = folderContents?.folders || [];
+    const files = folderContents?.files || [];
+    const breadcrumbs = folderContents?.breadcrumbs || [];
+    const currentFolderName = folderContents?.currentFolder?.name || 'Root';
+
     return (
-        <div className="space-y-6">
+        <div className="space-y-6 container-app py-8">
             {/* Header */}
             <div className="flex items-center justify-between flex-wrap gap-4">
                 <div>
@@ -180,26 +165,39 @@ export function FileListPage() {
             </div>
 
             {/* Breadcrumb Navigation */}
-            <div className="flex items-center gap-2 text-sm">
+            <div className="flex items-center flex-wrap gap-2 text-sm bg-muted/20 p-2 rounded-md">
                 <button
-                    onClick={() => navigateUp(-1)}
-                    className="flex items-center gap-1 hover:text-primary transition-colors"
+                    onClick={() => navigateToFolder(null)}
+                    className={`flex items-center gap-1 hover:text-primary transition-colors ${currentFolderId === null ? 'font-bold text-primary' : ''}`}
                 >
                     <Home className="h-4 w-4" />
                     <span>Root</span>
                 </button>
-                {breadcrumbs.map((crumb, index) => (
-                    <div key={index} className="flex items-center gap-2">
+
+                {breadcrumbs.map((crumb) => (
+                    <div key={crumb.id} className="flex items-center gap-2">
                         <ChevronRight className="h-4 w-4 text-muted-foreground" />
                         <button
-                            onClick={() => navigateUp(index)}
+                            onClick={() => navigateToFolder(crumb.id)}
                             className="hover:text-primary transition-colors"
                         >
-                            {crumb}
+                            {crumb.name}
                         </button>
                     </div>
                 ))}
+
+                {/* Always show current if not root and not in breadcrumbs (if logic differs) */}
+                {/* Check if current is last breadcrumb, if not add it? API returns full path usually including current? */}
+                {/* Based on my backend logic, I included current in breadcrumbs. So valid. */}
             </div>
+
+            {/* Back Button if not root */}
+            {currentFolderId !== null && (
+                <Button variant="ghost" size="sm" onClick={navigateUp} className="mb-2">
+                    <CornerUpLeft className="h-4 w-4 mr-2" />
+                    Ebene höher
+                </Button>
+            )}
 
             {/* Content */}
             {isLoading ? (
@@ -216,49 +214,77 @@ export function FileListPage() {
             ) : (
                 <Card>
                     <CardHeader>
-                        <CardTitle className="text-lg">
-                            {currentFolder === '/' ? 'Alle Dateien' : currentFolder}
+                        <CardTitle className="text-lg flex items-center gap-2">
+                            <Folder className="h-5 w-5 fill-primary/20 text-primary" />
+                            {currentFolderName}
                         </CardTitle>
                     </CardHeader>
                     <CardContent>
                         <div className="space-y-2">
                             {/* Subfolders */}
-                            {subfolders.map((folder) => (
+                            {folders.map((folder) => (
                                 <div
-                                    key={folder}
-                                    className="flex items-center justify-between p-3 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors cursor-pointer"
-                                    onClick={() => navigateToFolder(folder)}
+                                    key={folder.id}
+                                    className="flex items-center justify-between p-3 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors group"
                                 >
-                                    <div className="flex items-center gap-3">
-                                        <Folder className="h-5 w-5 text-primary" />
-                                        <span className="font-medium">
-                                            {folder.split('/').filter(Boolean).pop()}
-                                        </span>
+                                    <div
+                                        className="flex items-center gap-3 flex-1 cursor-pointer"
+                                        onClick={() => navigateToFolder(folder.id)}
+                                    >
+                                        <Folder className="h-10 w-10 fill-primary/20 text-primary transition-transform group-hover:scale-110" />
+                                        <div className="flex flex-col">
+                                            <span className="font-medium text-base">
+                                                {folder.name}
+                                            </span>
+                                            <span className="text-xs text-muted-foreground">
+                                                {(folder._count?.files || 0) + (folder._count?.children || 0)} Objekte
+                                            </span>
+                                        </div>
                                     </div>
                                     <div className="flex items-center gap-2">
                                         <ChevronRight className="h-4 w-4 text-muted-foreground mr-2" />
                                         {isAdmin && (
-                                            <Button
-                                                variant="ghost"
-                                                size="sm"
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    setDeleteFolderTarget(folder);
-                                                }}
-                                                className="text-destructive hover:text-destructive hover:bg-destructive/10 h-8 w-8 p-0"
-                                            >
-                                                <Trash2 className="h-4 w-4" />
-                                            </Button>
+                                            <DropdownMenu>
+                                                <DropdownMenuTrigger asChild>
+                                                    <Button variant="ghost" className="h-8 w-8 p-0 opacity-0 group-hover: opacity-100 transition-opacity">
+                                                        <span className="sr-only">Open menu</span>
+                                                        <MoreVertical className="h-4 w-4" />
+                                                    </Button>
+                                                </DropdownMenuTrigger>
+                                                <DropdownMenuContent align="end">
+                                                    <DropdownMenuLabel>Aktionen</DropdownMenuLabel>
+                                                    <DropdownMenuSeparator />
+                                                    <DropdownMenuItem
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            setManageAccessFolder(folder);
+                                                        }}
+                                                    >
+                                                        <Shield className="mr-2 h-4 w-4" />
+                                                        Berechtigungen
+                                                    </DropdownMenuItem>
+                                                    <DropdownMenuItem
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            setDeleteFolderId(folder.id);
+                                                        }}
+                                                        className="text-red-600 focus:text-red-600"
+                                                    >
+                                                        <Trash2 className="mr-2 h-4 w-4" />
+                                                        Löschen
+                                                    </DropdownMenuItem>
+                                                </DropdownMenuContent>
+                                            </DropdownMenu>
                                         )}
                                     </div>
                                 </div>
                             ))}
 
                             {/* Files */}
-                            {files?.map((file) => (
+                            {files.map((file) => (
                                 <div
                                     key={file.id}
-                                    className="flex items-center justify-between p-3 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors"
+                                    className="flex items-center justify-between p-3 rounded-lg hover:bg-accent/50 transition-colors border border-transparent hover:border-border"
                                 >
                                     <div className="flex items-center gap-3 min-w-0 flex-1">
                                         <span className="text-2xl flex-shrink-0">
@@ -269,7 +295,7 @@ export function FileListPage() {
                                             <div className="flex gap-2 text-xs text-muted-foreground">
                                                 <span>{formatFileSize(file.size)}</span>
                                                 {file.visibility !== 'all' && (
-                                                    <Badge variant="outline" className="text-xs">
+                                                    <Badge variant="outline" className="text-xs ml-2">
                                                         {file.visibility === 'admin' ? 'Admin' :
                                                             file.visibility === 'register' ? 'Register' :
                                                                 'Begrenzt'}
@@ -280,6 +306,18 @@ export function FileListPage() {
                                     </div>
 
                                     <div className="flex items-center gap-2">
+                                        <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            onClick={() => handleDownload(file.id, file.originalName)}
+                                        >
+                                            {downloading === file.id ? (
+                                                <Loader2 className="h-4 w-4 animate-spin" />
+                                            ) : (
+                                                <Download className="h-4 w-4" />
+                                            )}
+                                        </Button>
+
                                         <DropdownMenu>
                                             <DropdownMenuTrigger asChild>
                                                 <Button variant="ghost" className="h-8 w-8 p-0">
@@ -291,11 +329,7 @@ export function FileListPage() {
                                                 <DropdownMenuLabel>Aktionen</DropdownMenuLabel>
 
                                                 <DropdownMenuItem onClick={() => handleDownload(file.id, file.originalName)}>
-                                                    {downloading === file.id ? (
-                                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                                    ) : (
-                                                        <Download className="mr-2 h-4 w-4" />
-                                                    )}
+                                                    <Download className="mr-2 h-4 w-4" />
                                                     Herunterladen
                                                 </DropdownMenuItem>
 
@@ -321,9 +355,17 @@ export function FileListPage() {
                                 </div>
                             ))}
 
-                            {subfolders.length === 0 && files?.length === 0 && (
-                                <div className="text-center text-muted-foreground py-8">
-                                    Dieser Ordner ist leer
+                            {folders.length === 0 && files.length === 0 && (
+                                <div className="text-center text-muted-foreground py-12 flex flex-col items-center">
+                                    <div className="bg-muted rounded-full p-4 mb-3">
+                                        <Folder className="h-8 w-8 text-muted-foreground" />
+                                    </div>
+                                    <p>Dieser Ordner ist leer</p>
+                                    {isAdmin && currentFolderId !== null && (
+                                        <Button variant="link" onClick={() => setIsUploadOpen(true)}>
+                                            Erste Datei hochladen
+                                        </Button>
+                                    )}
                                 </div>
                             )}
                         </div>
@@ -335,14 +377,16 @@ export function FileListPage() {
             <FileUploadDialog
                 open={isUploadOpen}
                 onOpenChange={setIsUploadOpen}
-                currentFolder={currentFolder}
+                currentFolderId={currentFolderId}
+                currentFolderName={currentFolderName}
             />
 
             {/* Create Folder Dialog */}
             <CreateFolderDialog
                 open={isCreateFolderOpen}
                 onOpenChange={setIsCreateFolderOpen}
-                currentFolder={currentFolder}
+                currentFolderId={currentFolderId}
+                currentFolderName={currentFolderName}
             />
 
             {/* Manage Access Dialog */}
@@ -350,6 +394,13 @@ export function FileListPage() {
                 open={!!manageAccessFile}
                 onOpenChange={(open) => !open && setManageAccessFile(null)}
                 file={manageAccessFile}
+            />
+
+            {/* Manage Folder Access Dialog */}
+            <ManageFolderAccessDialog
+                open={!!manageAccessFolder}
+                onOpenChange={(open) => !open && setManageAccessFolder(null)}
+                folder={manageAccessFolder}
             />
 
             {/* Delete File Confirmation Dialog */}
@@ -381,20 +432,20 @@ export function FileListPage() {
             </Dialog>
 
             {/* Delete Folder Confirmation Dialog */}
-            <Dialog open={deleteFolderTarget !== null} onOpenChange={() => setDeleteFolderTarget(null)}>
+            <Dialog open={deleteFolderId !== null} onOpenChange={() => setDeleteFolderId(null)}>
                 <DialogContent>
                     <DialogHeader>
                         <DialogTitle>Ordner löschen</DialogTitle>
                         <DialogDescription className="text-destructive font-medium">
-                            WARNUNG: Möchten Sie den Ordner "{deleteFolderTarget}" wirklich löschen?
+                            WARNUNG: Möchten Sie den ausgewählten Ordner wirklich löschen?
                         </DialogDescription>
                         <DialogDescription>
-                            Dies wird permanent <b>alle Dateien</b> in diesem Ordner und allen Unterordnern löschen.
+                            Dies wird permanent <b>alle Dateien und Unterordner</b> darin löschen.
                             Diese Aktion kann nicht rückgängig gemacht werden.
                         </DialogDescription>
                     </DialogHeader>
                     <DialogFooter>
-                        <Button variant="outline" onClick={() => setDeleteFolderTarget(null)}>
+                        <Button variant="outline" onClick={() => setDeleteFolderId(null)}>
                             Abbrechen
                         </Button>
                         <Button
@@ -413,5 +464,3 @@ export function FileListPage() {
         </div>
     );
 }
-
-export default FileListPage;

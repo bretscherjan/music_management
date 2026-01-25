@@ -8,9 +8,9 @@ const prisma = new PrismaClient();
  */
 
 let vapidKeys = {
-    publicKey: '',
-    privateKey: '',
-    subject: ''
+    publicKey: process.env.VAPID_PUBLIC_KEY || '',
+    privateKey: process.env.VAPID_PRIVATE_KEY || '',
+    subject: process.env.VAPID_SUBJECT || 'mailto:info@musig-elgg.ch'
 };
 
 /**
@@ -83,7 +83,14 @@ const sendPushNotification = async (subscription, payload) => {
         // Send the notification
         const result = await webpush.sendNotification(
             pushSubscription,
-            JSON.stringify(payload)
+            JSON.stringify(payload),
+            {
+                vapidDetails: {
+                    subject: vapidKeys.subject,
+                    publicKey: vapidKeys.publicKey,
+                    privateKey: vapidKeys.privateKey
+                }
+            }
         );
 
         return { success: true, statusCode: result.statusCode };

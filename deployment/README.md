@@ -75,4 +75,26 @@ server {
         proxy_set_header Host $host;
     }
 }
+
+## 4. Redis Queue Setup
+
+The application uses Redis for background job processing (Event Reminders).
+
+1.  Start Redis:
+    If you are using Docker, you can use the provided `docker-compose.redis.yml`:
+    ```bash
+    docker-compose -f deployment/docker-compose.redis.yml up -d
+    ```
+    Or install Redis server on your host:
+    ```bash
+    sudo apt install redis-server
+    sudo systemctl enable redis-server
+    sudo systemctl start redis-server
+    ```
+
+2.  Configure `.env` in `010_backend`:
+    ```
+    REDIS_HOST=localhost
+    REDIS_PORT=6379
+    ```
 ```

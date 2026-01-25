@@ -22,12 +22,7 @@ router.post(
     fileController.uploadFile
 );
 
-/**
- * @route   POST /api/files/create-folder
- * @desc    Create a new empty folder
- * @access  Private
- */
-router.post('/create-folder', authMiddleware, fileController.createFolder);
+
 
 /**
  * @route   GET /api/files
@@ -36,19 +31,7 @@ router.post('/create-folder', authMiddleware, fileController.createFolder);
  */
 router.get('/', authMiddleware, validate(queryFilesSchema), fileController.getAllFiles);
 
-/**
- * @route   GET /api/files/folders
- * @desc    Get all unique folders
- * @access  Private
- */
-router.get('/folders', authMiddleware, fileController.getFolders);
 
-/**
- * @route   DELETE /api/files/folders
- * @desc    Delete folder and contents
- * @access  Admin only
- */
-router.delete('/folders', authMiddleware, adminOnly, fileController.deleteFolder);
 
 /**
  * @route   GET /api/files/:id

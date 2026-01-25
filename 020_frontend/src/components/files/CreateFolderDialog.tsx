@@ -10,18 +10,19 @@ import { Loader2, FolderPlus } from 'lucide-react';
 interface CreateFolderDialogProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
-    currentFolder?: string;
+    currentFolderId: number | null;
+    currentFolderName: string;
 }
 
-export function CreateFolderDialog({ open, onOpenChange, currentFolder = '/' }: CreateFolderDialogProps) {
+export function CreateFolderDialog({ open, onOpenChange, currentFolderId, currentFolderName }: CreateFolderDialogProps) {
     const queryClient = useQueryClient();
     const [folderName, setFolderName] = useState('');
     const [error, setError] = useState<string | null>(null);
 
     const mutation = useMutation({
-        mutationFn: (newPath: string) => fileService.createFolder(newPath),
+        mutationFn: (name: string) => fileService.createFolder(name, currentFolderId),
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['folders'] });
+            queryClient.invalidateQueries({ queryKey: ['folderContents'] });
             handleClose();
         },
         onError: (err: any) => {
@@ -38,31 +39,8 @@ export function CreateFolderDialog({ open, onOpenChange, currentFolder = '/' }: 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!folderName.trim()) return;
-
-        // Construct full path
-        // If currentFolder is root, just /Name. Else /Parent/Name
-        const parent = currentFolder === '/' ? '' : currentFolder;
-        // Ensure leading slash for input if user typed it, preventing double slash
-        let cleanName = folderName.trim();
-        // However, the requirement says "absoluten pfad ab / an" (enter absolute path from /).
-        // But usually "Create Folder" in a context implies searching IN that context.
-        // Let's support both: if starts with /, it's absolute. Else relative to current.
-
-        // Actually, user said: "beim ordner hinzufügen, gibt man einen absoluten pfad ab / an"
-        // So we should default to absolute path input? Or prepopulate?
-        // Let's prepopulate with current folder + /
-
-        let finalPath = '';
-        if (cleanName.startsWith('/')) {
-            finalPath = cleanName;
-        } else {
-            finalPath = `${parent}/${cleanName}`;
-        }
-
-        mutation.mutate(finalPath);
+        mutation.mutate(folderName.trim());
     };
-
-    // Pre-fill logic could go here, but let's keep it simple first
 
     return (
         <Dialog open={open} onOpenChange={handleClose}>
@@ -73,21 +51,16 @@ export function CreateFolderDialog({ open, onOpenChange, currentFolder = '/' }: 
 
                 <form onSubmit={handleSubmit} className="space-y-4">
                     <div className="space-y-2">
-                        <Label htmlFor="folderName">Ordnerpfad</Label>
-                        <div className="flex items-center gap-2">
-                            <span className="text-muted-foreground text-sm font-mono whitespace-nowrap">
-                                {currentFolder === '/' ? '/' : currentFolder + '/'}
-                            </span>
-                            <Input
-                                id="folderName"
-                                placeholder="Ordnername"
-                                value={folderName}
-                                onChange={(e) => setFolderName(e.target.value)}
-                                autoFocus
-                            />
-                        </div>
+                        <Label htmlFor="folderName">Name</Label>
+                        <Input
+                            id="folderName"
+                            placeholder="Ordnername"
+                            value={folderName}
+                            onChange={(e) => setFolderName(e.target.value)}
+                            autoFocus
+                        />
                         <p className="text-xs text-muted-foreground">
-                            Erstellt einen neuen Ordner im aktuellen Verzeichnis.
+                            Erstellt einen neuen Ordner in <strong>{currentFolderName}</strong>.
                         </p>
                     </div>
 

@@ -58,15 +58,36 @@ const uploadFile = asyncHandler(async (req, res) => {
         throw new AppError('Keine Datei hochgeladen', 400);
     }
 
-    let { visibility = 'all', targetRegisterId, eventId, folder = '/', accessRules } = req.body;
+    let { visibility = 'all', targetRegisterId, eventId, folderId, accessRules } = req.body;
 
-    // Normalize folder path
-    folder = String(folder).replace(/\\/g, '/').trim(); // Windows backslashes & trim
-    if (!folder.startsWith('/')) folder = '/' + folder;
-    folder = folder.replace(/\/+$/, '') || '/'; // Remove trailing slash unless root
+    // Resolve folderId
+    let resolvedFolderId = null;
+    let resolvedFolderName = '/'; // fallback for folder string
+
+    if (folderId && folderId !== 'null' && folderId !== 'undefined' && folderId !== 'root') {
+        resolvedFolderId = parseInt(folderId);
+        // Verify folder exists
+        const folderObj = await prisma.folder.findUnique({ where: { id: resolvedFolderId } });
+        if (!folderObj) throw new AppError('Ordner nicht gefunden', 404);
+        resolvedFolderName = folderObj.name; // Not full path, but name. Or construct path? 
+        // Existing system used FULL PATH strings.
+        // New system keeps `folderId`.
+        // We set `folderId` directly. The `folder` string field is deprecated but we can set it to the folder Name or '/' if root.
+        // For compatibility, let's just use the Name or 'legacy' logic if we wanted. 
+        // But we are migrating away from logic dependent on path string for hierarchy.
+    } else {
+        // Root folder logic
+        // Try to find Root folder ID if we want to be strict, or just leave null
+        // Migration script mapped '/' to Root folder.
+        // If we want consistency, we should look up Root folder.
+        const root = await prisma.folder.findFirst({ where: { name: 'Root', parentId: null } });
+        if (root) {
+            resolvedFolderId = root.id;
+        }
+    }
 
     // Validate targetRegisterId if provided
-    if (targetRegisterId) {
+    if (targetRegisterId && targetRegisterId !== 'null') {
         const register = await prisma.register.findUnique({
             where: { id: parseInt(targetRegisterId) },
         });
@@ -77,7 +98,7 @@ const uploadFile = asyncHandler(async (req, res) => {
     }
 
     // Validate eventId if provided
-    if (eventId) {
+    if (eventId && eventId !== 'null') {
         const event = await prisma.event.findUnique({
             where: { id: parseInt(eventId) },
         });
@@ -106,9 +127,10 @@ const uploadFile = asyncHandler(async (req, res) => {
             mimetype: req.file.mimetype,
             size: req.file.size,
             visibility,
-            folder: (folder || '/').replace(/\/+$/, '') || '/',
-            targetRegisterId: targetRegisterId ? parseInt(targetRegisterId) : null,
-            eventId: eventId ? parseInt(eventId) : null,
+            folder: resolvedFolderName, // Deprecated but filled
+            folderId: resolvedFolderId, // New Relation
+            targetRegisterId: targetRegisterId && targetRegisterId !== 'null' ? parseInt(targetRegisterId) : null,
+            eventId: eventId && eventId !== 'null' ? parseInt(eventId) : null,
             accessRules: {
                 create: parsedAccessRules.map(rule => ({
                     accessType: rule.accessType,
@@ -601,8 +623,8 @@ module.exports = {
     getFileInfo,
     getAllFiles,
     deleteFile,
-    getFolders,
-    deleteFolder,
-    createFolder,
     updateFileAccess,
+    getFolders,
+    createFolder,
+    deleteFolder,
 };

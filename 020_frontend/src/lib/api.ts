@@ -9,6 +9,14 @@ const api = axios.create({
     },
 });
 
+// Public API instance - no auth token attached (for public pages)
+export const publicApi = axios.create({
+    baseURL: API_BASE_URL,
+    headers: {
+        'Content-Type': 'application/json',
+    },
+});
+
 // Request interceptor: Attach JWT token
 api.interceptors.request.use(
     (config) => {

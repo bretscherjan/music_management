@@ -56,17 +56,14 @@ export function LoginPage() {
                     <Link to="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
                         <img src="/logo.png" alt="Musig Elgg Logo" className="h-12 w-auto" />
                         <div className="flex flex-col">
-                            <span className="text-xl font-bold text-[hsl(var(--musig-burgundy))]">
+                            <span className="text-xl font-bold text-[hsl(var(--musig-primary))]">
                                 Musig Elgg
-                            </span>
-                            <span className="text-xs text-[hsl(var(--muted-foreground))]">
-                                Musikverein seit 1896
                             </span>
                         </div>
                     </Link>
                     <Link
                         to="/"
-                        className="flex items-center gap-2 text-sm text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--musig-burgundy))] transition-colors"
+                        className="flex items-center gap-2 text-sm text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--musig-primary))] transition-colors"
                     >
                         <ArrowLeft className="h-4 w-4" />
                         Zurück zur Startseite
@@ -77,11 +74,11 @@ export function LoginPage() {
             {/* Login Form */}
             <div className="flex-1 flex items-center justify-center p-4">
                 <Card className="w-full max-w-md shadow-xl border-2 border-[hsl(var(--border))]">
-                    <CardHeader className="text-center space-y-4 bg-gradient-to-br from-[hsl(var(--musig-burgundy))]/5 to-[hsl(var(--musig-gold))]/5">
+                    <CardHeader className="text-center space-y-4 bg-gradient-to-br from-[hsl(var(--musig-primary))]/5 to-[hsl(var(--musig-contrast))]/5">
                         <div className="flex justify-center">
                             <img src="/logo.png" alt="Musig Elgg Logo" className="h-24 w-auto" />
                         </div>
-                        <CardTitle className="text-2xl font-bold text-[hsl(var(--musig-burgundy))]">
+                        <CardTitle className="text-2xl font-bold text-[hsl(var(--musig-primary))]">
                             Mitgliederbereich
                         </CardTitle>
                         <CardDescription className="text-base">
@@ -112,7 +109,15 @@ export function LoginPage() {
                             </div>
 
                             <div className="space-y-2">
-                                <Label htmlFor="password">Passwort</Label>
+                                <div className="flex items-center justify-between">
+                                    <Label htmlFor="password">Passwort</Label>
+                                    <Link
+                                        to="/forgot-password"
+                                        className="text-sm text-primary hover:underline"
+                                    >
+                                        Passwort vergessen?
+                                    </Link>
+                                </div>
                                 <Input
                                     id="password"
                                     type="password"
@@ -127,7 +132,7 @@ export function LoginPage() {
 
                             <Button
                                 type="submit"
-                                className="w-full bg-[hsl(var(--musig-burgundy))] hover:bg-[hsl(var(--musig-burgundy))]/90"
+                                className="w-full bg-[hsl(var(--musig-primary))] hover:bg-[hsl(var(--musig-primary))]/90"
                                 size="lg"
                                 disabled={isLoading}
                             >

@@ -6,14 +6,15 @@ const initializeCronJobs = () => {
 
     // Run reminder check every hour at minute 0
     // Format: second(optional) minute hour day-of-month month day-of-week
-    cron.schedule('0 * * * *', async () => {
-        console.log(`⏰ [Cron] Running hourly reminder check at ${new Date().toISOString()}`);
-        try {
-            await notificationService.sendEventReminders();
-        } catch (error) {
-            console.error('❌ [Cron] Error running reminder check:', error);
-        }
-    });
+    // cron.schedule('0 * * * *', async () => {
+    //     console.log(`⏰ [Cron] Running hourly reminder check at ${new Date().toISOString()}`);
+    //     try {
+    //         await notificationService.sendEventReminders();
+    //     } catch (error) {
+    //         console.error('❌ [Cron] Error running reminder check:', error);
+    //     }
+    // });
+    console.log('ℹ️ Legacy Cron Job (Hourly Event Reminders) disabled in favor of Queue system.');
 
     console.log('✅ Cron Jobs initialized: Hourly Event Reminders (Minute 0)');
 };

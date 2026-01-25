@@ -11,7 +11,6 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Calendar, MapPin, Clock, ChevronRight, Newspaper, Plus } from 'lucide-react';
 import { formatDate, formatTime, getCategoryLabel } from '@/lib/utils';
 import type { Event, News } from '@/types';
-import { QuickAttendance } from '@/components/dashboard/QuickAttendance';
 import { AttendanceSummary } from '@/components/events/AttendanceSummary';
 import { useState } from 'react';
 
@@ -31,10 +30,10 @@ export function Dashboard() {
     });
 
     return (
-        <div className="space-y-8">
+        <div className="space-y-8 animate-in fade-in duration-500">
             {/* Welcome Header */}
-            <div className="space-y-1">
-                <h1 className="text-3xl font-bold tracking-tight text-primary">
+            <div className="space-y-2">
+                <h1 className="text-3xl font-bold tracking-tight text-secondary">
                     Willkommen, {user?.firstName}!
                 </h1>
                 <p className="text-muted-foreground text-lg">
@@ -42,13 +41,13 @@ export function Dashboard() {
                 </p>
             </div>
 
-            <div className="grid gap-6 lg:grid-cols-3">
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                 {/* Upcoming Events */}
-                <div className="lg:col-span-2 space-y-4">
+                <div className="md:col-span-2 space-y-4">
                     <div className="flex items-center justify-between">
-                        <h2 className="text-xl font-semibold">Nächste Termine</h2>
+                        <h2 className="text-xl font-semibold text-foreground/80">Nächste Termine</h2>
                         <Link to="/member/events">
-                            <Button variant="ghost" size="sm">
+                            <Button variant="ghost" size="sm" className="hover:text-primary hover:bg-primary/10">
                                 Alle Termine <ChevronRight className="h-4 w-4 ml-1" />
                             </Button>
                         </Link>
@@ -57,7 +56,7 @@ export function Dashboard() {
                     {eventsLoading ? (
                         <div className="space-y-4">
                             {[1, 2, 3].map((i) => (
-                                <Card key={i}>
+                                <Card key={i} className="border-border/50 shadow-sm">
                                     <CardContent className="p-6">
                                         <Skeleton className="h-6 w-3/4 mb-2" />
                                         <Skeleton className="h-4 w-1/2" />
@@ -72,9 +71,10 @@ export function Dashboard() {
                             ))}
                         </div>
                     ) : (
-                        <Card>
-                            <CardContent className="p-6 text-center text-muted-foreground">
-                                Keine kommenden Termine
+                        <Card className="border-dashed">
+                            <CardContent className="p-12 text-center text-muted-foreground flex flex-col items-center gap-2">
+                                <Calendar className="h-10 w-10 opacity-20" />
+                                <p>Keine kommenden Termine</p>
                             </CardContent>
                         </Card>
                     )}
@@ -82,16 +82,12 @@ export function Dashboard() {
 
                 {/* Sidebar */}
                 <div className="space-y-6">
-                    {/* Quick Attendance */}
-                    {events && events.length > 0 && (
-                        <QuickAttendance event={events[0]} />
-                    )}
 
                     {/* News Ticker */}
-                    <Card>
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
-                            <CardTitle className="flex items-center gap-2">
-                                <Newspaper className="h-5 w-5" />
+                    <Card className="border-primary/20 shadow-md bg-card/50 backdrop-blur-sm">
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4 border-b border-primary/10">
+                            <CardTitle className="flex items-center gap-2 text-secondary">
+                                <Newspaper className="h-5 w-5 text-primary" />
                                 Neuigkeiten
                             </CardTitle>
                             {isAdmin && (
@@ -99,27 +95,27 @@ export function Dashboard() {
                                     variant="ghost"
                                     size="icon"
                                     onClick={() => setIsNewsDialogOpen(true)}
-                                    className="h-8 w-8"
+                                    className="h-8 w-8 text-muted-foreground hover:text-primary"
                                 >
                                     <Plus className="h-4 w-4" />
                                 </Button>
                             )}
                         </CardHeader>
-                        <CardContent>
+                        <CardContent className="pt-4">
                             {newsLoading ? (
-                                <div className="space-y-3">
+                                <div className="space-y-4">
                                     {[1, 2, 3].map((i) => (
-                                        <Skeleton key={i} className="h-12 w-full" />
+                                        <Skeleton key={i} className="h-16 w-full rounded-md" />
                                     ))}
                                 </div>
                             ) : news && news.length > 0 ? (
-                                <div className="space-y-3">
+                                <div className="space-y-4">
                                     {news.map((item: News) => (
                                         <NewsItem key={item.id} news={item} />
                                     ))}
                                 </div>
                             ) : (
-                                <p className="text-sm text-muted-foreground text-center py-4">
+                                <p className="text-sm text-muted-foreground text-center py-8">
                                     Keine Neuigkeiten
                                 </p>
                             )}
@@ -145,29 +141,31 @@ function EventCard({ event }: { event: Event }) {
 
     return (
         <Link to={`/member/events/${event.id}`}>
-            <Card className="transition-all hover:shadow-md hover:border-primary/50">
-                <CardContent className="p-6">
+            <Card className="transition-all duration-200 hover:shadow-md hover:border-primary/50 group bg-card hover:bg-accent/5">
+                <CardContent className="p-5">
                     <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
-                        <div className="space-y-2 flex-1">
-                            <div className="flex items-center gap-2 flex-wrap">
-                                <h3 className="font-semibold text-lg">{event.title}</h3>
-                                <Badge variant={categoryColors[event.category]}>
+                        <div className="space-y-3 flex-1">
+                            <div className="flex items-center gap-3 flex-wrap">
+                                <h3 className="font-bold text-lg text-foreground group-hover:text-primary transition-colors">
+                                    {event.title}
+                                </h3>
+                                <Badge variant={categoryColors[event.category]} className="capitalize">
                                     {getCategoryLabel(event.category)}
                                 </Badge>
                             </div>
 
-                            <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
-                                <span className="flex items-center gap-1">
-                                    <Calendar className="h-4 w-4" />
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-2 gap-x-6 text-sm text-muted-foreground">
+                                <span className="flex items-center gap-2">
+                                    <Calendar className="h-4 w-4 text-primary/70" />
                                     {formatDate(event.date)}
                                 </span>
-                                <span className="flex items-center gap-1">
-                                    <Clock className="h-4 w-4" />
+                                <span className="flex items-center gap-2">
+                                    <Clock className="h-4 w-4 text-primary/70" />
                                     {formatTime(event.startTime)} - {formatTime(event.endTime)}
                                 </span>
                                 {event.location && (
-                                    <span className="flex items-center gap-1">
-                                        <MapPin className="h-4 w-4" />
+                                    <span className="flex items-center gap-2 sm:col-span-2">
+                                        <MapPin className="h-4 w-4 text-primary/70" />
                                         {event.location}
                                     </span>
                                 )}
@@ -175,13 +173,13 @@ function EventCard({ event }: { event: Event }) {
 
                             {/* Attendance Summary */}
                             {event.attendanceSummary && (
-                                <div className="mt-3 pt-3 border-t">
+                                <div className="mt-4 pt-3 border-t border-border/50">
                                     <AttendanceSummary summary={event.attendanceSummary} />
                                 </div>
                             )}
                         </div>
 
-                        <ChevronRight className="h-5 w-5 text-muted-foreground hidden sm:block" />
+                        <ChevronRight className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors hidden sm:block self-center" />
                     </div>
                 </CardContent>
             </Card>

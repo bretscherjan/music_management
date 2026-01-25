@@ -5,16 +5,20 @@ import { eventService } from '@/services/eventService';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
+import { registerService } from '@/services/registerService';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ChevronLeft, Loader2 } from 'lucide-react';
 import type { CreateEventDto } from '@/types';
+
 
 export function CreateEventPage() {
     const navigate = useNavigate();
     const { id } = useParams<{ id: string }>();
     const isEditMode = !!id;
     const queryClient = useQueryClient();
+    // const { user } = useAuth(); // User defaults removed
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
@@ -23,8 +27,8 @@ export function CreateEventPage() {
         return {
             title: '',
             date: new Date().toISOString().split('T')[0],
-            startTime: '19:30',
-            endTime: '21:30',
+            startTime: '20:00',
+            endTime: '22:00',
             location: '',
             category: 'rehearsal',
             visibility: 'all',
@@ -33,8 +37,12 @@ export function CreateEventPage() {
             isRecurring: false,
             defaultAttendanceStatus: 'none',
             setlistEnabled: false,
+            isPublic: false,
+            targetRegisters: [] as number[],
         };
     });
+
+
 
     // Recurrence State
     const [recurrenceFreq, setRecurrenceFreq] = useState('WEEKLY');
@@ -46,6 +54,12 @@ export function CreateEventPage() {
         queryKey: ['event', id],
         queryFn: () => eventService.getById(parseInt(id!)),
         enabled: isEditMode,
+    });
+
+    // Fetch Registers
+    const { data: registers = [] } = useQuery({
+        queryKey: ['registers'],
+        queryFn: registerService.getAll,
     });
 
     // Populate form when data is loaded
@@ -64,6 +78,8 @@ export function CreateEventPage() {
                 isRecurring: eventData.isRecurring,
                 defaultAttendanceStatus: 'none',
                 setlistEnabled: eventData.setlistEnabled || false,
+                isPublic: eventData.isPublic ?? false,
+                targetRegisters: eventData.targetRegisters?.map((r: any) => r.id) || [],
             });
 
             if (eventData.isRecurring && eventData.recurrenceRule) {
@@ -221,6 +237,8 @@ export function CreateEventPage() {
                             />
                         </div>
 
+
+
                         {/* Response Deadline */}
                         <div className="space-y-2">
                             <Label htmlFor="responseDeadlineHours">Rückmeldung bis *</Label>
@@ -247,7 +265,7 @@ export function CreateEventPage() {
                             </p>
                         </div>
 
-                        {/* Category & Visibility */}
+                        {/* Category & Visibility Settings */}
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div className="space-y-2">
                                 <Label htmlFor="category">Kategorie</Label>
@@ -256,27 +274,70 @@ export function CreateEventPage() {
                                     name="category"
                                     value={formData.category}
                                     onChange={handleChange}
-                                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background disabled:cursor-not-allowed disabled:opacity-50"
                                 >
                                     <option value="rehearsal">Probe</option>
                                     <option value="performance">Auftritt</option>
                                     <option value="other">Sonstiges</option>
                                 </select>
                             </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="visibility">Sichtbarkeit</Label>
-                                <select
-                                    id="visibility"
-                                    name="visibility"
-                                    value={formData.visibility}
-                                    onChange={handleChange}
-                                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                                >
-                                    <option value="all">Alle (Öffentlich)</option>
-                                    <option value="register">Nur Register</option>
-                                    <option value="admin">Nur Admin</option>
-                                </select>
+
+                            {/* Public Visibility Toggle */}
+                            <div className="flex items-end pb-2">
+                                <div className="flex items-center space-x-2 h-10"> {/* Match input height */}
+                                    <Switch
+                                        id="isPublic"
+                                        checked={!!formData.isPublic}
+                                        onCheckedChange={(checked) => setFormData(prev => ({ ...prev, isPublic: checked }))}
+                                    />
+                                    <Label htmlFor="isPublic" className="cursor-pointer">
+                                        Öffentlich anzeigen (Website)
+                                    </Label>
+                                </div>
                             </div>
+                        </div>
+
+                        {/* Internal Visibility / Register Restriction */}
+                        <div className="space-y-3 p-4 border rounded-lg bg-muted/20">
+                            <Label className="font-semibold">Sichtbarkeit für Mitglieder</Label>
+                            <p className="text-sm text-muted-foreground">
+                                Standardmässig sind Termine für alle Mitglieder sichtbar. Hier können Sie die Sichtbarkeit einschränken.
+                            </p>
+
+                            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mt-2">
+                                {registers.map((reg: any) => {
+                                    const isSelected = (formData.targetRegisters as number[])?.includes(reg.id);
+                                    return (
+                                        <div key={reg.id} className="flex items-center space-x-2">
+                                            <input
+                                                type="checkbox"
+                                                id={`reg-${reg.id}`}
+                                                checked={isSelected}
+                                                onChange={(e) => {
+                                                    const checked = e.target.checked;
+                                                    setFormData(prev => {
+                                                        const current = prev.targetRegisters as number[] || [];
+                                                        if (checked) {
+                                                            return { ...prev, targetRegisters: [...current, reg.id] };
+                                                        } else {
+                                                            return { ...prev, targetRegisters: current.filter(id => id !== reg.id) };
+                                                        }
+                                                    });
+                                                }}
+                                                className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+                                            />
+                                            <label htmlFor={`reg-${reg.id}`} className="text-sm cursor-pointer">
+                                                {reg.name}
+                                            </label>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                            <p className="text-xs text-muted-foreground mt-2">
+                                {(formData.targetRegisters as number[])?.length > 0
+                                    ? "Nur für ausgewählte Register sichtbar (+ Admins)."
+                                    : "Für alle Mitglieder sichtbar."}
+                            </p>
                         </div>
 
                         {/* Default Attendance Status - ONLY SHOW IN CREATE MODE */}

@@ -6,10 +6,10 @@
 /* CSS Variables for theming - Musig Elgg colors */
 :root {
   /* Musig Elgg Brand Colors */
-  --musig-burgundy: 355 50% 32%;
-  /* #722F37 - Primary burgundy/wine red */
-  --musig-gold: 42 48% 58%;
-  /* #C4A962 - Gold accent */
+  --musig-primary: 77 43% 68%;
+  /* #BDD18C - Primary Lime Green */
+  --musig-contrast: 77 57% 20%;
+  /* #405116 - Contrast Dark Green */
   --musig-cream: 60 11% 96%;
   /* #F5F5F0 - Soft cream background */
   --musig-dark: 0 0% 15%;
@@ -25,28 +25,28 @@
   --card-foreground: oklch(0.145 0 0);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  /* Burgundy */
-  --primary-foreground: oklch(0.985 0 0);
-  /* Cream text on burgundy */
-  --secondary: oklch(0.97 0 0);
-  /* Gold */
-  --secondary-foreground: oklch(0.205 0 0);
-  /* Dark text on gold */
+  --primary: #BDD18C;
+  /* Lime Green */
+  --primary-foreground: #405116;
+  /* Dark Green text on Lime */
+  --secondary: #405116;
+  /* Dark Green */
+  --secondary-foreground: #FFFFFF;
+  /* White text on Dark Green */
   --muted: oklch(0.97 0 0);
   /* Muted cream */
   --muted-foreground: oklch(0.556 0 0);
   /* Muted text */
-  --accent: oklch(0.97 0 0);
+  --accent: #405116;
   /* Gold accent */
-  --accent-foreground: oklch(0.205 0 0);
+  --accent-foreground: #FFFFFF;
   --destructive: oklch(0.577 0.245 27.325);
   --destructive-foreground: 0 0% 98%;
   --border: oklch(0.922 0 0);
   /* Subtle border */
   --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  /* Burgundy focus ring */
+  --ring: #BDD18C;
+  /* Lime focus ring */
   --radius: 0.625rem;
 
   /* Status colors */
@@ -175,6 +175,7 @@ body {
   * {
     @apply border-border outline-ring/50;
   }
+
   body {
     @apply bg-background text-foreground;
   }

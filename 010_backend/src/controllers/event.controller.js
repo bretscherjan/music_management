@@ -3,6 +3,8 @@ const { asyncHandler, AppError } = require('../middlewares/errorHandler.middlewa
 const { expandRecurringEvents, addExcludedDate } = require('../services/recurrence.service');
 const { sendBulkEventReminders } = require('../services/email.service');
 const notificationService = require('../services/notification.service');
+const reminderQueueService = require('../services/reminder.queue.service');
+
 
 const prisma = new PrismaClient();
 
@@ -36,23 +38,28 @@ const getAllEvents = asyncHandler(async (req, res) => {
     // Visibility filter based on user role and register
     if (user) {
         if (user.role !== 'admin') {
-            // Members can see 'all' events and events for their register
-            whereClause.OR = [
-                { visibility: 'all' },
+            // Logic:
+            // 1. Event is NOT admin-only (visibility != 'admin').
+            // 2. AND (targetRegisters is empty OR user.registerId is in targetRegisters).
+            whereClause.AND = [
+                { visibility: { not: 'admin' } },
                 {
-                    visibility: 'register', AND: user.registerId ? {
-                        // Check if event is visible to user's register (future enhancement)
-                    } : {}
-                },
+                    OR: [
+                        { targetRegisters: { none: {} } }, // Empty -> visible to all
+                        user.registerId ? { targetRegisters: { some: { id: user.registerId } } } : {} // Visible if my register is targeted
+                    ]
+                }
             ];
-            // Simplify: members see 'all' visibility events
-            delete whereClause.OR;
-            whereClause.visibility = { in: ['all'] };
+
+            // Cleanup logical hole: if user has no register, the second OR condition object is empty which Prisma might ignore or treat weirdly.
+            // If registerId is null, they should ONLY see events with NO targets.
+            if (!user.registerId) {
+                whereClause.AND[1].OR = [{ targetRegisters: { none: {} } }];
+            }
         }
-        // Admins see everything
     } else {
         // Unauthenticated users only see public events
-        whereClause.visibility = 'all';
+        whereClause.isPublic = true;
     }
 
     // Get count of active members for calculating 'open' status
@@ -145,6 +152,9 @@ const getEventById = asyncHandler(async (req, res) => {
     const event = await prisma.event.findUnique({
         where: { id: parseInt(id) },
         include: {
+            targetRegisters: {
+                select: { id: true, name: true }
+            },
             attendances: {
                 include: {
                     user: {
@@ -197,6 +207,29 @@ const getEventById = asyncHandler(async (req, res) => {
     res.json({ event: eventData });
 });
 
+// Helper to construct a Date object that corresponds to a specific time in Zurich using Luxon
+const { DateTime } = require('luxon');
+
+const createZurichDate = (dateObj, timeStr) => {
+    const y = dateObj.getUTCFullYear();
+    const mon = dateObj.getUTCMonth() + 1; // Luxon months are 1-indexed
+    const d = dateObj.getUTCDate();
+
+    // Create DateTime in Zurich zone
+    // We assume the input dateObj is the date we want "in Zurich".
+    // e.g. if we selected "2024-05-10", we want "2024-05-10 [timeStr] Zurich Time" converted to UTCJSDate.
+
+    const zurichDateTime = DateTime.fromObject({
+        year: y,
+        month: mon,
+        day: d,
+        hour: parseInt(timeStr.split(':')[0]),
+        minute: parseInt(timeStr.split(':')[1])
+    }, { zone: 'Europe/Zurich' });
+
+    return zurichDateTime.toJSDate();
+};
+
 /**
  * Create new event (or multiple events for recurring)
  * POST /events
@@ -216,6 +249,8 @@ const createEvent = asyncHandler(async (req, res) => {
         responseDeadlineHours = 48, // Default 48 hours = 2 days before
         defaultAttendanceStatus,
         setlistEnabled = false,
+        isPublic = false,
+        targetRegisters = [], // Array of register IDs
     } = req.body;
 
     const eventDate = new Date(date);
@@ -258,6 +293,10 @@ const createEvent = asyncHandler(async (req, res) => {
                     responseDeadlineHours: parseInt(responseDeadlineHours),
                     isRecurring: false, // Each event is now individual
                     setlistEnabled,
+                    isPublic,
+                    targetRegisters: {
+                        connect: Array.isArray(targetRegisters) ? targetRegisters.map(id => ({ id })) : []
+                    },
                 },
             });
             createdEvents.push(event);
@@ -303,10 +342,17 @@ const createEvent = asyncHandler(async (req, res) => {
             responseDeadlineHours: parseInt(responseDeadlineHours),
             isRecurring: false,
             setlistEnabled,
+            isPublic,
+            targetRegisters: {
+                connect: Array.isArray(targetRegisters) ? targetRegisters.map(id => ({ id })) : []
+            },
         },
     });
 
     notificationService.notifyEventCreated(event);
+
+    // Schedule reminders for this event
+    await reminderQueueService.scheduleEventReminders(event);
 
     // Auto-create attendance entries for all active users based on the selected status
     if (defaultAttendanceStatus && defaultAttendanceStatus !== 'none') {
@@ -342,15 +388,49 @@ const updateEvent = asyncHandler(async (req, res) => {
     const { id } = req.params;
     const updateData = { ...req.body };
 
+    // 1. Fetch old event to get old reminders for cancellation
+    const oldEvent = await prisma.event.findUnique({
+        where: { id: parseInt(id) }
+    });
+
+    if (!oldEvent) {
+        throw new AppError('Event nicht gefunden', 404);
+    }
+
     // Convert date string to Date object if provided
     if (updateData.date) {
         updateData.date = new Date(updateData.date);
     }
 
+    // Handle targetRegisters update separately or within data
+    if (updateData.targetRegisters) {
+        // Use 'set' to replace existing relations
+        updateData.targetRegisters = {
+            set: Array.isArray(updateData.targetRegisters) ? updateData.targetRegisters.map(id => ({ id })) : []
+        };
+    }
+
+    // Update in DB
     const event = await prisma.event.update({
         where: { id: parseInt(id) },
         data: updateData,
+        include: { targetRegisters: true }
     });
+
+    // 2. Handle Reminders
+    // Check if date or time changed - if so, we need to reschedule reminders
+    const timeChanged = (
+        (updateData.date && oldEvent.date.getTime() !== updateData.date.getTime()) ||
+        (updateData.startTime && oldEvent.startTime !== updateData.startTime)
+    );
+
+    // Since personalized reminders depend on event time, if time changes, we MUST reschedule.
+    if (timeChanged) {
+        // Cancel old reminders is tricky now because we need to find them per user.
+        // But scheduleEventReminders handles "remove existing" by ID.
+        // So we just re-schedule.
+        await reminderQueueService.scheduleEventReminders(event);
+    }
 
     res.json({
         message: 'Event erfolgreich aktualisiert',
@@ -358,6 +438,10 @@ const updateEvent = asyncHandler(async (req, res) => {
     });
 
     notificationService.notifyEventUpdated(event);
+
+    // Reschedule reminders for this event (handles logic if time changed inside the service if we want, 
+    // but here we just call it always to be safe and update any attendee logic)
+    await reminderQueueService.scheduleEventReminders(event);
 });
 
 /**
@@ -376,6 +460,8 @@ const deleteEvent = asyncHandler(async (req, res) => {
     });
 
     if (event) {
+        // Cancel Reminders
+        await reminderQueueService.cancelEventReminders(event.id);
         notificationService.notifyEventDeleted(event);
     }
 
@@ -434,18 +520,39 @@ const setAttendance = asyncHandler(async (req, res) => {
         userId = targetUserId;
     }
 
-    // Check if event exists
+    // Check if event exists and get targetRegisters
     const event = await prisma.event.findUnique({
         where: { id: parseInt(id) },
+        include: {
+            targetRegisters: {
+                select: { id: true }
+            }
+        }
     });
 
     if (!event) {
         throw new AppError('Event nicht gefunden', 404);
     }
 
+    // Check if user is allowed to respond based on targetRegisters
+    const isAdmin = req.user.role === 'admin';
+    const targetRegisterIds = event.targetRegisters?.map(r => r.id) || [];
+
+    if (!isAdmin && targetRegisterIds.length > 0) {
+        // Get the user's registerId (could be current user or target user for admin)
+        const respondingUser = await prisma.user.findUnique({
+            where: { id: userId },
+            select: { registerId: true }
+        });
+
+        if (!respondingUser?.registerId || !targetRegisterIds.includes(respondingUser.registerId)) {
+            throw new AppError('Dieser Termin ist nur für bestimmte Register bestimmt. Sie können keine Rückmeldung geben.', 403);
+        }
+    }
+
 
     const now = new Date();
-    const isAdmin = req.user.role === 'admin';
+    // isAdmin is already declared earlier in function
 
     // Calculate response deadline from event date/time and responseDeadlineHours
     if (!isAdmin && event.responseDeadlineHours) {
@@ -507,8 +614,17 @@ const setAttendance = asyncHandler(async (req, res) => {
         },
     });
 
+    // Changing attendance status might affect "onlyIfAttending" reminders
+    // We re-schedule reminders for this event (or ideally just this user, but full event sync is safer/easier)
+    // We fetch the event again to have full data (start time, date, etc) need for scheduling
+    // Since we already fetched event above (Zeile 516), we can reuse it, but we need date/time fields which might not be selected?
+    // prisma findUnique include selects all fields by default unless select is used.
+    // Line 516 used include targetRegisters only? Wait. include ADDS to default selection. So we have full event.
+    // We need to ensure date/startTime is present.
+    await reminderQueueService.scheduleEventReminders(event);
+
     res.json({
-        message: 'Teilnahme-Status aktualisiert',
+        message: status === 'none' ? 'Rückmeldung zurückgezogen' : 'Rückmeldung gespeichert',
         attendance,
     });
 });
@@ -520,23 +636,38 @@ const setAttendance = asyncHandler(async (req, res) => {
 const getEventAttendances = asyncHandler(async (req, res) => {
     const { id } = req.params;
 
-    // Check if event exists
+    // Check if event exists and get targetRegisters
     const event = await prisma.event.findUnique({
         where: { id: parseInt(id) },
+        include: {
+            targetRegisters: {
+                select: { id: true }
+            }
+        }
     });
 
     if (!event) {
         throw new AppError('Event nicht gefunden', 404);
     }
 
-    // Get all active members
+    // Build where clause for active members
+    const membersWhereClause = { status: 'active' };
+
+    // If event has targetRegisters, only show members from those registers
+    const targetRegisterIds = event.targetRegisters?.map(r => r.id) || [];
+    if (targetRegisterIds.length > 0) {
+        membersWhereClause.registerId = { in: targetRegisterIds };
+    }
+
+    // Get active members (filtered by targetRegisters if set)
     const activeMembers = await prisma.user.findMany({
-        where: { status: 'active' },
+        where: membersWhereClause,
         select: {
             id: true,
             firstName: true,
             lastName: true,
             email: true,
+            registerId: true,
             register: {
                 select: { id: true, name: true },
             },
@@ -554,6 +685,7 @@ const getEventAttendances = asyncHandler(async (req, res) => {
                     firstName: true,
                     lastName: true,
                     email: true,
+                    registerId: true,
                     register: {
                         select: { id: true, name: true },
                     },

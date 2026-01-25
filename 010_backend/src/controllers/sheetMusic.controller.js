@@ -27,9 +27,9 @@ const getAllSheetMusic = asyncHandler(async (req, res) => {
     // Search in title, composer, arranger
     if (search) {
         whereClause.OR = [
-            { title: { contains: search, mode: 'insensitive' } },
-            { composer: { contains: search, mode: 'insensitive' } },
-            { arranger: { contains: search, mode: 'insensitive' } },
+            { title: { contains: search } },
+            { composer: { contains: search } },
+            { arranger: { contains: search } },
         ];
     }
 
@@ -339,9 +339,9 @@ const exportCsv = asyncHandler(async (req, res) => {
 
     if (search) {
         whereClause.OR = [
-            { title: { contains: search, mode: 'insensitive' } },
-            { composer: { contains: search, mode: 'insensitive' } },
-            { arranger: { contains: search, mode: 'insensitive' } },
+            { title: { contains: search } },
+            { composer: { contains: search } },
+            { arranger: { contains: search } },
         ];
     }
 

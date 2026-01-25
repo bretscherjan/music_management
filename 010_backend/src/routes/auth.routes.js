@@ -32,6 +32,25 @@ router.get('/me', authMiddleware, authController.getMe);
  * @desc    Refresh access token
  * @access  Private
  */
+/**
+ * @route   POST /api/auth/refresh
+ * @desc    Refresh access token
+ * @access  Private
+ */
 router.post('/refresh', authMiddleware, authController.refreshToken);
+
+/**
+ * @route   POST /api/auth/forgot-password
+ * @desc    Request password reset link
+ * @access  Public
+ */
+router.post('/forgot-password', authController.requestPasswordReset);
+
+/**
+ * @route   POST /api/auth/reset-password/:token
+ * @desc    Reset password using token
+ * @access  Public
+ */
+router.post('/reset-password/:token', authController.resetPassword);
 
 module.exports = router;

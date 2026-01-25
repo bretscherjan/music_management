@@ -1,5 +1,5 @@
 import api from '@/lib/api';
-import type { FileEntity, FileQueryParams, UploadFileDto } from '@/types';
+import type { FileEntity, FileQueryParams, UploadFileDto, FolderContentsResponse } from '@/types';
 
 export const fileService = {
     async getAll(params?: FileQueryParams): Promise<FileEntity[]> {
@@ -27,6 +27,9 @@ export const fileService = {
         }
         if (options?.folder) {
             formData.append('folder', options.folder);
+        }
+        if (options?.folderId !== undefined && options?.folderId !== null) {
+            formData.append('folderId', options.folderId.toString());
         }
 
         const response = await api.post<{ file: FileEntity }>('/files/upload', formData, {
@@ -61,21 +64,31 @@ export const fileService = {
         window.URL.revokeObjectURL(url);
     },
 
+    async getFolderContents(id: number | 'root'): Promise<FolderContentsResponse> {
+        const response = await api.get<FolderContentsResponse>(`/folders/${id}/contents`);
+        return response.data;
+    },
+
+    async createFolder(name: string, parentId: number | null): Promise<void> {
+        await api.post('/folders', { name, parentId });
+    },
+
+    async deleteFolder(id: number): Promise<void> {
+        await api.delete(`/folders/${id}`);
+    },
+
+    // Legacy or helper for flat list if needed, but likely replaced by getFolderContents
     async getFolders(): Promise<string[]> {
-        const response = await api.get<{ folders: string[] }>('/files/folders');
-        return response.data.folders;
-    },
-
-    async deleteFolder(folder: string): Promise<void> {
-        await api.delete('/files/folders', { params: { folder } });
-    },
-
-    async createFolder(folder: string): Promise<void> {
-        await api.post('/files/create-folder', { folder });
+        // Deprecated: used for path-based list
+        return [];
     },
 
     async updateAccess(id: number, data: any): Promise<void> {
         await api.put(`/files/${id}/access`, data);
+    },
+
+    async updateFolderAccess(id: number, accessRules: any[]): Promise<void> {
+        await api.put(`/folders/${id}`, { accessRules });
     },
 };
 

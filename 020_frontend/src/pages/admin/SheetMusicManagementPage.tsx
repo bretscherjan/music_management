@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/context/AuthContext';
 import { sheetMusicService } from '@/services';
+import { useDebounce } from '@/hooks/useDebounce';
 import type {
     SheetMusic,
     CreateSheetMusicDto,
@@ -42,6 +43,7 @@ export function SheetMusicManagementPage() {
 
     // Filter state
     const [search, setSearch] = useState('');
+    const debouncedSearch = useDebounce(search, 500);
     const [genreFilter, setGenreFilter] = useState<string>('all');
     const [difficultyFilter, setDifficultyFilter] = useState<string>('all');
     const [bookmarkedFilter, setBookmarkedFilter] = useState<string>('all');
@@ -82,7 +84,7 @@ export function SheetMusicManagementPage() {
 
     // Build query params
     const queryParams: SheetMusicQueryParams = {
-        search: search || undefined,
+        search: debouncedSearch || undefined,
         genre: genreFilter && genreFilter !== 'all' ? genreFilter : undefined,
         difficulty: difficultyFilter && difficultyFilter !== 'all' ? (difficultyFilter as Difficulty) : undefined,
         bookmarkedBy: bookmarkedFilter && bookmarkedFilter !== 'all' ? parseInt(bookmarkedFilter) : undefined,

@@ -58,7 +58,7 @@ const uploadFile = asyncHandler(async (req, res) => {
         throw new AppError('Keine Datei hochgeladen', 400);
     }
 
-    let { visibility = 'all', targetRegisterId, eventId, folderId, accessRules } = req.body;
+    let { visibility = 'all', targetRegisterId, eventId, folderId, accessRules, sheetMusicId } = req.body;
 
     // Resolve folderId
     let resolvedFolderId = null;
@@ -131,6 +131,7 @@ const uploadFile = asyncHandler(async (req, res) => {
             folderId: resolvedFolderId, // New Relation
             targetRegisterId: targetRegisterId && targetRegisterId !== 'null' ? parseInt(targetRegisterId) : null,
             eventId: eventId && eventId !== 'null' ? parseInt(eventId) : null,
+            sheetMusicId: sheetMusicId && sheetMusicId !== 'null' ? parseInt(sheetMusicId) : null,
             accessRules: {
                 create: parsedAccessRules.map(rule => ({
                     accessType: rule.accessType,
@@ -259,7 +260,7 @@ const getFileInfo = asyncHandler(async (req, res) => {
  * GET /files
  */
 const getAllFiles = asyncHandler(async (req, res) => {
-    const { visibility, eventId, registerId, folder } = req.query;
+    const { visibility, eventId, registerId, folder, sheetMusicId } = req.query;
     const user = req.user;
 
     // Base query
@@ -277,6 +278,10 @@ const getAllFiles = asyncHandler(async (req, res) => {
     // Filter by registerId if provided (legacy filter)
     if (registerId) {
         whereClause.targetRegisterId = parseInt(registerId);
+    }
+
+    if (sheetMusicId) {
+        whereClause.sheetMusicId = parseInt(sheetMusicId);
     }
 
     // Filter by folder if provided

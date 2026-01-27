@@ -27,6 +27,7 @@ import { EventManagementPage } from '@/pages/admin/EventManagementPage';
 import { UserSettingsPage } from '@/pages/UserSettingsPage';
 import { SheetMusicManagementPage } from '@/pages/admin/SheetMusicManagementPage';
 import { StatisticsPage } from '@/pages/admin/StatisticsPage';
+import { MusicFolderPage } from '@/pages/secured/music-folder/MusicFolderPage';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -81,6 +82,8 @@ function App() {
               <Route path="events" element={<EventListPage />} />
               <Route path="events/:id" element={<EventDetailPage />} />
               <Route path="files" element={<FileListPage />} />
+              <Route path="music-folders" element={<MusicFolderPage />} />
+              <Route path="music-folders/:id" element={<MusicFolderPage />} />
               <Route path="settings" element={<UserSettingsPage />} />
               <Route path="members" element={<UserManagementPage />} />
 

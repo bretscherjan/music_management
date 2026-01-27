@@ -44,6 +44,13 @@ router.get('/export-pdf', authMiddleware, adminOnly, sheetMusicController.export
 router.get('/:id', authMiddleware, validate(getSheetMusicByIdSchema), sheetMusicController.getSheetMusicById);
 
 /**
+ * @route   GET /api/sheet-music/:id/view
+ * @desc    Stream Sheet Music PDF (Part/Score)
+ * @access  Private (authenticated users)
+ */
+router.get('/:id/view', authMiddleware, sheetMusicController.viewSheetMusicPdf);
+
+/**
  * @route   POST /api/sheet-music
  * @desc    Create new sheet music
  * @access  Admin only

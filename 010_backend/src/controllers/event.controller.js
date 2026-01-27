@@ -4,6 +4,8 @@ const { expandRecurringEvents, addExcludedDate } = require('../services/recurren
 const { sendBulkEventReminders } = require('../services/email.service');
 const notificationService = require('../services/notification.service');
 const reminderQueueService = require('../services/reminder.queue.service');
+const PdfPrinter = require('pdfmake/js/Printer').default;
+const path = require('path');
 
 
 const prisma = new PrismaClient();
@@ -1175,6 +1177,152 @@ const verifyAttendance = asyncHandler(async (req, res) => {
     });
 });
 
+/**
+ * Export Event Setlist as PDF (Ablauf)
+ * GET /events/:id/export-pdf
+ */
+const exportSetlistPdf = asyncHandler(async (req, res) => {
+    const { id } = req.params;
+
+    const event = await prisma.event.findUnique({
+        where: { id: parseInt(id) },
+        include: {
+            sheetMusic: {
+                orderBy: { position: 'asc' },
+                include: {
+                    sheetMusic: true
+                }
+            }
+        }
+    });
+
+    if (!event) {
+        throw new AppError('Event nicht gefunden', 404);
+    }
+
+    const fonts = {
+        Roboto: {
+            normal: path.join(__dirname, '../../node_modules/pdfmake/fonts/Roboto/Roboto-Regular.ttf'),
+            bold: path.join(__dirname, '../../node_modules/pdfmake/fonts/Roboto/Roboto-Medium.ttf'),
+            italics: path.join(__dirname, '../../node_modules/pdfmake/fonts/Roboto/Roboto-Italic.ttf'),
+            bolditalics: path.join(__dirname, '../../node_modules/pdfmake/fonts/Roboto/Roboto-MediumItalic.ttf')
+        }
+    };
+
+    const printer = new PdfPrinter(fonts);
+
+    // Filter for table body
+    const tableBody = [
+        [
+            { text: '#', style: 'tableHeader' },
+            { text: 'Titel / Aktion', style: 'tableHeader' },
+            { text: 'Detail / Komponist', style: 'tableHeader' },
+            { text: 'Dauer', style: 'tableHeader', alignment: 'right' }
+        ]
+    ];
+
+    let totalDuration = 0;
+
+    if (event.sheetMusic && event.sheetMusic.length > 0) {
+        event.sheetMusic.forEach((item, index) => {
+            let title = '';
+            let detail = '';
+            let duration = item.duration ? `${item.duration} Min.` : '';
+            if (item.duration) totalDuration += item.duration;
+
+            if (item.type === 'sheetMusic' && item.sheetMusic) {
+                title = item.customTitle || item.sheetMusic.title;
+                detail = item.sheetMusic.composer || '';
+                if (item.sheetMusic.arranger) {
+                    detail += detail ? `, ${item.sheetMusic.arranger}` : item.sheetMusic.arranger;
+                }
+                if (item.customDescription) {
+                    detail += detail ? `\n${item.customDescription}` : item.customDescription;
+                }
+            } else if (item.type === 'pause') {
+                title = 'PAUSE';
+                detail = '';
+            } else if (item.type === 'custom') {
+                title = item.customTitle;
+                detail = item.customDescription || '';
+            }
+
+            tableBody.push([
+                (index + 1).toString(),
+                { text: title, bold: item.type === 'pause' },
+                { text: detail, italics: true, color: 'gray' },
+                { text: duration, alignment: 'right' }
+            ]);
+        });
+
+        // Add Total Duration Row
+        tableBody.push([
+            { text: '', border: [false, true, false, false] },
+            { text: 'Total', bold: true, border: [false, true, false, false] },
+            { text: '', border: [false, true, false, false] },
+            { text: `${totalDuration} Min.`, bold: true, alignment: 'right', border: [false, true, false, false] }
+        ]);
+    } else {
+        tableBody.push([{ text: 'Keine Elemente im Programm', colSpan: 4, alignment: 'center', italics: true }, {}, {}, {}]);
+    }
+
+
+    const formattedDate = new Date(event.date).toLocaleDateString('de-CH');
+    const timeStr = event.startTime ? `${event.startTime} Uhr` : '';
+
+    const docDefinition = {
+        content: [
+            { text: event.title, style: 'header' },
+            { text: `${formattedDate} ${timeStr} | ${event.location || ''}`, style: 'subheader' },
+            { text: 'Ablauf / Programm', style: 'h3' },
+            {
+                table: {
+                    headerRows: 1,
+                    widths: ['auto', '*', '*', 'auto'],
+                    body: tableBody
+                },
+                layout: 'lightHorizontalLines'
+            }
+        ],
+        styles: {
+            header: {
+                fontSize: 18,
+                bold: true,
+                margin: [0, 0, 0, 5]
+            },
+            subheader: {
+                fontSize: 12,
+                margin: [0, 0, 0, 20]
+            },
+            h3: {
+                fontSize: 14,
+                bold: true,
+                margin: [0, 0, 0, 10]
+            },
+            tableHeader: {
+                bold: true,
+                fontSize: 11,
+                color: 'black',
+                fillColor: '#f0f0f0'
+            }
+        },
+        defaultStyle: {
+            fontSize: 10
+        }
+    };
+
+    const pdfDoc = await printer.createPdfKitDocument(docDefinition);
+
+    // Sanitize filename
+    const safeName = `Ablauf_${event.title}`.replace(/[^a-z0-9]/gi, '_');
+
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `inline; filename="${safeName}.pdf"`);
+
+    pdfDoc.pipe(res);
+    pdfDoc.end();
+});
+
 module.exports = {
     getAllEvents,
     getEventById,
@@ -1191,5 +1339,7 @@ module.exports = {
     removeItemFromSetlist,
     reorderSetlist,
     getVerificationList,
-    verifyAttendance
+    getVerificationList,
+    verifyAttendance,
+    exportSetlistPdf
 };

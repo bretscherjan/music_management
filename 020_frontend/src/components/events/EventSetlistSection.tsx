@@ -5,6 +5,7 @@ import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSo
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { sheetMusicService, eventService } from '@/services';
+import { musicFolderService } from '@/services/musicFolderService';
 import type { Event, EventSetlistItem, AddSetlistItemDto, UpdateSetlistItemDto } from '@/types';
 import { Button } from '@/components/ui/button';
 import {
@@ -20,7 +21,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
-import { Music, Search, GripVertical, Edit2, Trash2, Clock, FileText, Pause } from 'lucide-react';
+import { Music, Search, GripVertical, Edit2, Trash2, Clock, FileText, Pause, Folder, Download } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
 
 interface EventSetlistSectionProps {
@@ -36,6 +38,10 @@ export function EventSetlistSection({ event, isAdmin }: EventSetlistSectionProps
     const [editDialogOpen, setEditDialogOpen] = useState(false);
     const [search, setSearch] = useState('');
     const [selectedItem, setSelectedItem] = useState<EventSetlistItem | null>(null);
+
+    // Folder selection state
+    const [addMode, setAddMode] = useState<'search' | 'folder'>('search');
+    const [selectedFolderId, setSelectedFolderId] = useState<string>('');
 
     // Form states
     const [pauseMinutes, setPauseMinutes] = useState(15);
@@ -164,155 +170,203 @@ export function EventSetlistSection({ event, isAdmin }: EventSetlistSectionProps
                     <Music className="h-5 w-5 text-primary" />
                     <h3 className="text-lg font-semibold">Programm / Setlist</h3>
                 </div>
-                {isAdmin && (
-                    <div className="flex gap-2">
-                        <Dialog open={sheetMusicDialogOpen} onOpenChange={setSheetMusicDialogOpen}>
-                            <DialogTrigger asChild>
-                                <Button size="sm">
-                                    <Music className="h-4 w-4 mr-2" />
-                                    Note
-                                </Button>
-                            </DialogTrigger>
-                            <DialogContent className="max-w-2xl max-h-[80vh]">
-                                <DialogHeader>
-                                    <DialogTitle>Note zum Programm hinzufügen</DialogTitle>
-                                    <DialogDescription>
-                                        Suchen Sie nach Notenblättern im Archiv und fügen Sie sie hinzu.
-                                    </DialogDescription>
-                                </DialogHeader>
-                                <div className="space-y-4">
-                                    <div className="relative">
-                                        <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                                        <Input
-                                            placeholder="Note suchen..."
-                                            value={search}
-                                            onChange={(e) => setSearch(e.target.value)}
-                                            className="pl-10"
-                                        />
-                                    </div>
-                                    <div className="max-h-[400px] overflow-y-auto space-y-2">
-                                        {allSheetMusic?.sheetMusic.map((sheet) => (
-                                            <div
-                                                key={sheet.id}
-                                                className="flex items-center justify-between p-3 border rounded-lg hover:bg-accent"
+                <div className="flex gap-2">
+                    <Button asChild variant="outline" size="sm">
+                        <a href={eventService.getPdfExportUrl(event.id)} target="_blank" rel="noopener noreferrer">
+                            <Download className="h-4 w-4 mr-2" />
+                            Ablauf als PDF
+                        </a>
+                    </Button>
+                    {isAdmin && (
+                        <div className="flex gap-2">
+                            <Dialog open={sheetMusicDialogOpen} onOpenChange={setSheetMusicDialogOpen}>
+                                <DialogTrigger asChild>
+                                    <Button size="sm">
+                                        <Music className="h-4 w-4 mr-2" />
+                                        Note
+                                    </Button>
+                                </DialogTrigger>
+                                <DialogContent className="max-w-2xl max-h-[80vh]">
+                                    <DialogHeader>
+                                        <DialogTitle>Note zum Programm hinzufügen</DialogTitle>
+                                        <DialogDescription>
+                                            Suchen Sie nach Notenblättern im Archiv und fügen Sie sie hinzu.
+                                        </DialogDescription>
+                                    </DialogHeader>
+                                    <div className="space-y-4">
+                                        <div className="flex gap-2 border-b pb-4">
+                                            <Button
+                                                variant={addMode === 'search' ? 'default' : 'ghost'}
+                                                onClick={() => setAddMode('search')}
+                                                className="flex-1"
                                             >
-                                                <div className="flex-1">
-                                                    <div className="font-medium">{sheet.title}</div>
-                                                    <div className="text-sm text-muted-foreground">
-                                                        {sheet.composer && `${sheet.composer} • `}
-                                                        {sheet.genre || 'Kein Genre'}
-                                                        {sheet.difficulty && ` • ${sheet.difficulty}`}
-                                                    </div>
-                                                </div>
-                                                <Button
-                                                    size="sm"
-                                                    onClick={() =>
-                                                        addMutation.mutate({ type: 'sheetMusic', sheetMusicId: sheet.id })
-                                                    }
-                                                    disabled={alreadyInSetlist(sheet.id) || addMutation.isPending}
-                                                >
-                                                    {alreadyInSetlist(sheet.id) ? 'Bereits im Programm' : 'Hinzufügen'}
-                                                </Button>
+                                                <Search className="h-4 w-4 mr-2" />
+                                                Suchen
+                                            </Button>
+                                            <Button
+                                                variant={addMode === 'folder' ? 'default' : 'ghost'}
+                                                onClick={() => setAddMode('folder')}
+                                                className="flex-1"
+                                            >
+                                                <Folder className="h-4 w-4 mr-2" />
+                                                Aus Mappe
+                                            </Button>
+                                        </div>
+
+                                        {addMode === 'search' ? (
+                                            <div className="relative">
+                                                <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                                                <Input
+                                                    placeholder="Note suchen..."
+                                                    value={search}
+                                                    onChange={(e) => setSearch(e.target.value)}
+                                                    className="pl-10"
+                                                />
                                             </div>
-                                        ))}
+                                        ) : (
+                                            <div className="space-y-4">
+                                                <div className="space-y-2">
+                                                    <Label>Mappe wählen</Label>
+                                                    <FolderSelect
+                                                        value={selectedFolderId}
+                                                        onChange={setSelectedFolderId}
+                                                    />
+                                                </div>
+                                            </div>
+                                        )}
+                                        <div className="max-h-[400px] overflow-y-auto space-y-2">
+                                            {addMode === 'search' ? (
+                                                allSheetMusic?.sheetMusic.map((sheet) => (
+                                                    <div
+                                                        key={sheet.id}
+                                                        className="flex items-center justify-between p-3 border rounded-lg hover:bg-accent"
+                                                    >
+                                                        <div className="flex-1">
+                                                            <div className="font-medium">{sheet.title}</div>
+                                                            <div className="text-sm text-muted-foreground">
+                                                                {sheet.composer && `${sheet.composer} • `}
+                                                                {sheet.genre || 'Kein Genre'}
+                                                                {sheet.difficulty && ` • ${sheet.difficulty}`}
+                                                            </div>
+                                                        </div>
+                                                        <Button
+                                                            size="sm"
+                                                            onClick={() =>
+                                                                addMutation.mutate({ type: 'sheetMusic', sheetMusicId: sheet.id })
+                                                            }
+                                                            disabled={alreadyInSetlist(sheet.id) || addMutation.isPending}
+                                                        >
+                                                            {alreadyInSetlist(sheet.id) ? 'Bereits im Programm' : 'Hinzufügen'}
+                                                        </Button>
+                                                    </div>
+                                                ))
+                                            ) : (
+                                                <FolderSheetsList
+                                                    folderId={selectedFolderId}
+                                                    onAdd={(sheetId) => addMutation.mutate({ type: 'sheetMusic', sheetMusicId: sheetId })}
+                                                    alreadyInSetlist={alreadyInSetlist}
+                                                    isPending={addMutation.isPending}
+                                                />
+                                            )}
+                                        </div>
                                     </div>
-                                </div>
-                            </DialogContent>
-                        </Dialog>
+                                </DialogContent>
+                            </Dialog>
 
-                        <Dialog open={pauseDialogOpen} onOpenChange={setPauseDialogOpen}>
-                            <DialogTrigger asChild>
-                                <Button size="sm" variant="outline">
-                                    <Pause className="h-4 w-4 mr-2" />
-                                    Pause
-                                </Button>
-                            </DialogTrigger>
-                            <DialogContent>
-                                <DialogHeader>
-                                    <DialogTitle>Pause hinzufügen</DialogTitle>
-                                    <DialogDescription>
-                                        Fügen Sie eine Pause mit einer bestimmten Dauer ein.
-                                    </DialogDescription>
-                                </DialogHeader>
-                                <div className="space-y-4">
-                                    <div>
-                                        <Label>Dauer (Minuten)</Label>
-                                        <Input
-                                            type="number"
-                                            min="1"
-                                            value={pauseMinutes}
-                                            onChange={(e) => setPauseMinutes(parseInt(e.target.value) || 15)}
-                                        />
-                                    </div>
-                                </div>
-                                <DialogFooter>
-                                    <Button
-                                        onClick={() =>
-                                            addMutation.mutate({
-                                                type: 'pause',
-                                                customTitle: 'Pause',
-                                                duration: pauseMinutes,
-                                            })
-                                        }
-                                        disabled={addMutation.isPending}
-                                    >
-                                        {addMutation.isPending ? 'Hinzufügen...' : 'Hinzufügen'}
+                            <Dialog open={pauseDialogOpen} onOpenChange={setPauseDialogOpen}>
+                                <DialogTrigger asChild>
+                                    <Button size="sm" variant="outline">
+                                        <Pause className="h-4 w-4 mr-2" />
+                                        Pause
                                     </Button>
-                                </DialogFooter>
-                            </DialogContent>
-                        </Dialog>
+                                </DialogTrigger>
+                                <DialogContent>
+                                    <DialogHeader>
+                                        <DialogTitle>Pause hinzufügen</DialogTitle>
+                                        <DialogDescription>
+                                            Fügen Sie eine Pause mit einer bestimmten Dauer ein.
+                                        </DialogDescription>
+                                    </DialogHeader>
+                                    <div className="space-y-4">
+                                        <div>
+                                            <Label>Dauer (Minuten)</Label>
+                                            <Input
+                                                type="number"
+                                                min="1"
+                                                value={pauseMinutes}
+                                                onChange={(e) => setPauseMinutes(parseInt(e.target.value) || 15)}
+                                            />
+                                        </div>
+                                    </div>
+                                    <DialogFooter>
+                                        <Button
+                                            onClick={() =>
+                                                addMutation.mutate({
+                                                    type: 'pause',
+                                                    customTitle: 'Pause',
+                                                    duration: pauseMinutes,
+                                                })
+                                            }
+                                            disabled={addMutation.isPending}
+                                        >
+                                            {addMutation.isPending ? 'Hinzufügen...' : 'Hinzufügen'}
+                                        </Button>
+                                    </DialogFooter>
+                                </DialogContent>
+                            </Dialog>
 
-                        <Dialog open={customDialogOpen} onOpenChange={setCustomDialogOpen}>
-                            <DialogTrigger asChild>
-                                <Button size="sm" variant="outline">
-                                    <FileText className="h-4 w-4 mr-2" />
-                                    Eigenes Element
-                                </Button>
-                            </DialogTrigger>
-                            <DialogContent>
-                                <DialogHeader>
-                                    <DialogTitle>Eigenes Element erstellen</DialogTitle>
-                                    <DialogDescription>
-                                        Erstellen Sie ein benutzerdefiniertes Element für Ansagen oder Moderationen.
-                                    </DialogDescription>
-                                </DialogHeader>
-                                <div className="space-y-4">
-                                    <div>
-                                        <Label>Titel *</Label>
-                                        <Input
-                                            value={customTitle}
-                                            onChange={(e) => setCustomTitle(e.target.value)}
-                                            placeholder="z.B. Ansage, Vorstellung, Moderation"
-                                        />
-                                    </div>
-                                    <div>
-                                        <Label>Beschreibung</Label>
-                                        <Textarea
-                                            value={customDescription}
-                                            onChange={(e) => setCustomDescription(e.target.value)}
-                                            placeholder="Optional..."
-                                            rows={3}
-                                        />
-                                    </div>
-                                </div>
-                                <DialogFooter>
-                                    <Button
-                                        onClick={() =>
-                                            addMutation.mutate({
-                                                type: 'custom',
-                                                customTitle,
-                                                customDescription: customDescription || undefined,
-                                            })
-                                        }
-                                        disabled={!customTitle || addMutation.isPending}
-                                    >
-                                        {addMutation.isPending ? 'Erstellen...' : 'Erstellen'}
+                            <Dialog open={customDialogOpen} onOpenChange={setCustomDialogOpen}>
+                                <DialogTrigger asChild>
+                                    <Button size="sm" variant="outline">
+                                        <FileText className="h-4 w-4 mr-2" />
+                                        Eigenes Element
                                     </Button>
-                                </DialogFooter>
-                            </DialogContent>
-                        </Dialog>
-                    </div>
-                )}
+                                </DialogTrigger>
+                                <DialogContent>
+                                    <DialogHeader>
+                                        <DialogTitle>Eigenes Element erstellen</DialogTitle>
+                                        <DialogDescription>
+                                            Erstellen Sie ein benutzerdefiniertes Element für Ansagen oder Moderationen.
+                                        </DialogDescription>
+                                    </DialogHeader>
+                                    <div className="space-y-4">
+                                        <div>
+                                            <Label>Titel *</Label>
+                                            <Input
+                                                value={customTitle}
+                                                onChange={(e) => setCustomTitle(e.target.value)}
+                                                placeholder="z.B. Ansage, Vorstellung, Moderation"
+                                            />
+                                        </div>
+                                        <div>
+                                            <Label>Beschreibung</Label>
+                                            <Textarea
+                                                value={customDescription}
+                                                onChange={(e) => setCustomDescription(e.target.value)}
+                                                placeholder="Optional..."
+                                                rows={3}
+                                            />
+                                        </div>
+                                    </div>
+                                    <DialogFooter>
+                                        <Button
+                                            onClick={() =>
+                                                addMutation.mutate({
+                                                    type: 'custom',
+                                                    customTitle,
+                                                    customDescription: customDescription || undefined,
+                                                })
+                                            }
+                                            disabled={!customTitle || addMutation.isPending}
+                                        >
+                                            {addMutation.isPending ? 'Erstellen...' : 'Erstellen'}
+                                        </Button>
+                                    </DialogFooter>
+                                </DialogContent>
+                            </Dialog>
+                        </div>
+                    )}
+                </div>
             </div>
 
             {sortedSetlist.length > 0 ? (
@@ -532,5 +586,65 @@ function SetlistItem({ item, index, isAdmin, onEdit, onRemove }: SetlistItemProp
                 )
             }
         </div >
+    );
+}
+
+function FolderSelect({ value, onChange }: { value: string, onChange: (val: string) => void }) {
+    const { data: folders } = useQuery({
+        queryKey: ['musicFolders'],
+        queryFn: musicFolderService.getAll
+    });
+
+    return (
+        <Select value={value} onValueChange={onChange}>
+            <SelectTrigger>
+                <SelectValue placeholder="Mappe wählen..." />
+            </SelectTrigger>
+            <SelectContent>
+                {folders?.map(f => (
+                    <SelectItem key={f.id} value={f.id.toString()}>{f.name}</SelectItem>
+                ))}
+            </SelectContent>
+        </Select>
+    );
+}
+
+function FolderSheetsList({ folderId, onAdd, alreadyInSetlist, isPending }: {
+    folderId: string,
+    onAdd: (id: number) => void,
+    alreadyInSetlist: (id: number) => boolean | undefined,
+    isPending: boolean
+}) {
+    const { data: folder, isLoading } = useQuery({
+        queryKey: ['musicFolder', folderId],
+        queryFn: () => musicFolderService.getById(parseInt(folderId)),
+        enabled: !!folderId
+    });
+
+    if (!folderId) return <div className="text-center text-muted-foreground py-8">Bitte wählen Sie eine Mappe aus</div>;
+    if (isLoading) return <div className="text-center py-8">Laden...</div>;
+    if (!folder || !folder.items || folder.items.length === 0) return <div className="text-center text-muted-foreground py-8">Keine Noten in dieser Mappe</div>;
+
+    return (
+        <div className="space-y-2">
+            {folder.items.map(item => (
+                <div key={item.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-accent">
+                    <div className="flex-1">
+                        <div className="font-medium">{item.sheetMusic.title}</div>
+                        <div className="text-sm text-muted-foreground">
+                            {item.sheetMusic.composer}
+                            {item.sheetMusic.arranger && ` • ${item.sheetMusic.arranger}`}
+                        </div>
+                    </div>
+                    <Button
+                        size="sm"
+                        onClick={() => onAdd(item.sheetMusic.id)}
+                        disabled={alreadyInSetlist(item.sheetMusic.id) || isPending}
+                    >
+                        {alreadyInSetlist(item.sheetMusic.id) ? 'Bereits im Programm' : 'Hinzufügen'}
+                    </Button>
+                </div>
+            ))}
+        </div>
     );
 }

@@ -13,7 +13,8 @@ import {
     Newspaper,
     Settings,
     Library,
-    BarChart
+    BarChart,
+    Folder
 } from 'lucide-react';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
@@ -31,6 +32,7 @@ const navItems: NavItem[] = [
     { label: 'Termine', href: '/member/events', icon: <Calendar className="h-5 w-5" /> },
     { label: 'Termine Admin', href: '/member/admin/events', icon: <Calendar className="h-5 w-5" />, adminOnly: true },
     { label: 'Dateien', href: '/member/files', icon: <FileText className="h-5 w-5" /> },
+    { label: 'Mappen', href: '/member/music-folders', icon: <Folder className="h-5 w-5" /> },
     { label: 'Mitglieder', href: '/member/members', icon: <Users className="h-5 w-5" /> }, // Accessible to all
     { label: 'Noten', href: '/member/admin/sheet-music', icon: <Library className="h-5 w-5" />, adminOnly: true },
     { label: 'Register', href: '/member/admin/registers', icon: <Music className="h-5 w-5" />, adminOnly: true },

@@ -31,6 +31,9 @@ export const fileService = {
         if (options?.folderId !== undefined && options?.folderId !== null) {
             formData.append('folderId', options.folderId.toString());
         }
+        if (options?.sheetMusicId) {
+            formData.append('sheetMusicId', options.sheetMusicId.toString());
+        }
 
         const response = await api.post<{ file: FileEntity }>('/files/upload', formData, {
             headers: {

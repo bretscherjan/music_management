@@ -1,5 +1,7 @@
 // Sheet Music Types - mirrors Prisma SheetMusic model
 
+import type { FileEntity } from './file';
+
 export type Difficulty = 'easy' | 'medium' | 'hard';
 
 export interface SheetMusic {
@@ -14,6 +16,7 @@ export interface SheetMusic {
     createdAt: string;
     updatedAt: string;
     bookmarks?: SheetMusicBookmark[];
+    files?: FileEntity[];
 }
 
 export interface SheetMusicBookmark {

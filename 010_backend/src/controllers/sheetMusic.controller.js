@@ -16,6 +16,7 @@ const getAllSheetMusic = asyncHandler(async (req, res) => {
         genre,
         difficulty,
         bookmarkedBy,
+        folderId, // Filter by Folder
         sort = 'title',
         page = 1,
         limit = 50,
@@ -50,6 +51,15 @@ const getAllSheetMusic = asyncHandler(async (req, res) => {
             some: {
                 userId: parseInt(bookmarkedBy),
             },
+        };
+    }
+
+    // Filter by Folder
+    if (folderId) {
+        whereClause.folderItems = {
+            some: {
+                folderId: parseInt(folderId)
+            }
         };
     }
 
@@ -121,6 +131,7 @@ const getSheetMusicById = asyncHandler(async (req, res) => {
                     },
                 },
             },
+            files: true, // Include associated files
         },
     });
 
@@ -130,6 +141,110 @@ const getSheetMusicById = asyncHandler(async (req, res) => {
 
     res.json({ sheetMusic });
 });
+
+/**
+ * View Sheet Music PDF (Smart Proxy)
+ * GET /sheet-music/:id/view
+ */
+const viewSheetMusicPdf = asyncHandler(async (req, res) => {
+    const { id } = req.params;
+    const user = req.user;
+    const requestedFileId = req.query.fileId; // Optional specific file request
+
+    // Fetch sheet music with files
+    const sheetMusic = await prisma.sheetMusic.findUnique({
+        where: { id: parseInt(id) },
+        include: {
+            files: true
+        }
+    });
+
+    if (!sheetMusic) {
+        throw new AppError('Notenblatt nicht gefunden', 404);
+    }
+
+    if (!sheetMusic.files || sheetMusic.files.length === 0) {
+        throw new AppError('Keine Dateien für dieses Notenblatt vorhanden', 404);
+    }
+
+    let fileToServe = null;
+
+    if (requestedFileId) {
+        // Explicit request
+        fileToServe = sheetMusic.files.find(f => f.id === parseInt(requestedFileId));
+    } else {
+        // Smart Selection Logic
+
+        // 1. Try to find user's register part
+        if (user.registerId) {
+            fileToServe = sheetMusic.files.find(f => f.targetRegisterId === user.registerId);
+        }
+
+        // 2. If not found, try to find a file with NO targetRegister (Partitur/Score assumption)
+        if (!fileToServe) {
+            fileToServe = sheetMusic.files.find(f => !f.targetRegisterId);
+        }
+
+        // 3. Fallback: Take the first one? Or fail?
+        if (!fileToServe) {
+            fileToServe = sheetMusic.files[0];
+        }
+    }
+
+    if (!fileToServe) {
+        throw new AppError('Datei nicht gefunden', 404);
+    }
+
+    // Permission Check (reuse logic ideally, but simplified here)
+    const hasAccess = await checkFileAccess(fileToServe, user);
+    if (!hasAccess) {
+        throw new AppError('Keine Berechtigung', 403);
+    }
+
+    // Serve File
+    if (!fs.existsSync(fileToServe.path)) {
+        throw new AppError('Datei physisch nicht gefunden', 404);
+    }
+
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', 'inline'); // Inline for viewing in browser
+
+    const stream = fs.createReadStream(fileToServe.path);
+    stream.pipe(res);
+});
+
+// Helper for access check (Duplicated from file.controller because of module boundaries, 
+// strictly should be in a service)
+async function checkFileAccess(file, user) {
+    if (user.role === 'admin') return true;
+
+    // Check File Access Rules (We need to fetch them if we want full check)
+    // The query above didn't fetch accessRules. Let's fetch the full file with rules.
+    const fullFile = await prisma.file.findUnique({
+        where: { id: file.id },
+        include: { accessRules: true }
+    });
+
+    if (!fullFile) return false;
+
+    // 1. Explicit DENY
+    if (fullFile.accessRules.some(r => r.targetType === 'USER' && r.userId === user.id && r.accessType === 'DENY')) return false;
+    if (user.registerId && fullFile.accessRules.some(r => r.targetType === 'REGISTER' && r.registerId === user.registerId && r.accessType === 'DENY')) return false;
+
+    // 2. Explicit ALLOW
+    if (fullFile.accessRules.some(r => r.targetType === 'USER' && r.userId === user.id && r.accessType === 'ALLOW')) return true;
+    if (user.registerId && fullFile.accessRules.some(r => r.targetType === 'REGISTER' && r.registerId === user.registerId && r.accessType === 'ALLOW')) return true;
+
+    // 3. Visibility Fallback
+    const hasCustomRules = fullFile.accessRules.length > 0;
+    if (!hasCustomRules) {
+        if (fullFile.visibility === 'all') return true;
+        if (fullFile.visibility === 'admin') return false;
+        if (fullFile.visibility === 'register') return fullFile.targetRegisterId === user.registerId;
+    }
+
+    return false;
+}
 
 /**
  * Create new sheet music
@@ -575,4 +690,5 @@ module.exports = {
     exportCsv,
     exportPdf,
     toggleBookmark,
+    viewSheetMusicPdf,
 };

@@ -10,6 +10,10 @@ export default defineConfig({
     react(),
     tailwindcss(),
     VitePWA({
+      workbox: {
+        // Erhöhe das Limit auf 3MB oder 4MB
+        maximumFileSizeToCacheInBytes: 4 * 1024 * 1024, 
+      },
       registerType: 'autoUpdate',
       includeAssets: ['logo.png', 'vite.svg'],
       manifest: {

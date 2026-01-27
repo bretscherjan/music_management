@@ -31,6 +31,7 @@ router.get('/', optionalAuth, validate(queryEventsSchema), eventController.getAl
  * @access  Public (filtered by visibility)
  */
 router.get('/:id', optionalAuth, validate(getEventByIdSchema), eventController.getEventById);
+router.get('/:id/export-pdf', optionalAuth, eventController.exportSetlistPdf);
 
 /**
  * @route   POST /api/events

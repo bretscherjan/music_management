@@ -107,6 +107,10 @@ export const eventService = {
         const response = await api.post<{ message: string }>(`/events/${eventId}/verify`, data);
         return response.data;
     },
+
+    getPdfExportUrl: (eventId: number) => {
+        return `${api.defaults.baseURL}/events/${eventId}/export-pdf`;
+    },
 };
 
 export default eventService;

@@ -34,8 +34,9 @@ import {
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { Plus, FileUp, FileDown, Search, Star, Edit2, Trash2 } from 'lucide-react';
+import { Folder, Plus, FileUp, FileDown, Search, Star, Edit2, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { musicFolderService } from '@/services/musicFolderService';
 
 export function SheetMusicManagementPage() {
     const { user } = useAuth();
@@ -55,6 +56,10 @@ export function SheetMusicManagementPage() {
     const [editDialogOpen, setEditDialogOpen] = useState(false);
     const [csvDialogOpen, setCsvDialogOpen] = useState(false);
     const [selectedSheet, setSelectedSheet] = useState<SheetMusic | null>(null);
+
+    // Folder Add Logic
+    const [addToFolderDialogOpen, setAddToFolderDialogOpen] = useState(false);
+    const [selectedSheetForFolder, setSelectedSheetForFolder] = useState<SheetMusic | null>(null);
 
     // Form states
     const [formData, setFormData] = useState<CreateSheetMusicDto>({
@@ -181,6 +186,22 @@ export function SheetMusicManagementPage() {
             toast.error('Fehler beim PDF Export');
         },
     });
+
+    const addToFolderMutation = useMutation({
+        mutationFn: ({ folderId, sheetId }: { folderId: number, sheetId: number }) =>
+            musicFolderService.addItems(folderId, [sheetId]),
+        onSuccess: () => {
+            toast.success('Zu Mappe hinzugefügt');
+            setAddToFolderDialogOpen(false);
+            setSelectedSheetForFolder(null);
+        },
+        onError: () => toast.error('Fehler beim Hinzufügen')
+    });
+
+    const handleAddToFolder = (sheet: SheetMusic) => {
+        setSelectedSheetForFolder(sheet);
+        setAddToFolderDialogOpen(true);
+    };
 
     const resetForm = () => {
         setFormData({
@@ -475,6 +496,14 @@ export function SheetMusicManagementPage() {
                                                     <Button
                                                         size="icon"
                                                         variant="ghost"
+                                                        title="Zu Mappe hinzufügen"
+                                                        onClick={() => handleAddToFolder(sheet)}
+                                                    >
+                                                        <Folder className="h-4 w-4" />
+                                                    </Button>
+                                                    <Button
+                                                        size="icon"
+                                                        variant="ghost"
                                                         onClick={() => handleEdit(sheet)}
                                                     >
                                                         <Edit2 className="h-4 w-4" />
@@ -532,10 +561,22 @@ export function SheetMusicManagementPage() {
                                 updateMutation.mutate({ id: selectedSheet.id, data: formData })
                             }
                             isLoading={updateMutation.isPending}
+                            sheetId={selectedSheet.id}
                         />
                     </Dialog>
                 )
             }
+
+            {/* Add To Folder Dialog */}
+            <Dialog open={addToFolderDialogOpen} onOpenChange={setAddToFolderDialogOpen}>
+                {selectedSheetForFolder && (
+                    <AddToFolderDialog
+                        sheet={selectedSheetForFolder}
+                        onSubmit={(folderId) => addToFolderMutation.mutate({ folderId, sheetId: selectedSheetForFolder.id })}
+                        isLoading={addToFolderMutation.isPending}
+                    />
+                )}
+            </Dialog>
         </div >
     );
 }
@@ -547,6 +588,7 @@ interface CreateEditDialogProps {
     setFormData: (data: CreateSheetMusicDto) => void;
     onSubmit: () => void;
     isLoading: boolean;
+    sheetId?: number; // Added to enable file management in edit mode
 }
 
 function CreateEditDialog({
@@ -555,82 +597,207 @@ function CreateEditDialog({
     setFormData,
     onSubmit,
     isLoading,
+    sheetId,
 }: CreateEditDialogProps) {
+    const queryClient = useQueryClient();
+
+    // File Queries
+    const { data: files } = useQuery({
+        queryKey: ['sheetMusicFiles', sheetId],
+        queryFn: () => import('@/services/fileService').then(m => m.fileService.getAll({ sheetMusicId: sheetId })),
+        enabled: !!sheetId,
+    });
+
+    const uploadFileMutation = useMutation({
+        mutationFn: (file: File) => import('@/services/fileService').then(m => m.fileService.upload(file, { sheetMusicId: sheetId, visibility: 'all' })),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['sheetMusicFiles', sheetId] });
+            toast.success('Datei hochgeladen');
+        },
+        onError: () => toast.error('Upload fehlgeschlagen')
+    });
+
+    const deleteFileMutation = useMutation({
+        mutationFn: (id: number) => import('@/services/fileService').then(m => m.fileService.delete(id)),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['sheetMusicFiles', sheetId] });
+            toast.success('Datei gelöscht');
+        },
+        onError: () => toast.error('Löschen fehlgeschlagen')
+    });
+
+    const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files?.[0] && sheetId) {
+            uploadFileMutation.mutate(e.target.files[0]);
+            // Reset input
+            e.target.value = '';
+        }
+    };
+
     return (
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
                 <DialogTitle>{title}</DialogTitle>
             </DialogHeader>
-            <div className="space-y-4">
-                <div>
-                    <Label>Titel *</Label>
-                    <Input
-                        value={formData.title}
-                        onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                    />
-                </div>
-                <div className="grid grid-cols-2 gap-4">
+            <div className="grid md:grid-cols-2 gap-6">
+                <div className="space-y-4">
+                    <h3 className="font-medium border-b pb-2">Metadaten</h3>
                     <div>
-                        <Label>Komponist</Label>
+                        <Label>Titel *</Label>
                         <Input
-                            value={formData.composer}
-                            onChange={(e) => setFormData({ ...formData, composer: e.target.value })}
+                            value={formData.title}
+                            onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                        />
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <Label>Komponist</Label>
+                            <Input
+                                value={formData.composer}
+                                onChange={(e) => setFormData({ ...formData, composer: e.target.value })}
+                            />
+                        </div>
+                        <div>
+                            <Label>Arrangeur</Label>
+                            <Input
+                                value={formData.arranger}
+                                onChange={(e) => setFormData({ ...formData, arranger: e.target.value })}
+                            />
+                        </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <Label>Genre</Label>
+                            <Input
+                                value={formData.genre}
+                                onChange={(e) => setFormData({ ...formData, genre: e.target.value })}
+                            />
+                        </div>
+                        <div>
+                            <Label>Schwierigkeit</Label>
+                            <Select
+                                value={formData.difficulty}
+                                onValueChange={(val) =>
+                                    setFormData({ ...formData, difficulty: val as Difficulty })
+                                }
+                            >
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Wählen..." />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="easy">Leicht</SelectItem>
+                                    <SelectItem value="medium">Mittel</SelectItem>
+                                    <SelectItem value="hard">Schwer</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+                    </div>
+                    <div>
+                        <Label>Verlag/Quelle</Label>
+                        <Input
+                            value={formData.publisher}
+                            onChange={(e) => setFormData({ ...formData, publisher: e.target.value })}
                         />
                     </div>
                     <div>
-                        <Label>Arrangeur</Label>
-                        <Input
-                            value={formData.arranger}
-                            onChange={(e) => setFormData({ ...formData, arranger: e.target.value })}
+                        <Label>Notizen/Bemerkungen</Label>
+                        <Textarea
+                            rows={4}
+                            value={formData.notes}
+                            onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
                         />
                     </div>
                 </div>
-                <div className="grid grid-cols-2 gap-4">
-                    <div>
-                        <Label>Genre</Label>
-                        <Input
-                            value={formData.genre}
-                            onChange={(e) => setFormData({ ...formData, genre: e.target.value })}
-                        />
-                    </div>
-                    <div>
-                        <Label>Schwierigkeit</Label>
-                        <Select
-                            value={formData.difficulty}
-                            onValueChange={(val) =>
-                                setFormData({ ...formData, difficulty: val as Difficulty })
-                            }
-                        >
-                            <SelectTrigger>
-                                <SelectValue placeholder="Wählen..." />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="easy">Leicht</SelectItem>
-                                <SelectItem value="medium">Mittel</SelectItem>
-                                <SelectItem value="hard">Schwer</SelectItem>
-                            </SelectContent>
-                        </Select>
-                    </div>
-                </div>
-                <div>
-                    <Label>Verlag/Quelle</Label>
-                    <Input
-                        value={formData.publisher}
-                        onChange={(e) => setFormData({ ...formData, publisher: e.target.value })}
-                    />
-                </div>
-                <div>
-                    <Label>Notizen/Bemerkungen</Label>
-                    <Textarea
-                        rows={4}
-                        value={formData.notes}
-                        onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                    />
+
+                <div className="space-y-4">
+                    <h3 className="font-medium border-b pb-2">Dateien</h3>
+                    {sheetId ? (
+                        <>
+                            <div className="flex items-center gap-4">
+                                <Button variant="outline" className="relative cursor-pointer" asChild>
+                                    <label>
+                                        <FileUp className="h-4 w-4 mr-2" />
+                                        Datei hochladen
+                                        <input type="file" className="hidden" onChange={handleFileSelect} disabled={uploadFileMutation.isPending} />
+                                    </label>
+                                </Button>
+                                {uploadFileMutation.isPending && <span className="text-sm text-muted-foreground">Upload läuft...</span>}
+                            </div>
+
+                            <div className="border rounded-md divide-y max-h-[400px] overflow-y-auto">
+                                {files?.map(file => (
+                                    <div key={file.id} className="p-2 flex items-center justify-between hover:bg-slate-50">
+                                        <a href="#" className="flex items-center gap-2 truncate text-sm hover:underline" onClick={(e) => {
+                                            e.preventDefault();
+                                            import('@/services/fileService').then(m => m.fileService.downloadAndSave(file.id, file.originalName));
+                                        }}>
+                                            <FileDown className="h-4 w-4 text-slate-400" />
+                                            {file.originalName}
+                                        </a>
+                                        <Button
+                                            size="icon"
+                                            variant="ghost"
+                                            className="h-8 w-8 text-destructive"
+                                            onClick={() => deleteFileMutation.mutate(file.id)}
+                                        >
+                                            <Trash2 className="h-4 w-4" />
+                                        </Button>
+                                    </div>
+                                ))}
+                                {(!files || files.length === 0) && (
+                                    <div className="p-4 text-center text-muted-foreground text-sm">
+                                        Keine Dateien vorhanden
+                                    </div>
+                                )}
+                            </div>
+                        </>
+                    ) : (
+                        <div className="p-8 border rounded-md border-dashed text-center text-muted-foreground">
+                            Speichern Sie die Note zuerst, um Dateien hochzuladen.
+                        </div>
+                    )}
                 </div>
             </div>
+
             <DialogFooter>
                 <Button onClick={onSubmit} disabled={!formData.title || isLoading}>
                     {isLoading ? 'Speichere...' : 'Speichern'}
+                </Button>
+            </DialogFooter>
+        </DialogContent>
+    );
+}
+
+// AddToFolderDialog Component
+function AddToFolderDialog({ sheet, onSubmit, isLoading }: { sheet: SheetMusic, onSubmit: (folderId: number) => void, isLoading: boolean }) {
+    const { data: folders } = useQuery({
+        queryKey: ['musicFolders'],
+        queryFn: musicFolderService.getAll
+    });
+
+    const [selectedFolderId, setSelectedFolderId] = useState<string>('');
+
+    return (
+        <DialogContent>
+            <DialogHeader>
+                <DialogTitle>"{sheet.title}" zu Mappe hinzufügen</DialogTitle>
+            </DialogHeader>
+            <div className="py-4">
+                <Label>Mappe wählen</Label>
+                <Select value={selectedFolderId} onValueChange={setSelectedFolderId}>
+                    <SelectTrigger>
+                        <SelectValue placeholder="Mappe wählen..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                        {folders?.map(f => (
+                            <SelectItem key={f.id} value={f.id.toString()}>{f.name}</SelectItem>
+                        ))}
+                    </SelectContent>
+                </Select>
+            </div>
+            <DialogFooter>
+                <Button onClick={() => onSubmit(parseInt(selectedFolderId))} disabled={!selectedFolderId || isLoading}>
+                    Hinzufügen
                 </Button>
             </DialogFooter>
         </DialogContent>

@@ -230,6 +230,10 @@ model File {
   targetRegister   Register? @relation(fields: [targetRegisterId], references: [id], onDelete: SetNull)
   eventId          Int?
   event            Event?    @relation(fields: [eventId], references: [id], onDelete: SetNull)
+  
+  // Sheet Music Association (for Digital Folders)
+  sheetMusicId     Int?
+  sheetMusic       SheetMusic? @relation(fields: [sheetMusicId], references: [id], onDelete: SetNull)
 
   // Timestamps
   createdAt DateTime @default(now())
@@ -307,8 +311,10 @@ model SheetMusic {
   notes     String?     @db.Text // Bemerkungen/Notizen
 
   // Relations
-  bookmarks SheetMusicBookmark[]
-  events    EventSheetMusic[]
+  bookmarks   SheetMusicBookmark[]
+  events      EventSheetMusic[]
+  files       File[]               // PDF parts associated with this sheet music
+  folderItems MusicFolderItem[]    // In which folders is this piece?
 
   // Timestamps
   createdAt DateTime @default(now())
@@ -461,3 +467,30 @@ model VerifiedAttendance {
   @@index([userId])
 }
 
+// ============================================
+// MUSIC FOLDER SYSTEM (Digital Mappen)
+// ============================================
+
+model MusicFolder {
+  id          Int                 @id @default(autoincrement())
+  name        String              // z.B. "Frühlingskonzert 2026"
+  description String?
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+  
+  items       MusicFolderItem[]
+}
+
+model MusicFolderItem {
+  id           Int        @id @default(autoincrement())
+  folderId     Int
+  sheetMusicId Int
+  position     Int        @default(0) // Für die Sortierung innerhalb der Mappe
+  
+  folder       MusicFolder @relation(fields: [folderId], references: [id], onDelete: Cascade)
+  sheetMusic   SheetMusic  @relation(fields: [sheetMusicId], references: [id], onDelete: Cascade)
+
+  @@unique([folderId, sheetMusicId])
+  @@index([folderId])
+  @@index([sheetMusicId])
+}

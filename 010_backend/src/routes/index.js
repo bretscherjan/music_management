@@ -29,6 +29,7 @@ router.use('/contact', contactRoutes);
 router.use('/calendar', require('./calendar.routes'));
 router.use('/push', pushRoutes);
 router.use('/stats', require('./stats.routes'));
+router.use('/music-folders', require('./musicFolder.routes'));
 
 module.exports = router;
 

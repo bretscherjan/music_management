@@ -36,6 +36,7 @@ export interface UploadFileDto {
     eventId?: number;
     folder?: string;
     folderId?: number | null;
+    sheetMusicId?: number;
     accessRules?: string; // JSON string because of FormData
 }
 
@@ -45,6 +46,7 @@ export interface FileQueryParams {
     eventId?: number;
     folder?: string;
     folderId?: number | null;
+    sheetMusicId?: number;
 }
 
 export interface Folder {

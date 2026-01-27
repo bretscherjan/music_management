@@ -1,154 +1,599 @@
 const { PrismaClient } = require('@prisma/client');
-const { asyncHandler } = require('../middlewares/errorHandler.middleware');
+const { asyncHandler, AppError } = require('../middlewares/errorHandler.middleware');
+const PdfPrinter = require('pdfmake/js/Printer').default;
+const path = require('path');
 
 const prisma = new PrismaClient();
 
 /**
- * Get attendance summary statistics
- * GET /api/stats/attendance-summary
+ * Get Repertoire Statistics
+ * GET /api/stats/repertoire
+ * Query: startDate, endDate, category, limit
  */
-const getAttendanceSummary = asyncHandler(async (req, res) => {
-    const { startDate, endDate, registerId } = req.query;
+const getRepertoireStats = asyncHandler(async (req, res) => {
+    const { startDate, endDate, category, limit = 20 } = req.query;
 
-    // Default to current year if not specified
-    const start = startDate ? new Date(startDate) : new Date(new Date().getFullYear(), 0, 1);
-    const end = endDate ? new Date(endDate) : new Date(new Date().getFullYear(), 11, 31);
-
-    // Filter events in range
-    const dateFilter = {
-        date: {
-            gte: start,
-            lte: end
-        },
-        // We only care about events that have happened or are marked as such? 
-        // Generally stats are for past events.
+    const whereClause = {
+        event: {
+            date: {
+                lt: new Date() // Only past events
+            }
+        }
     };
 
-    // Filter by register if provided (though usually we want all stats)
-    // Actually, register filter might be applied on Users, not Events. 
-    // But if we want stats FOR a register, we filter users.
-
-    // 1. Get all Relevant Events
-    // We only want events that "count" for attendance (e.g. rehearsals, performances).
-    // Maybe exclude "other" or specific types? For now, include all or filter by category if needed.
-    const events = await prisma.event.findMany({
-        where: dateFilter,
-        select: { id: true, date: true, title: true, category: true }
-    });
-
-    const eventIds = events.map(e => e.id);
-
-    if (eventIds.length === 0) {
-        return res.json({
-            message: 'Keine Events im Zeitraum gefunden',
-            stats: [],
-            pieChartData: []
-        });
+    if (startDate) {
+        whereClause.event.date.gte = new Date(startDate);
     }
 
-    // 2. Get Verified Attendances for these events
-    const verifiedAttendances = await prisma.verifiedAttendance.findMany({
-        where: {
-            eventId: { in: eventIds }
+    if (endDate) {
+        whereClause.event.date.lte = new Date(endDate);
+    }
+
+    if (category) {
+        whereClause.event.category = category;
+    }
+
+    // 1. Aggregation: Count usages per sheetMusicId
+    // Note: We only want to count actual sheet music (type 'sheetMusic'), not pauses or custom items without sheetMusicId
+    const usageStats = await prisma.eventSheetMusic.groupBy({
+        by: ['sheetMusicId'],
+        _count: {
+            sheetMusicId: true
         },
-        include: {
-            user: {
+        where: {
+            ...whereClause,
+            type: 'sheetMusic',
+            sheetMusicId: { not: null }
+        },
+        orderBy: {
+            _count: {
+                sheetMusicId: 'desc'
+            }
+        },
+        // Only take top N if limit is set? 
+        // groupBy doesn't support 'take' directly in all prisma versions for aggregation result, 
+        // but we can slice the result later. 
+        // Actually, for "Long Tail" we need ALL stats, so maybe we shouldn't limit here unless explicitly requested for a chart.
+    });
+
+    // 2. Fetch Sheet Music Details for the aggregated IDs
+    // We need to map the IDs back to titles/composers
+    const sheetIds = usageStats.map(s => s.sheetMusicId);
+
+    const sheetDetails = await prisma.sheetMusic.findMany({
+        where: {
+            id: { in: sheetIds }
+        },
+        select: {
+            id: true,
+            title: true,
+            composer: true,
+            genre: true
+        }
+    });
+
+    const sheetMap = new Map(sheetDetails.map(s => [s.id, s]));
+
+    // 3. Combine Data and Calculate Last Played
+    // To get "Last Played", we need a separate query or a custom raw query.
+    // GroupBy DOES support _max on relations in some db/prisma versions, but let's do it safely.
+    // For each piece, we might want to know the last event date.
+    // To avoid N+1, maybe we can fetch all EventSheetMusic entries and process in memory if dataset isn't huge?
+    // Or we do a second aggregation for max date.
+
+    const lastPlayedStats = await prisma.eventSheetMusic.groupBy({
+        by: ['sheetMusicId'],
+        _max: {
+            eventId: true // This gives us max Event ID, which roughly correlates to date but not guaranteed if IDs aren't chronological.
+            // Better: We can't easily get max *date* of the relation directly in simple groupBy in older prisma without raw query.
+            // Alternative: Fetch the latest event for each sheet separately? Expensive.
+            // Let's iterate and find unique sheet IDs?
+        },
+        where: {
+            ...whereClause,
+            type: 'sheetMusic',
+            sheetMusicId: { not: null }
+        }
+    });
+
+    // Actually, let's try to get "Last Played" by ensuring we fetch the latest event date.
+    // We can do this efficiently by fetching all EventSheetMusic with Event Date selected, then reducing.
+    // If dataset is expected to be < 10k rows, memory is fine.
+
+    const allUsages = await prisma.eventSheetMusic.findMany({
+        where: {
+            ...whereClause,
+            type: 'sheetMusic',
+            sheetMusicId: { not: null }
+        },
+        select: {
+            sheetMusicId: true,
+            event: {
                 select: {
-                    id: true,
-                    firstName: true,
-                    lastName: true,
-                    register: { select: { id: true, name: true } }
+                    date: true,
+                    category: true
                 }
             }
         }
     });
 
-    // 3. Calculate Stats per User
-    // We also need to know the potential *total* events for each user.
-    // Simplifying assumption: Every user *should* have attended every event unless excluded?
-    // Or we just count the verified entries.
-    // If a user has NO verified entry for an event, does it count as Absent or "Not Relevant"?
-    // "Analyse: Das Dashboard greift nun nur noch auf diese verifizierten Daten zu"
-    // So we treat VerifiedAttendance as the source. If no record, maybe they weren't member yet?
-    // Better: Count how many VerifiedAttendances exist for the user.
+    // Process in memory
+    const statsMap = new Map();
 
-    // Group by User
-    const userStatsMap = new Map();
-
-    for (const record of verifiedAttendances) {
-        const userId = record.userId;
-        const status = record.status; // PRESENT, EXCUSED, UNEXCUSEDUser
-
-        if (!userStatsMap.has(userId)) {
-            userStatsMap.set(userId, {
-                user: record.user,
-                present: 0,
-                excused: 0,
-                unexcused: 0,
-                total: 0
+    allUsages.forEach(usage => {
+        const sid = usage.sheetMusicId;
+        if (!statsMap.has(sid)) {
+            statsMap.set(sid, {
+                sheetMusicId: sid,
+                count: 0,
+                lastPlayed: null,
+                categoryCounts: {}
             });
         }
 
-        const stats = userStatsMap.get(userId);
-        stats.total++;
-        if (status === 'PRESENT') stats.present++;
-        if (status === 'EXCUSED') stats.excused++;
-        if (status === 'UNEXCUSED') stats.unexcused++;
-    }
+        const entry = statsMap.get(sid);
+        entry.count++;
 
-    // Convert map to array and calculate percentages
-    let userStats = Array.from(userStatsMap.values()).map(stat => {
-        const presentRate = stat.total > 0 ? (stat.present / stat.total) * 100 : 0;
+        const eventDate = new Date(usage.event.date);
+        if (!entry.lastPlayed || eventDate > new Date(entry.lastPlayed)) {
+            entry.lastPlayed = eventDate;
+        }
+
+        const cat = usage.event.category;
+        entry.categoryCounts[cat] = (entry.categoryCounts[cat] || 0) + 1;
+    });
+
+    // Merge with details
+    const result = [];
+
+    // Also include "orphaned" pieces (0 plays) if we want "Long Tail"? 
+    // The user requirement says "Long-Tail-Analyse... wie viele Stücke im Archiv verwaist sind".
+    // So we should fetch ALL sheet music and match.
+
+    const allSheets = await prisma.sheetMusic.findMany({
+        select: { id: true, title: true, composer: true, genre: true }
+    });
+
+    const fullResult = allSheets.map(sheet => {
+        const stats = statsMap.get(sheet.id) || {
+            count: 0,
+            lastPlayed: null,
+            categoryCounts: {}
+        };
+
         return {
-            ...stat,
-            presentRate: parseFloat(presentRate.toFixed(1))
+            id: sheet.id,
+            title: sheet.title,
+            composer: sheet.composer,
+            genre: sheet.genre,
+            playCount: stats.count,
+            lastPlayed: stats.lastPlayed,
+            rehearsalCount: stats.categoryCounts['rehearsal'] || 0,
+            performanceCount: stats.categoryCounts['performance'] || 0
         };
     });
 
-    // Filter by register if requested
-    if (registerId) {
-        userStats = userStats.filter(s => s.user.register?.id === parseInt(registerId));
-    }
+    // Sort by play count desc
+    fullResult.sort((a, b) => b.playCount - a.playCount);
 
-    // Sort by Best Attendance
-    userStats.sort((a, b) => b.presentRate - a.presentRate);
+    res.json(fullResult);
+});
 
-    // 4. Calculate Aggregate Data (Pie Chart)
-    const totalPresent = userStats.reduce((sum, s) => sum + s.present, 0);
-    const totalExcused = userStats.reduce((sum, s) => sum + s.excused, 0);
-    const totalUnexcused = userStats.reduce((sum, s) => sum + s.unexcused, 0);
 
-    const pieChartData = [
-        { name: 'Anwesend', value: totalPresent },
-        { name: 'Entschuldigt', value: totalExcused },
-        { name: 'Unentschuldigt', value: totalUnexcused }
-    ];
+/**
+ * Export Repertoire Stats as PDF
+ * GET /api/stats/repertoire/export
+ */
+const exportRepertoirePdf = asyncHandler(async (req, res) => {
+    const { startDate, endDate, category } = req.query;
 
-    // 5. Calculate Register Stats (Average per register)
-    const registerStatsMap = new Map();
-    for (const stat of userStats) {
-        const regName = stat.user.register?.name || 'Ohne Register';
-        if (!registerStatsMap.has(regName)) {
-            registerStatsMap.set(regName, { name: regName, totalPresentRate: 0, count: 0 });
+    // Reuse logic (duplicated for now to keep clean independence, or extract to helper)
+    // For PDF we might want the same data logic.
+    // Ideally we extract the specific data fetching logic.
+    // ... Copying logic for now ...
+
+    const whereClause = {
+        event: {
+            date: {
+                lt: new Date()
+            }
         }
-        const regStat = registerStatsMap.get(regName);
-        regStat.totalPresentRate += stat.presentRate;
-        regStat.count++;
+    };
+
+    if (startDate) whereClause.event.date.gte = new Date(startDate);
+    if (endDate) whereClause.event.date.lte = new Date(endDate);
+    if (category) whereClause.event.category = category;
+
+    const allUsages = await prisma.eventSheetMusic.findMany({
+        where: {
+            ...whereClause,
+            type: 'sheetMusic',
+            sheetMusicId: { not: null }
+        },
+        select: {
+            sheetMusicId: true,
+            event: { select: { date: true, category: true } }
+        }
+    });
+
+    const statsMap = new Map();
+    allUsages.forEach(usage => {
+        const sid = usage.sheetMusicId;
+        if (!statsMap.has(sid)) {
+            statsMap.set(sid, { count: 0, lastPlayed: null, categoryCounts: {} });
+        }
+        const entry = statsMap.get(sid);
+        entry.count++;
+        const eventDate = new Date(usage.event.date);
+        if (!entry.lastPlayed || eventDate > new Date(entry.lastPlayed)) entry.lastPlayed = eventDate;
+        const cat = usage.event.category;
+        entry.categoryCounts[cat] = (entry.categoryCounts[cat] || 0) + 1;
+    });
+
+    const allSheets = await prisma.sheetMusic.findMany({
+        select: { id: true, title: true, composer: true, genre: true },
+        orderBy: { title: 'asc' }
+    });
+
+    const data = allSheets.map(sheet => {
+        const stats = statsMap.get(sheet.id) || { count: 0, lastPlayed: null, categoryCounts: {} };
+        return {
+            title: sheet.title,
+            composer: sheet.composer,
+            playCount: stats.count,
+            lastPlayed: stats.lastPlayed,
+            rehearsalCount: stats.categoryCounts['rehearsal'] || 0,
+            performanceCount: stats.categoryCounts['performance'] || 0
+        };
+    }).sort((a, b) => b.playCount - a.playCount); // Sort by usage desc
+
+    // Generate PDF
+    const fonts = {
+        Roboto: {
+            normal: path.join(__dirname, '../../node_modules/pdfmake/fonts/Roboto/Roboto-Regular.ttf'),
+            bold: path.join(__dirname, '../../node_modules/pdfmake/fonts/Roboto/Roboto-Medium.ttf'),
+            italics: path.join(__dirname, '../../node_modules/pdfmake/fonts/Roboto/Roboto-Italic.ttf'),
+            bolditalics: path.join(__dirname, '../../node_modules/pdfmake/fonts/Roboto/Roboto-MediumItalic.ttf')
+        }
+    };
+
+    const printer = new PdfPrinter(fonts);
+
+    const docDefinition = {
+        pageOrientation: 'portrait',
+        content: [
+            { text: 'Repertoire Statistik: Musig Elgg', style: 'header' },
+            {
+                text: `Zeitraum: ${startDate ? new Date(startDate).toLocaleDateString('de-CH') : 'Anfang'} - ${endDate ? new Date(endDate).toLocaleDateString('de-CH') : 'Heute'}`,
+                style: 'subheader'
+            },
+            {
+                table: {
+                    headerRows: 1,
+                    widths: ['*', 'auto', 'auto', 'auto', 'auto'],
+                    body: [
+                        [
+                            { text: 'Titel / Komponist', style: 'tableHeader' },
+                            { text: 'Total', style: 'tableHeader', alignment: 'center' },
+                            { text: 'Proben', style: 'tableHeader', alignment: 'center' },
+                            { text: 'Auftritte', style: 'tableHeader', alignment: 'center' },
+                            { text: 'Zuletzt', style: 'tableHeader', alignment: 'right' }
+                        ],
+                        ...data.map(item => [
+                            { text: `${item.title}\n${item.composer || ''}`, style: 'cellText' },
+                            { text: item.playCount.toString(), alignment: 'center', bold: true },
+                            { text: item.rehearsalCount.toString(), alignment: 'center' },
+                            { text: item.performanceCount.toString(), alignment: 'center' },
+                            { text: item.lastPlayed ? new Date(item.lastPlayed).toLocaleDateString('de-CH') : '-', alignment: 'right' }
+                        ])
+                    ]
+                },
+                layout: 'lightHorizontalLines'
+            }
+        ],
+        styles: {
+            header: { fontSize: 18, bold: true, margin: [0, 0, 0, 10] },
+            subheader: { fontSize: 12, margin: [0, 0, 0, 20] },
+            tableHeader: { bold: true, fontSize: 10, color: 'black', fillColor: '#eeeeee' },
+            cellText: { fontSize: 10 }
+        }
+    };
+
+    const pdfDoc = await printer.createPdfKitDocument(docDefinition);
+
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', 'attachment; filename=repertoire-stats.pdf');
+
+    pdfDoc.pipe(res);
+    pdfDoc.end();
+});
+
+/**
+ * Get Attendance Statistics
+ * GET /api/stats/attendance
+ * Query: startDate, endDate
+ */
+const getAttendanceStats = asyncHandler(async (req, res) => {
+    const { startDate, endDate } = req.query;
+
+    const whereClause = {};
+
+    if (startDate || endDate) {
+        whereClause.event = {};
+        if (startDate) whereClause.event.date = { ...whereClause.event.date, gte: new Date(startDate) };
+        if (endDate) whereClause.event.date = { ...whereClause.event.date, lte: new Date(endDate) };
     }
 
-    const registerStats = Array.from(registerStatsMap.values()).map(r => ({
-        name: r.name,
-        averageAttendance: parseFloat((r.totalPresentRate / r.count).toFixed(1))
-    })).sort((a, b) => b.averageAttendance - a.averageAttendance);
+    // 1. Overall Distribution (Present, Excused, Unexcused)
+    const distributionRaw = await prisma.verifiedAttendance.groupBy({
+        by: ['status'],
+        _count: {
+            status: true
+        },
+        where: whereClause
+    });
+
+    const distribution = distributionRaw.map(d => ({
+        name: d.status,
+        value: d._count.status
+    }));
+
+    // 2. Attendees Detailed Stats
+    // Fetch all verified attendances in range
+    const allAttendances = await prisma.verifiedAttendance.findMany({
+        where: whereClause,
+        select: {
+            userId: true,
+            status: true
+        }
+    });
+
+    // Fetch User Details including Register
+    // We fetch all active users to ensure we have a base, but strictly we only have stats for those with attendance records.
+    // Use userIds from attendance to filter, but maybe we want "0" for others? 
+    // Let's stick to users who have at least one record to avoid cluttering with non-active/legacy users, 
+    // unless we want to show '0%'. For now, strict to records.
+    const userIds = [...new Set(allAttendances.map(a => a.userId))];
+
+    // Fetch users with their register
+    const users = await prisma.user.findMany({
+        where: { id: { in: userIds } },
+        select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            profilePicture: true,
+            register: {
+                select: { name: true }
+            }
+        },
+        orderBy: { lastName: 'asc' } // Default sort by name
+    });
+
+    // Aggregation Map
+    const statsMap = new Map();
+    // Initialize map with users
+    users.forEach(u => {
+        statsMap.set(u.id, {
+            id: u.id,
+            name: `${u.lastName} ${u.firstName}`, // "Nachname Vorname" typical for lists
+            firstName: u.firstName,
+            lastName: u.lastName,
+            register: u.register ? u.register.name : '-',
+            profilePicture: u.profilePicture,
+            present: 0,
+            excused: 0,
+            unexcused: 0,
+            total: 0
+        });
+    });
+
+    allAttendances.forEach(att => {
+        const entry = statsMap.get(att.userId);
+        if (entry) {
+            entry.total++;
+            if (att.status === 'PRESENT') entry.present++;
+            else if (att.status === 'EXCUSED') entry.excused++;
+            else if (att.status === 'UNEXCUSED') entry.unexcused++;
+        }
+    });
+
+    const attendees = Array.from(statsMap.values()).map(s => ({
+        ...s,
+        rate: s.total > 0 ? Math.round((s.present / s.total) * 100) : 0
+    }));
+
+    // Sort by Rate desc, then Name (or just Name as requested? Screenshot shows sorted by Rate? No, screenshot looks random/mixed. Let's sort by Name default or Rate.)
+    // Screenshot: "Meier" then "Bretscher". Seems sorted by Name.
+    // Let's sort by Name (LastName) default.
+    attendees.sort((a, b) => a.lastName.localeCompare(b.lastName));
+
+    // Top Attendees (Derived from full list)
+    const topAttendees = [...attendees]
+        .sort((a, b) => b.present - a.present)
+        .slice(0, 10)
+        .map(a => ({
+            id: a.id,
+            name: `${a.firstName} ${a.lastName}`,
+            count: a.present,
+            profilePicture: a.profilePicture
+        }));
 
     res.json({
-        period: { start, end },
-        userStats, // For Top 10 Table
-        pieChartData,
-        registerStats // For Register Comparison if needed
+        distribution,
+        attendees, // Full detailed list
+        topAttendees // For the chart
     });
 });
 
+/**
+ * Export Attendance Stats as PDF
+ * GET /api/stats/attendance/export
+ */
+const exportAttendancePdf = asyncHandler(async (req, res) => {
+    const { startDate, endDate } = req.query;
+
+    const whereClause = {};
+    if (startDate || endDate) {
+        whereClause.event = {};
+        if (startDate) whereClause.event.date = { ...whereClause.event.date, gte: new Date(startDate) };
+        if (endDate) whereClause.event.date = { ...whereClause.event.date, lte: new Date(endDate) };
+    }
+
+    const allAttendances = await prisma.verifiedAttendance.findMany({
+        where: whereClause,
+        select: { userId: true, status: true }
+    });
+
+    const userIds = [...new Set(allAttendances.map(a => a.userId))];
+    const users = await prisma.user.findMany({
+        where: { id: { in: userIds } },
+        select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            register: { select: { name: true } }
+        },
+        orderBy: { lastName: 'asc' }
+    });
+
+    const statsMap = new Map();
+    users.forEach(u => {
+        statsMap.set(u.id, {
+            name: `${u.lastName} ${u.firstName}`,
+            register: u.register ? u.register.name : '', // Empty string if null for clean layout
+            present: 0,
+            excused: 0,
+            unexcused: 0,
+            total: 0
+        });
+    });
+
+    allAttendances.forEach(att => {
+        const entry = statsMap.get(att.userId);
+        if (entry) {
+            entry.total++;
+            if (att.status === 'PRESENT') entry.present++;
+            else if (att.status === 'EXCUSED') entry.excused++;
+            else if (att.status === 'UNEXCUSED') entry.unexcused++;
+        }
+    });
+
+    const data = Array.from(statsMap.values()).map(s => ({
+        ...s,
+        rate: s.total > 0 ? Math.round((s.present / s.total) * 100) : 0
+    }));
+
+    // Data sorted by Name
+    data.sort((a, b) => a.name.localeCompare(b.name));
+
+    const fonts = {
+        Roboto: {
+            normal: path.join(__dirname, '../../node_modules/pdfmake/fonts/Roboto/Roboto-Regular.ttf'),
+            bold: path.join(__dirname, '../../node_modules/pdfmake/fonts/Roboto/Roboto-Medium.ttf'),
+            italics: path.join(__dirname, '../../node_modules/pdfmake/fonts/Roboto/Roboto-Italic.ttf'),
+            bolditalics: path.join(__dirname, '../../node_modules/pdfmake/fonts/Roboto/Roboto-MediumItalic.ttf')
+        }
+    };
+
+    const printer = new PdfPrinter(fonts);
+    const today = new Date().toLocaleDateString('de-CH');
+    const periodStr = `${startDate ? new Date(startDate).toLocaleDateString('de-CH') : 'Anfang'} - ${endDate ? new Date(endDate).toLocaleDateString('de-CH') : 'Heute'}`;
+
+    const docDefinition = {
+        pageOrientation: 'portrait',
+        header: function (currentPage, pageCount) {
+            return {
+                text: currentPage > 1 ? `Anwesenheitsstatistik - ${today}` : '',
+                alignment: 'right',
+                margin: [0, 20, 20, 0],
+                fontSize: 9,
+                color: '#888888'
+            };
+        },
+        footer: function (currentPage, pageCount) {
+            return {
+                text: `${currentPage} / ${pageCount}`,
+                alignment: 'center',
+                margin: [0, 10, 0, 0],
+                fontSize: 9
+            };
+        },
+        content: [
+            // Title Section
+            { text: `Anwesenheitsstatistik ${new Date().getFullYear()}`, style: 'header' },
+            { text: `Generiert am: ${today}`, style: 'subtext', margin: [0, 0, 0, 5] },
+            { text: `Zeitraum: ${periodStr}`, style: 'subtext', margin: [0, 0, 0, 20] },
+
+            // Table
+            {
+                table: {
+                    headerRows: 1,
+                    widths: ['auto', 'auto', 'auto', 'auto', 'auto', 'auto', 'auto'], // Let simpler widths
+                    body: [
+                        [
+                            { text: 'Name', style: 'tableHeader' },
+                            { text: 'Register', style: 'tableHeader' },
+                            { text: 'Rate', style: 'tableHeader' },
+                            { text: 'Anwesend', style: 'tableHeader', alignment: 'center' },
+                            { text: 'Entschuldigt', style: 'tableHeader', alignment: 'center' },
+                            { text: 'Unentschuldigt', style: 'tableHeader', alignment: 'center' },
+                            { text: 'Total', style: 'tableHeader', alignment: 'center' }
+                        ],
+                        ...data.map((item, index) => {
+                            const fillColor = index % 2 === 0 ? '#ffffff' : '#f9f9f9'; // Alternating row colors
+                            return [
+                                { text: item.name, style: 'cellText', fillColor },
+                                { text: item.register, style: 'cellText', fillColor },
+                                { text: `${item.rate}%`, style: 'cellText', fillColor },
+                                { text: item.present.toString(), alignment: 'center', style: 'cellText', fillColor },
+                                { text: item.excused.toString(), alignment: 'center', style: 'cellText', fillColor },
+                                { text: item.unexcused.toString(), alignment: 'center', style: 'cellText', fillColor },
+                                { text: item.total.toString(), alignment: 'center', style: 'cellText', fillColor, bold: true }
+                            ];
+                        })
+                    ]
+                },
+                layout: {
+                    hLineWidth: function (i, node) {
+                        return (i === 0 || i === node.table.body.length) ? 0 : 1;
+                    },
+                    vLineWidth: function (i, node) {
+                        return 0;
+                    },
+                    hLineColor: function (i, node) {
+                        return '#eaeaea';
+                    },
+                    paddingLeft: function (i, node) { return 4; },
+                    paddingRight: function (i, node) { return 4; },
+                    paddingTop: function (i, node) { return 4; },
+                    paddingBottom: function (i, node) { return 4; },
+                    fillColor: function (rowIndex, node, columnIndex) {
+                        return null; // Handle manually in cells
+                    }
+                }
+            }
+        ],
+        styles: {
+            header: { fontSize: 22, bold: true, margin: [0, 0, 0, 5] },
+            subtext: { fontSize: 12, color: '#333333' },
+            tableHeader: { bold: true, fontSize: 10, color: 'white', fillColor: '#2B75A0', margin: [0, 5, 0, 5] }, // Blue header like screenshot
+            cellText: { fontSize: 10, margin: [0, 2, 0, 2] }
+        }
+    };
+
+    const pdfDoc = await printer.createPdfKitDocument(docDefinition);
+
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', 'attachment; filename=attendance-stats.pdf');
+
+    pdfDoc.pipe(res);
+    pdfDoc.end();
+});
+
 module.exports = {
-    getAttendanceSummary
+    getRepertoireStats,
+    exportRepertoirePdf,
+    getAttendanceStats,
+    exportAttendancePdf
 };

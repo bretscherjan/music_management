@@ -500,6 +500,47 @@ const exportAttendancePdf = asyncHandler(async (req, res) => {
     const today = new Date().toLocaleDateString('de-CH');
     const periodStr = `${startDate ? new Date(startDate).toLocaleDateString('de-CH') : 'Anfang'} - ${endDate ? new Date(endDate).toLocaleDateString('de-CH') : 'Heute'}`;
 
+    // Charts Data Preparation
+
+    // 1. Distribution Data
+    let totalPresent = 0;
+    let totalExcused = 0;
+    let totalUnexcused = 0;
+    let totalAll = 0;
+
+    allAttendances.forEach(att => {
+        totalAll++;
+        if (att.status === 'PRESENT') totalPresent++;
+        else if (att.status === 'EXCUSED') totalExcused++;
+        else if (att.status === 'UNEXCUSED') totalUnexcused++;
+    });
+
+    const percentPresent = totalAll > 0 ? (totalPresent / totalAll) * 100 : 0;
+    const percentExcused = totalAll > 0 ? (totalExcused / totalAll) * 100 : 0;
+    const percentUnexcused = totalAll > 0 ? (totalUnexcused / totalAll) * 100 : 0;
+
+    // 2. Top 10 Attendees
+    // We already have 'data' sorted by Name. Let's create a sorted copy for the chart.
+    const top10 = [...data]
+        .sort((a, b) => b.present - a.present)
+        .slice(0, 10);
+
+    const maxAttendance = top10.length > 0 ? top10[0].present : 1;
+
+    // Helper to generate bar chart row
+    const createBarRow = (name, value, maxValue, color) => {
+        const barWidth = (value / maxValue) * 250; // Max width ~250pt
+        return [
+            { text: name, style: 'chartLabel', width: 120 },
+            {
+                canvas: [{ type: 'rect', x: 0, y: 0, w: barWidth, h: 10, color: color }],
+                alignment: 'left',
+                margin: [0, 3, 0, 0]
+            },
+            { text: value.toString(), style: 'chartValue', width: 30, alignment: 'right' }
+        ];
+    };
+
     const docDefinition = {
         pageOrientation: 'portrait',
         header: function (currentPage, pageCount) {
@@ -524,6 +565,61 @@ const exportAttendancePdf = asyncHandler(async (req, res) => {
             { text: `Anwesenheitsstatistik ${new Date().getFullYear()}`, style: 'header' },
             { text: `Generiert am: ${today}`, style: 'subtext', margin: [0, 0, 0, 5] },
             { text: `Zeitraum: ${periodStr}`, style: 'subtext', margin: [0, 0, 0, 20] },
+
+            // CHARTS SECTION
+
+            // Distribution Chart (Stacked Bar)
+            { text: 'Gesamtverteilung', style: 'h3', margin: [0, 10, 0, 5] },
+            {
+                table: {
+                    widths: [`${percentPresent}%`, `${percentExcused}%`, `${percentUnexcused}%`],
+                    body: [
+                        [
+                            {
+                                text: `${Math.round(percentPresent)}%`,
+                                fillColor: '#10b981', color: 'white', alignment: 'center', fontSize: 10, bold: true, border: [false, false, false, false]
+                            },
+                            {
+                                text: `${Math.round(percentExcused)}%`,
+                                fillColor: '#f59e0b', color: 'white', alignment: 'center', fontSize: 10, bold: true, border: [false, false, false, false]
+                            },
+                            {
+                                text: `${Math.round(percentUnexcused)}%`,
+                                fillColor: '#ef4444', color: 'white', alignment: 'center', fontSize: 10, bold: true, border: [false, false, false, false]
+                            }
+                        ]
+                    ]
+                },
+                layout: 'noBorders',
+                margin: [0, 0, 0, 5]
+            },
+            // Legend
+            {
+                columns: [
+                    { width: '*', text: '' },
+                    { width: 'auto', canvas: [{ type: 'rect', x: 0, y: 3, w: 10, h: 10, color: '#10b981' }] },
+                    { width: 'auto', text: ` Anwesend (${totalPresent})`, fontSize: 10, margin: [5, 0, 15, 0] },
+                    { width: 'auto', canvas: [{ type: 'rect', x: 0, y: 3, w: 10, h: 10, color: '#f59e0b' }] },
+                    { width: 'auto', text: ` Entschuldigt (${totalExcused})`, fontSize: 10, margin: [5, 0, 15, 0] },
+                    { width: 'auto', canvas: [{ type: 'rect', x: 0, y: 3, w: 10, h: 10, color: '#ef4444' }] },
+                    { width: 'auto', text: ` Unentschuldigt (${totalUnexcused})`, fontSize: 10, margin: [5, 0, 0, 0] },
+                    { width: '*', text: '' }
+                ],
+                margin: [0, 0, 0, 25]
+            },
+
+            // Top 10 Chart
+            { text: 'Top 10 Anwesende', style: 'h3', margin: [0, 0, 0, 10] },
+            {
+                table: {
+                    widths: [130, '*', 30],
+                    body: top10.map(item => createBarRow(item.name, item.present, maxAttendance, '#10b981'))
+                },
+                layout: 'noBorders',
+                margin: [0, 0, 0, 30]
+            },
+
+            { text: 'Detailliste', style: 'h3', margin: [0, 0, 0, 10], pageBreak: 'before' },
 
             // Table
             {
@@ -577,6 +673,9 @@ const exportAttendancePdf = asyncHandler(async (req, res) => {
         styles: {
             header: { fontSize: 22, bold: true, margin: [0, 0, 0, 5] },
             subtext: { fontSize: 12, color: '#333333' },
+            h3: { fontSize: 14, bold: true, color: '#2B75A0' },
+            chartLabel: { fontSize: 10, color: '#333333' },
+            chartValue: { fontSize: 10, bold: true, color: '#333333' },
             tableHeader: { bold: true, fontSize: 10, color: 'white', fillColor: '#2B75A0', margin: [0, 5, 0, 5] }, // Blue header like screenshot
             cellText: { fontSize: 10, margin: [0, 2, 0, 2] }
         }

@@ -28,6 +28,7 @@ router.use('/sheet-music', sheetMusicRoutes);
 router.use('/contact', contactRoutes);
 router.use('/calendar', require('./calendar.routes'));
 router.use('/push', pushRoutes);
+router.use('/stats', require('./stats.routes'));
 
 module.exports = router;
 

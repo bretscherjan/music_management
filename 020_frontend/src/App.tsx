@@ -26,6 +26,7 @@ import { NewsManagementPage } from '@/pages/admin/NewsManagementPage';
 import { EventManagementPage } from '@/pages/admin/EventManagementPage';
 import { UserSettingsPage } from '@/pages/UserSettingsPage';
 import { SheetMusicManagementPage } from '@/pages/admin/SheetMusicManagementPage';
+import { StatisticsPage } from '@/pages/admin/StatisticsPage';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -129,6 +130,14 @@ function App() {
                 element={
                   <ProtectedRoute requireAdmin>
                     <SheetMusicManagementPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="admin/statistics"
+                element={
+                  <ProtectedRoute requireAdmin>
+                    <StatisticsPage />
                   </ProtectedRoute>
                 }
               />

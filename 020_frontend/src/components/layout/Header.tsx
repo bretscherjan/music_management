@@ -12,7 +12,8 @@ import {
     Music,
     Newspaper,
     Settings,
-    Library
+    Library,
+    BarChart
 } from 'lucide-react';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
@@ -34,6 +35,7 @@ const navItems: NavItem[] = [
     { label: 'Noten', href: '/member/admin/sheet-music', icon: <Library className="h-5 w-5" />, adminOnly: true },
     { label: 'Register', href: '/member/admin/registers', icon: <Music className="h-5 w-5" />, adminOnly: true },
     { label: 'News', href: '/member/admin/news', icon: <Newspaper className="h-5 w-5" />, adminOnly: true },
+    { label: 'Statistiken', href: '/member/admin/statistics', icon: <BarChart className="h-5 w-5" />, adminOnly: true },
 ];
 
 export function Header() {

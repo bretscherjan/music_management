@@ -96,6 +96,17 @@ export const eventService = {
             .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
             .slice(0, limit);
     },
+
+    // Verification operations
+    async getVerificationList(eventId: number): Promise<import('@/types').VerificationListResponse> {
+        const response = await api.get<import('@/types').VerificationListResponse>(`/events/${eventId}/verification-list`);
+        return response.data;
+    },
+
+    async verifyAttendance(eventId: number, data: import('@/types').BulkVerifyDto): Promise<{ message: string }> {
+        const response = await api.post<{ message: string }>(`/events/${eventId}/verify`, data);
+        return response.data;
+    },
 };
 
 export default eventService;

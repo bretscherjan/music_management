@@ -97,6 +97,7 @@ model User {
 
   notificationSettings NotificationSettings?
   pushSubscriptions    PushSubscription[]
+  verifiedAttendances  VerifiedAttendance[]
 
   @@index([email])
   @@index([registerId])
@@ -178,8 +179,10 @@ model Event {
   setlistEnabled Boolean @default(false) // Toggle for showing the setlist/schedule
   
   // Visibility Extensions
+  // Visibility Extensions
   isPublic         Boolean @default(false) // Show on public website
   targetRegisters  Register[] // Specific registers this event is visible to (if empty, visible to all members)
+  verifiedAttendances VerifiedAttendance[]
 
   @@index([date])
   @@index([category])
@@ -409,6 +412,7 @@ model Folder {
   @@index([parentId])
 }
 
+
 model FolderAccess {
   id        Int              @id @default(autoincrement())
   folderId  Int
@@ -428,5 +432,32 @@ model FolderAccess {
   @@index([folderId])
   @@index([userId])
   @@index([registerId])
+}
+
+// ============================================
+// VERIFIED ATTENDANCE
+// ============================================
+
+enum VerificationStatus {
+  PRESENT
+  EXCUSED
+  UNEXCUSED
+}
+
+model VerifiedAttendance {
+  id        Int                @id @default(autoincrement())
+  eventId   Int
+  userId    Int
+  status    VerificationStatus
+  comment   String?            // Notiz vom Admin (z.B. "Zuspätgekommen")
+  updatedAt DateTime           @updatedAt
+  adminId   Int                // Wer hat die Kontrolle durchgeführt?
+
+  event     Event              @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  user      User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([eventId, userId]) // Pro User/Event nur ein Eintrag
+  @@index([eventId])
+  @@index([userId])
 }
 

@@ -171,6 +171,17 @@ export function SheetMusicManagementPage() {
         },
     });
 
+    const exportPdfMutation = useMutation({
+        mutationFn: () => sheetMusicService.exportPdf(queryParams),
+        onSuccess: (blob) => {
+            sheetMusicService.downloadBlob(blob, `noteninventar-${new Date().toISOString().split('T')[0]}.pdf`);
+            toast.success('PDF erfolgreich exportiert');
+        },
+        onError: () => {
+            toast.error('Fehler beim PDF Export');
+        },
+    });
+
     const resetForm = () => {
         setFormData({
             title: '',
@@ -375,9 +386,13 @@ export function SheetMusicManagementPage() {
                         </DialogContent>
                     </Dialog>
 
-                    <Button variant="outline" onClick={() => exportMutation.mutate()}>
+                    <Button variant="outline" onClick={() => exportMutation.mutate()} disabled={exportMutation.isPending}>
                         <FileDown className="h-4 w-4 mr-2" />
                         CSV Export
+                    </Button>
+                    <Button variant="outline" onClick={() => exportPdfMutation.mutate()} disabled={exportPdfMutation.isPending}>
+                        <FileDown className="h-4 w-4 mr-2" />
+                        PDF Export
                     </Button>
                 </div>
             </div>

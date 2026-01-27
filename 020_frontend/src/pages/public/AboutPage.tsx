@@ -1,4 +1,4 @@
-import { Calendar, Award, Music2 } from 'lucide-react';
+import { Calendar, Award, Music2, Mail } from 'lucide-react';
 import praesidentinImg from '../../img/praesidentin1.jpeg';
 import kassierImg from '../../img/kassier.jpeg';
 import aktuarImg from '../../img/aktuar.jpg';
@@ -42,7 +42,7 @@ export function AboutPage() {
                             <div className="bg-gradient-to-br from-[hsl(var(--musig-contrast))]/20 to-[hsl(var(--musig-primary))]/20 rounded-2xl p-8 border-2 border-[hsl(var(--musig-contrast))]/30">
                                 <div className="text-center">
                                     <div className="text-6xl font-bold text-[hsl(var(--musig-primary))] mb-2">
-                                        20
+                                        22
                                     </div>
                                     <div className="text-xl text-[hsl(var(--muted-foreground))]">
                                         Mitspieler*innen
@@ -57,19 +57,19 @@ export function AboutPage() {
                                 img={praesidentinImg}
                                 title="Präsidentin"
                                 description="Ramona Egli"
-                                email="praesident@musig-elgg.ch"
+                                email1="praesident@musig-elgg.ch"
                             />
                             <FeatureCard
                                 img={kassierImg}
-                                title="Kassier/Dirigent"
+                                title="Dirigent"
                                 description="Christian Meier"
-                                email="kassier@musig-elgg.ch"
+                                email1="dirigent@musig-elgg.ch"
                             />
                             <FeatureCard
                                 img={aktuarImg}
                                 title="Aktuar"
                                 description="Jan Bretscher"
-                                email="aktuar@musig-elgg.ch"
+                                email1="aktuar@musig-elgg.ch"
                             />
                         </div>
                     </div>
@@ -174,25 +174,47 @@ interface FeatureCardProps {
     img: string;
     title: string;
     description: string;
-    email?: string;
+    email1?: string;
+    email2?: string;
 }
 
-function FeatureCard({ img, title, description, email }: FeatureCardProps) {
+function FeatureCard({ img, title, description, email1, email2 }: FeatureCardProps) {
     return (
-        <div className="bg-white rounded-xl border border-[hsl(var(--border))] p-6 hover:shadow-lg transition-shadow">
-            <div className="bg-gradient-to-br from-[hsl(var(--musig-primary))] to-[hsl(var(--musig-primary))]/80 text-white w-14 h-14 rounded-full flex items-center justify-center mb-4 overflow-hidden">
+        <div className="bg-white rounded-xl border border-[hsl(var(--border))] p-6 hover:shadow-lg transition-shadow h-full flex flex-col">
+            <div className="bg-gradient-to-br from-[hsl(var(--musig-primary))] to-[hsl(var(--musig-primary))]/80 text-white w-14 h-14 rounded-full flex items-center justify-center mb-4 overflow-hidden shrink-0">
                 <img src={img} alt={title} className="w-full h-full object-cover" />
             </div>
             <h3 className="text-xl font-bold text-[hsl(var(--musig-primary))] mb-2">
                 {title}
             </h3>
-            <p className="text-[hsl(var(--muted-foreground))] leading-relaxed">
+            <p className="text-[hsl(var(--muted-foreground))] leading-relaxed mb-6 flex-grow">
                 {description}
             </p>
-            {email && (
-                <a href={`mailto:${email}`} className="hover:text-[hsl(var(--musig-contrast))] hover:underline">
-                    {email}
-                </a>
+            {(email1 || email2) && (
+                <div className="flex flex-col gap-3 pt-4 border-t border-[hsl(var(--border))] mt-auto">
+                    {email1 && (
+                        <a
+                            href={`mailto:${email1}`}
+                            className="flex items-center gap-3 text-sm text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--musig-contrast))] transition-colors group"
+                        >
+                            <div className="p-2 rounded-full bg-[hsl(var(--musig-primary))]/10 text-[hsl(var(--musig-primary))] group-hover:bg-[hsl(var(--musig-contrast))]/10 group-hover:text-[hsl(var(--musig-contrast))] transition-colors shrink-0">
+                                <Mail className="h-4 w-4" />
+                            </div>
+                            <span className="truncate">{email1}</span>
+                        </a>
+                    )}
+                    {email2 && (
+                        <a
+                            href={`mailto:${email2}`}
+                            className="flex items-center gap-3 text-sm text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--musig-contrast))] transition-colors group"
+                        >
+                            <div className="p-2 rounded-full bg-[hsl(var(--musig-primary))]/10 text-[hsl(var(--musig-primary))] group-hover:bg-[hsl(var(--musig-contrast))]/10 group-hover:text-[hsl(var(--musig-contrast))] transition-colors shrink-0">
+                                <Mail className="h-4 w-4" />
+                            </div>
+                            <span className="truncate">{email2}</span>
+                        </a>
+                    )}
+                </div>
             )}
         </div>
     );

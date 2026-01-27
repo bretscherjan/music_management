@@ -6,6 +6,7 @@ export * from './register';
 export * from './news';
 export * from './file';
 export * from './sheetMusic';
+export * from './stats';
 
 // Common API response types
 export interface ApiResponse<T> {

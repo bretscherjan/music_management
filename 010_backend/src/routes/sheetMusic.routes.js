@@ -30,6 +30,13 @@ router.get('/', authMiddleware, validate(querySheetMusicSchema), sheetMusicContr
 router.get('/export-csv', authMiddleware, adminOnly, sheetMusicController.exportCsv);
 
 /**
+ * @route   GET /api/sheet-music/export-pdf
+ * @desc    Export sheet music to PDF (with filters)
+ * @access  Admin only
+ */
+router.get('/export-pdf', authMiddleware, adminOnly, sheetMusicController.exportPdf);
+
+/**
  * @route   GET /api/sheet-music/:id
  * @desc    Get sheet music by ID
  * @access  Private (authenticated users)

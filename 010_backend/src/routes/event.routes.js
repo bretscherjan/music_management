@@ -116,4 +116,18 @@ router.put('/:id/setlist/:itemId', authMiddleware, adminOnly, validate(updateSet
  */
 router.delete('/:id/setlist/:itemId', authMiddleware, adminOnly, validate(removeSetlistItemSchema), eventController.removeItemFromSetlist);
 
+/**
+ * @route   GET /api/events/:id/verification-list
+ * @desc    Get list of users with attendance and verification status
+ * @access  Admin only
+ */
+router.get('/:id/verification-list', authMiddleware, adminOnly, eventController.getVerificationList);
+
+/**
+ * @route   POST /api/events/:id/verify
+ * @desc    Bulk verify attendance
+ * @access  Admin only
+ */
+router.post('/:id/verify', authMiddleware, adminOnly, eventController.verifyAttendance);
+
 module.exports = router;

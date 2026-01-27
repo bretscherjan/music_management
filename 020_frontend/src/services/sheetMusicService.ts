@@ -47,13 +47,22 @@ export const sheetMusicService = {
         return response.data;
     },
 
+    async exportPdf(params?: SheetMusicQueryParams): Promise<Blob> {
+        const response = await api.get('/sheet-music/export-pdf', {
+            params,
+            responseType: 'blob',
+        });
+        return response.data;
+    },
+
     async toggleBookmark(id: number): Promise<{ bookmarked: boolean }> {
         const response = await api.post<{ bookmarked: boolean }>(`/sheet-music/${id}/bookmark`);
         return response.data;
     },
 
     // Helper: Download CSV export
-    downloadCsvBlob(blob: Blob, filename: string = 'sheet-music-export.csv') {
+    // Helper: Download Blob export
+    downloadBlob(blob: Blob, filename: string) {
         const url = window.URL.createObjectURL(blob);
         const link = document.createElement('a');
         link.href = url;
@@ -62,6 +71,11 @@ export const sheetMusicService = {
         link.click();
         document.body.removeChild(link);
         window.URL.revokeObjectURL(url);
+    },
+
+    // Legacy support or alias
+    downloadCsvBlob(blob: Blob, filename: string = 'sheet-music-export.csv') {
+        this.downloadBlob(blob, filename);
     },
 };
 

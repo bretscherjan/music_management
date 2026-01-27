@@ -1038,6 +1038,143 @@ const reorderSetlist = asyncHandler(async (req, res) => {
     });
 });
 
+/**
+ * Get verification list for an event (Admin)
+ * GET /events/:id/verification-list
+ */
+const getVerificationList = asyncHandler(async (req, res) => {
+    const { id } = req.params;
+
+    const event = await prisma.event.findUnique({
+        where: { id: parseInt(id) },
+        include: {
+            targetRegisters: { select: { id: true } }
+        }
+    });
+
+    if (!event) {
+        throw new AppError('Event nicht gefunden', 404);
+    }
+
+    // 1. Get all Active Users (filtered by targetRegisters if applicable)
+    const whereClause = { status: 'active' };
+    const targetRegisterIds = event.targetRegisters?.map(r => r.id) || [];
+    if (targetRegisterIds.length > 0) {
+        whereClause.registerId = { in: targetRegisterIds };
+    }
+
+    const users = await prisma.user.findMany({
+        where: whereClause,
+        select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            register: { select: { id: true, name: true } },
+            profilePicture: true,
+        },
+        orderBy: [{ register: { name: 'asc' } }, { lastName: 'asc' }]
+    });
+
+    // 2. Get User Self-Declared Attendance
+    const attendances = await prisma.attendance.findMany({
+        where: { eventId: parseInt(id) }
+    });
+    const attendanceMap = new Map(attendances.map(a => [a.userId, a]));
+
+    // 3. Get Verified Attendance
+    const verifiedAttendances = await prisma.verifiedAttendance.findMany({
+        where: { eventId: parseInt(id) }
+    });
+    const verifiedMap = new Map(verifiedAttendances.map(v => [v.userId, v]));
+
+    // 4. Merge Data
+    const result = users.map(user => {
+        const attendance = attendanceMap.get(user.id);
+        const verified = verifiedMap.get(user.id);
+
+        let suggestedStatus = 'UNEXCUSED'; // Default if nothing matches
+        if (verified) {
+            suggestedStatus = verified.status;
+        } else if (attendance?.status === 'yes') {
+            suggestedStatus = 'PRESENT';
+        } else if (attendance?.status === 'no') {
+            suggestedStatus = 'EXCUSED';
+        }
+
+        return {
+            user: user,
+            attendance: attendance ? { status: attendance.status, comment: attendance.comment } : null,
+            verified: verified ? {
+                status: verified.status,
+                comment: verified.comment,
+                updatedAt: verified.updatedAt
+            } : null,
+            smartStatus: verified ? verified.status : suggestedStatus
+        };
+    });
+
+    // Group by Register
+    const groupedByRegister = result.reduce((acc, item) => {
+        const regName = item.user.register?.name || 'Ohne Register';
+        if (!acc[regName]) acc[regName] = [];
+        acc[regName].push(item);
+        return acc;
+    }, {});
+
+    res.json({
+        event: { id: event.id, title: event.title, date: event.date },
+        list: result,
+        grouped: groupedByRegister
+    });
+});
+
+/**
+ * Bulk verify attendance for an event
+ * POST /events/:id/verify
+ */
+const verifyAttendance = asyncHandler(async (req, res) => {
+    const { id } = req.params;
+    const { verifications } = req.body; // Array of { userId, status, comment }
+    const adminId = req.user.id; // Corrected: req.user.id not req.params.id
+
+    if (!Array.isArray(verifications)) {
+        throw new AppError('Ungültiges Format', 400);
+    }
+
+    const eventId = parseInt(id);
+
+    // Use transaction to update all
+    // Since we want to update multiple records, we can use a loop of upserts in a transaction
+    const operations = verifications.map(v =>
+        prisma.verifiedAttendance.upsert({
+            where: {
+                eventId_userId: {
+                    eventId: eventId,
+                    userId: v.userId
+                }
+            },
+            update: {
+                status: v.status,
+                comment: v.comment,
+                adminId: adminId
+            },
+            create: {
+                eventId: eventId,
+                userId: v.userId,
+                status: v.status,
+                comment: v.comment,
+                adminId: adminId
+            }
+        })
+    );
+
+    await prisma.$transaction(operations);
+
+    res.json({
+        message: `${operations.length} Einträge erfolgreich verifiziert.`
+    });
+});
+
 module.exports = {
     getAllEvents,
     getEventById,
@@ -1053,4 +1190,6 @@ module.exports = {
     updateSetlistItem,
     removeItemFromSetlist,
     reorderSetlist,
+    getVerificationList,
+    verifyAttendance
 };

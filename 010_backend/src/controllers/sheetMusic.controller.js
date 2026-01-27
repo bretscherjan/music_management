@@ -1,5 +1,8 @@
 const { PrismaClient } = require('@prisma/client');
 const { asyncHandler, AppError } = require('../middlewares/errorHandler.middleware');
+const PdfPrinter = require('pdfmake/js/Printer').default;
+const path = require('path');
+const fs = require('fs');
 
 const prisma = new PrismaClient();
 
@@ -392,6 +395,130 @@ const exportCsv = asyncHandler(async (req, res) => {
 });
 
 /**
+ * Export sheet music to PDF
+ * GET /sheet-music/export-pdf
+ */
+const exportPdf = asyncHandler(async (req, res) => {
+    const { search, genre, difficulty, bookmarkedBy } = req.query;
+
+    const whereClause = {};
+
+    if (search) {
+        whereClause.OR = [
+            { title: { contains: search } },
+            { composer: { contains: search } },
+            { arranger: { contains: search } },
+        ];
+    }
+
+    if (genre) {
+        whereClause.genre = genre;
+    }
+
+    if (difficulty) {
+        whereClause.difficulty = difficulty;
+    }
+
+    if (bookmarkedBy) {
+        whereClause.bookmarks = {
+            some: {
+                userId: parseInt(bookmarkedBy),
+            },
+        };
+    }
+
+    const sheetMusic = await prisma.sheetMusic.findMany({
+        where: whereClause,
+        orderBy: { title: 'asc' },
+    });
+
+    // Define fonts - we'll use the ones from pdfmake package
+    const fonts = {
+        Roboto: {
+            normal: path.join(__dirname, '../../node_modules/pdfmake/fonts/Roboto/Roboto-Regular.ttf'),
+            bold: path.join(__dirname, '../../node_modules/pdfmake/fonts/Roboto/Roboto-Medium.ttf'),
+            italics: path.join(__dirname, '../../node_modules/pdfmake/fonts/Roboto/Roboto-Italic.ttf'),
+            bolditalics: path.join(__dirname, '../../node_modules/pdfmake/fonts/Roboto/Roboto-MediumItalic.ttf')
+        }
+    };
+
+    const printer = new PdfPrinter(fonts);
+
+    const docDefinition = {
+        pageOrientation: 'landscape',
+        footer: function (currentPage, pageCount) {
+            return {
+                text: currentPage.toString() + ' / ' + pageCount,
+                alignment: 'center',
+                margin: [0, 10, 0, 0]
+            };
+        },
+        content: [
+            {
+                text: 'Noteninventar der Musig Elgg',
+                style: 'header',
+                alignment: 'center',
+                margin: [0, 0, 0, 10]
+            },
+            {
+                text: new Date().toLocaleDateString('de-CH'),
+                alignment: 'right',
+                margin: [0, 0, 0, 20]
+            },
+            {
+                table: {
+                    headerRows: 1,
+                    widths: ['*', 'auto', 'auto', 'auto', 'auto', 'auto', '*'],
+                    body: [
+                        [
+                            { text: 'Titel', style: 'tableHeader' },
+                            { text: 'Komponist', style: 'tableHeader' },
+                            { text: 'Arrangeur', style: 'tableHeader' },
+                            { text: 'Genre', style: 'tableHeader' },
+                            { text: 'Schwierigkeit', style: 'tableHeader' },
+                            { text: 'Verlag', style: 'tableHeader' },
+                            { text: 'Bemerkungen', style: 'tableHeader' }
+                        ],
+                        ...sheetMusic.map(sheet => [
+                            sheet.title || '',
+                            sheet.composer || '',
+                            sheet.arranger || '',
+                            sheet.genre || '',
+                            sheet.difficulty || '',
+                            sheet.publisher || '',
+                            sheet.notes || ''
+                        ])
+                    ]
+                }
+            }
+        ],
+        styles: {
+            header: {
+                fontSize: 18,
+                bold: true
+            },
+            tableHeader: {
+                bold: true,
+                fontSize: 12,
+                color: 'black',
+                fillColor: '#eeeeee'
+            }
+        },
+        defaultStyle: {
+            fontSize: 10
+        }
+    };
+
+    const pdfDoc = await printer.createPdfKitDocument(docDefinition);
+
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', 'attachment; filename=sheet-music-export.pdf');
+
+    pdfDoc.pipe(res);
+    pdfDoc.end();
+});
+
+/**
  * Toggle bookmark for sheet music
  * POST /sheet-music/:id/bookmark
  */
@@ -446,5 +573,6 @@ module.exports = {
     deleteSheetMusic,
     importCsv,
     exportCsv,
+    exportPdf,
     toggleBookmark,
 };

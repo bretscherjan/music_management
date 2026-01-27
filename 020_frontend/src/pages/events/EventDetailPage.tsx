@@ -9,6 +9,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { ArrowLeft, Calendar, Clock, MapPin, Edit } from 'lucide-react';
 import { formatDate, formatTime, getCategoryLabel } from '@/lib/utils';
 import { AttendanceSection } from '@/components/events/AttendanceSection';
+import { VerificationSection } from '@/components/events/VerificationSection';
 import { EventSetlistSection } from '@/components/events/EventSetlistSection';
 
 export function EventDetailPage() {
@@ -150,6 +151,13 @@ export function EventDetailPage() {
                 startTime={event.startTime}
                 endTime={event.endTime}
             />
+
+            {/* Verification Section (Admin Only) */}
+            {isAdmin && (
+                <div className="mt-8">
+                    <VerificationSection eventId={event.id} eventDate={event.date} />
+                </div>
+            )}
         </div>
     );
 }

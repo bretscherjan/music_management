@@ -16,13 +16,12 @@ import {
     TableRow,
 } from '@/components/ui/table';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Users, Search, UserCheck, UserX, Pencil, Plus, BarChart, Trash2 } from 'lucide-react';
+import { Users, Search, UserCheck, UserX, Pencil, Plus, Trash2 } from 'lucide-react';
 import { getStatusLabel } from '@/lib/utils';
 import type { UserStatus, User } from '@/types';
 import { AdminEditUserDialog } from '@/components/admin/AdminEditUserDialog';
 import { CreateUserDialog } from '@/components/admin/CreateUserDialog';
-import { AttendanceStats } from '@/components/stats/AttendanceStats';
-import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { ZoomableTableWrapper } from '@/components/common/ZoomableTableWrapper';
 
 export function UserManagementPage() {
     const isAdmin = useIsAdmin();
@@ -34,7 +33,6 @@ export function UserManagementPage() {
     // Dialog State
     const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
     const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
-    const [isStatsDialogOpen, setIsStatsDialogOpen] = useState(false);
     const [selectedUser, setSelectedUser] = useState<User | null>(null);
 
     const { data: users, isLoading: usersLoading } = useQuery({
@@ -120,12 +118,9 @@ export function UserManagementPage() {
                         }
                     </p>
                 </div>
+
                 {isAdmin && (
                     <div className="flex gap-2">
-                        <Button variant="outline" onClick={() => setIsStatsDialogOpen(true)}>
-                            <BarChart className="mr-2 h-4 w-4" />
-                            Statistik
-                        </Button>
                         <Button onClick={() => setIsCreateDialogOpen(true)}>
                             <Plus className="mr-2 h-4 w-4" />
                             Neues Mitglied
@@ -201,7 +196,7 @@ export function UserManagementPage() {
                             ))}
                         </div>
                     ) : (
-                        <div className="overflow-x-auto">
+                        <ZoomableTableWrapper title="Mitgliederliste">
                             <Table>
                                 <TableHeader>
                                     <TableRow>
@@ -209,20 +204,22 @@ export function UserManagementPage() {
                                         <TableHead className="hidden sm:table-cell">E-Mail</TableHead>
                                         <TableHead className="hidden lg:table-cell">Telefon</TableHead>
                                         <TableHead>Register</TableHead>
-                                        <TableHead>Status</TableHead>
-                                        <TableHead>Rolle</TableHead>
+                                        <TableHead className="hidden sm:table-cell">Status</TableHead>
+                                        <TableHead className="hidden sm:table-cell">Rolle</TableHead>
                                         {isAdmin && <TableHead className="text-right">Aktionen</TableHead>}
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
                                     {filteredUsers.map((user) => (
                                         <TableRow key={user.id}>
-                                            <TableCell className="font-medium">
-                                                <div>
-                                                    {user.firstName} {user.lastName}
-                                                </div>
-                                                <div className="text-xs text-muted-foreground sm:hidden">
-                                                    {user.email}
+                                            <TableCell className="font-medium py-3 sm:py-4">
+                                                <div className="space-y-1">
+                                                    <div className="font-medium">
+                                                        {user.firstName} {user.lastName}
+                                                    </div>
+                                                    <div className="text-xs text-muted-foreground sm:hidden truncate max-w-[180px]">
+                                                        {user.email}
+                                                    </div>
                                                 </div>
                                             </TableCell>
                                             <TableCell className="hidden sm:table-cell text-muted-foreground">
@@ -232,38 +229,46 @@ export function UserManagementPage() {
                                                 {user.phoneNumber || '-'}
                                             </TableCell>
                                             <TableCell>
-                                                {user.register?.name || (
-                                                    <span className="text-muted-foreground">–</span>
-                                                )}
+                                                <div className="flex flex-col gap-1">
+                                                    <span>{user.register?.name || '–'}</span>
+                                                    <div className="flex gap-1 sm:hidden">
+                                                        <Badge variant={statusVariant[user.status]} className="text-[10px] h-5 px-1.5">
+                                                            {getStatusLabel(user.status)}
+                                                        </Badge>
+                                                        <Badge variant={user.role === 'admin' ? 'default' : 'outline'} className="text-[10px] h-5 px-1.5">
+                                                            {user.role === 'admin' ? 'Admin' : 'Mitgl.'}
+                                                        </Badge>
+                                                    </div>
+                                                </div>
                                             </TableCell>
-                                            <TableCell>
+                                            <TableCell className="hidden sm:table-cell">
                                                 <Badge variant={statusVariant[user.status]}>
                                                     {getStatusLabel(user.status)}
                                                 </Badge>
                                             </TableCell>
-                                            <TableCell>
+                                            <TableCell className="hidden sm:table-cell">
                                                 <Badge variant={user.role === 'admin' ? 'default' : 'outline'}>
                                                     {user.role === 'admin' ? 'Admin' : 'Mitglied'}
                                                 </Badge>
                                             </TableCell>
                                             {isAdmin && (
-                                                <TableCell className="text-right">
+                                                <TableCell className="text-right py-3 sm:py-4">
                                                     <div className="flex gap-1 justify-end">
                                                         <Button
                                                             variant="ghost"
                                                             size="icon"
                                                             onClick={() => handleEditUser(user)}
-                                                            className="h-8 w-8"
+                                                            className="h-10 w-10 text-muted-foreground"
                                                         >
-                                                            <Pencil className="h-4 w-4" />
+                                                            <Pencil className="h-5 w-5" />
                                                         </Button>
                                                         <Button
                                                             variant="ghost"
                                                             size="icon"
                                                             onClick={() => handleDeleteUser(user)}
-                                                            className="h-8 w-8 text-destructive hover:text-destructive"
+                                                            className="h-10 w-10 text-destructive hover:text-destructive"
                                                         >
-                                                            <Trash2 className="h-4 w-4" />
+                                                            <Trash2 className="h-5 w-5" />
                                                         </Button>
                                                     </div>
                                                 </TableCell>
@@ -279,7 +284,7 @@ export function UserManagementPage() {
                                     )}
                                 </TableBody>
                             </Table>
-                        </div>
+                        </ZoomableTableWrapper>
                     )}
                 </CardContent>
             </Card>
@@ -297,11 +302,6 @@ export function UserManagementPage() {
                         open={isCreateDialogOpen}
                         onOpenChange={setIsCreateDialogOpen}
                     />
-                    <Dialog open={isStatsDialogOpen} onOpenChange={setIsStatsDialogOpen}>
-                        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
-                            <AttendanceStats />
-                        </DialogContent>
-                    </Dialog>
                 </>
             )}
 

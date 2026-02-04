@@ -38,7 +38,10 @@
         "nodemailer": "^6.9.8",
         "pdfmake": "^0.3.3",
         "rrule": "^2.7.2",
+        "socket.io": "^4.8.3",
         "web-push": "^3.6.7",
+        "y-websocket": "^3.0.0",
+        "yjs": "^13.6.29",
         "zod": "^3.22.4"
     },
     "devDependencies": {

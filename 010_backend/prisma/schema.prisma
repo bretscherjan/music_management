@@ -99,6 +99,13 @@ model User {
   pushSubscriptions    PushSubscription[]
   verifiedAttendances  VerifiedAttendance[]
 
+  // Workspace Relations
+  tasksCreated      Task[]             @relation("TaskCreator")
+  tasksCompleted    Task[]             @relation("TaskCompleter")
+  taskHistory       TaskHistory[]
+  ownedNotes        AdminNote[]        @relation("NoteOwner")
+  noteContributions NoteContribution[]
+
   @@index([email])
   @@index([registerId])
 }
@@ -183,6 +190,9 @@ model Event {
   isPublic         Boolean @default(false) // Show on public website
   targetRegisters  Register[] // Specific registers this event is visible to (if empty, visible to all members)
   verifiedAttendances VerifiedAttendance[]
+  
+  // Workspace Tasks linked to this event
+  workspaceTasks   Task[]
 
   @@index([date])
   @@index([category])
@@ -494,3 +504,130 @@ model MusicFolderItem {
   @@index([folderId])
   @@index([sheetMusicId])
 }
+
+// ============================================
+// ADMIN WORKSPACE (Tasks & Notes)
+// ============================================
+
+enum TaskPriority {
+  low
+  medium
+  high
+}
+
+// Task Category (z.B. "Konzert-Vorbereitung", "Vereinsarbeit")
+model TaskCategory {
+  id        Int      @id @default(autoincrement())
+  name      String
+  color     String?  // Optional: Custom Farbe
+  position  Int      @default(0)
+  
+  tasks     Task[]
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([position])
+}
+
+// Task mit Priorität, Subtasks, History
+model Task {
+  id           Int            @id @default(autoincrement())
+  title        String
+  description  String?        @db.Text
+  priority     TaskPriority   @default(medium)
+  dueDate      DateTime?
+  completed    Boolean        @default(false)
+  completedAt  DateTime?
+  archived     Boolean        @default(false)
+  position     Int            @default(0)
+  
+  // Relations
+  categoryId   Int
+  category     TaskCategory   @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  
+  // Subtasks (self-referencing)
+  parentId     Int?
+  parent       Task?          @relation("TaskSubtasks", fields: [parentId], references: [id], onDelete: Cascade)
+  subtasks     Task[]         @relation("TaskSubtasks")
+  
+  // Event-Verlinkung (optional)
+  eventId      Int?
+  event        Event?         @relation(fields: [eventId], references: [id], onDelete: SetNull)
+  
+  // Tracking
+  createdById   Int
+  createdBy     User           @relation("TaskCreator", fields: [createdById], references: [id])
+  completedById Int?
+  completedBy   User?          @relation("TaskCompleter", fields: [completedById], references: [id])
+  
+  history       TaskHistory[]
+  
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  @@index([categoryId])
+  @@index([parentId])
+  @@index([eventId])
+  @@index([completed])
+  @@index([archived])
+  @@index([position])
+}
+
+// Task History Log for tracking changes
+model TaskHistory {
+  id        Int      @id @default(autoincrement())
+  taskId    Int
+  task      Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id])
+  action    String   // 'created', 'completed', 'uncompleted', 'edited', 'archived', 'deleted'
+  details   Json?    // Additional details (e.g., old/new values)
+  
+  createdAt DateTime @default(now())
+
+  @@index([taskId])
+  @@index([userId])
+  @@index([createdAt])
+}
+
+// Admin Notes (Tab-System)
+model AdminNote {
+  id           Int           @id @default(autoincrement())
+  title        String
+  content      String        @db.LongText
+  
+  // Owner (determines primary color)
+  ownerId      Int
+  owner        User          @relation("NoteOwner", fields: [ownerId], references: [id])
+  
+  pinned       Boolean       @default(false)
+  position     Int           @default(0)
+  
+  // Collaboration Stats
+  contributions NoteContribution[]
+  
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  @@index([ownerId])
+  @@index([pinned])
+  @@index([position])
+}
+
+// Contribution Tracking (for determining primary contributor color)
+model NoteContribution {
+  id          Int       @id @default(autoincrement())
+  noteId      Int
+  note        AdminNote @relation(fields: [noteId], references: [id], onDelete: Cascade)
+  userId      Int
+  user        User      @relation(fields: [userId], references: [id])
+  charCount   Int       @default(0)  // Number of characters contributed
+  
+  updatedAt   DateTime  @updatedAt
+  
+  @@unique([noteId, userId])
+  @@index([noteId])
+  @@index([userId])
+}
+

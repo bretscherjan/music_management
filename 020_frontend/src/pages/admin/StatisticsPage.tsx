@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { Download, Calendar, Filter } from 'lucide-react';
 import { toast } from 'sonner';
+import { ZoomableTableWrapper } from '@/components/common/ZoomableTableWrapper';
 
 export function StatisticsPage() {
     const [activeTab, setActiveTab] = useState<'repertoire' | 'attendance'>('repertoire');
@@ -100,14 +101,14 @@ export function StatisticsPage() {
 
     return (
         <div className="space-y-6 max-w-7xl mx-auto pb-12">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4">
                 <div>
                     <h1 className="text-3xl font-bold tracking-tight">Statistiken</h1>
                     <p className="text-gray-500">Auswertung von Repertoire und Anwesenheit</p>
                 </div>
-                <div className="flex gap-2 items-center">
+                <div className="flex gap-2 items-center flex-wrap">
                     <Select value={timeRange} onValueChange={setTimeRange}>
-                        <SelectTrigger className="w-[180px]">
+                        <SelectTrigger className="w-[160px] sm:w-[180px]">
                             <Calendar className="mr-2 h-4 w-4" />
                             <SelectValue placeholder="Zeitraum" />
                         </SelectTrigger>
@@ -120,7 +121,7 @@ export function StatisticsPage() {
 
                     {activeTab === 'repertoire' && (
                         <Select value={eventCategory} onValueChange={setEventCategory}>
-                            <SelectTrigger className="w-[180px]">
+                            <SelectTrigger className="w-[160px] sm:w-[180px]">
                                 <Filter className="mr-2 h-4 w-4" />
                                 <SelectValue placeholder="Kategorie" />
                             </SelectTrigger>
@@ -132,7 +133,7 @@ export function StatisticsPage() {
                         </Select>
                     )}
 
-                    <Button onClick={handleDownloadPdf}>
+                    <Button onClick={handleDownloadPdf} className="whitespace-nowrap">
                         <Download className="mr-2 h-4 w-4" />
                         Export PDF
                     </Button>
@@ -229,11 +230,8 @@ export function StatisticsPage() {
 
                     {/* Data Table */}
                     <Card>
-                        <CardHeader>
-                            <CardTitle>Detailliste</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <div className="rounded-md border">
+                        <CardContent className="p-0">
+                            <ZoomableTableWrapper title="Detailliste: Repertoire">
                                 <table className="w-full text-sm">
                                     <thead className="bg-slate-50 border-b">
                                         <tr>
@@ -260,9 +258,9 @@ export function StatisticsPage() {
                                         ))}
                                     </tbody>
                                 </table>
-                            </div>
+                            </ZoomableTableWrapper>
                             {repertoireStats && repertoireStats.length > 50 && (
-                                <div className="text-center mt-4 text-xs text-slate-400">
+                                <div className="text-center p-4 text-xs text-slate-400">
                                     Zeige die ersten 50 von {repertoireStats.length} Einträgen. Nutzen Sie den PDF Export für die volle Liste.
                                 </div>
                             )}
@@ -342,20 +340,17 @@ export function StatisticsPage() {
 
                     {/* NEW: Full Attendance Table */}
                     <Card>
-                        <CardHeader>
-                            <CardTitle>Detailliste: Anwesenheit</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <div className="rounded-md border overflow-hidden">
+                        <CardContent className="p-0">
+                            <ZoomableTableWrapper title="Detailliste: Anwesenheit">
                                 <table className="w-full text-sm">
                                     <thead className="bg-[#2B75A0] text-white">
                                         <tr>
                                             <th className="h-10 px-4 text-left font-bold">Name</th>
                                             <th className="h-10 px-4 text-left font-bold">Register</th>
                                             <th className="h-10 px-4 text-left font-bold">Rate</th>
-                                            <th className="h-10 px-4 text-left font-bold">Anwesend</th>
-                                            <th className="h-10 px-4 text-left font-bold">Entschuldigt</th>
-                                            <th className="h-10 px-4 text-left font-bold">Unentschuldigt</th>
+                                            <th className="h-10 px-4 text-right font-bold">Anwesend</th>
+                                            <th className="h-10 px-4 text-right font-bold">Entschuldigt</th>
+                                            <th className="h-10 px-4 text-right font-bold">Unentschuldigt</th>
                                             <th className="h-10 px-4 text-right font-bold">Total</th>
                                         </tr>
                                     </thead>
@@ -367,15 +362,15 @@ export function StatisticsPage() {
                                                 </td>
                                                 <td className="p-3 text-slate-700">{item.register || '-'}</td>
                                                 <td className="p-3 font-medium">{item.rate}%</td>
-                                                <td className="p-3">{item.present}</td>
-                                                <td className="p-3">{item.excused}</td>
-                                                <td className="p-3">{item.unexcused}</td>
+                                                <td className="p-3 text-right">{item.present}</td>
+                                                <td className="p-3 text-right">{item.excused}</td>
+                                                <td className="p-3 text-right">{item.unexcused}</td>
                                                 <td className="p-3 text-right font-bold text-slate-900">{item.total}</td>
                                             </tr>
                                         ))}
                                     </tbody>
                                 </table>
-                            </div>
+                            </ZoomableTableWrapper>
                         </CardContent>
                     </Card>
                 </div>

@@ -43,7 +43,7 @@ export function Dashboard() {
 
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                 {/* Upcoming Events */}
-                <div className="md:col-span-2 space-y-4">
+                <div className="md:col-span-1 lg:col-span-2 space-y-4">
                     <div className="flex items-center justify-between">
                         <h2 className="text-xl font-semibold text-foreground/80">Nächste Termine</h2>
                         <Link to="/member/events">
@@ -141,7 +141,7 @@ function EventCard({ event }: { event: Event }) {
 
     return (
         <Link to={`/member/events/${event.id}`}>
-            <Card className="transition-all duration-200 hover:shadow-md hover:border-primary/50 group bg-card hover:bg-accent/5">
+            <Card className="transition-all duration-200 hover:shadow-md hover:border-primary/50 group bg-card hover:bg-accent/5 active-scale">
                 <CardContent className="p-5">
                     <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
                         <div className="space-y-3 flex-1">
@@ -179,7 +179,7 @@ function EventCard({ event }: { event: Event }) {
                             )}
                         </div>
 
-                        <ChevronRight className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors hidden sm:block self-center" />
+                        <ChevronRight className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors self-center" />
                     </div>
                 </CardContent>
             </Card>

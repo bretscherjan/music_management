@@ -28,6 +28,7 @@ import { UserSettingsPage } from '@/pages/UserSettingsPage';
 import { SheetMusicManagementPage } from '@/pages/admin/SheetMusicManagementPage';
 import { StatisticsPage } from '@/pages/admin/StatisticsPage';
 import { MusicFolderPage } from '@/pages/secured/music-folder/MusicFolderPage';
+import { WorkspacePage } from '@/pages/admin/WorkspacePage';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -141,6 +142,14 @@ function App() {
                 element={
                   <ProtectedRoute requireAdmin>
                     <StatisticsPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="admin/workspace"
+                element={
+                  <ProtectedRoute requireAdmin>
+                    <WorkspacePage />
                   </ProtectedRoute>
                 }
               />

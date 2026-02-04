@@ -112,6 +112,7 @@ body {
   color: hsl(var(--foreground));
   margin: 0;
   min-height: 100vh;
+  overflow-x: hidden;
 }
 
 /* Utility classes */
@@ -128,6 +129,12 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+/* Active state for better touch feedback */
+.active-scale:active {
+  transform: scale(0.98);
+  transition: transform 0.1s;
 }
 
 @theme inline {

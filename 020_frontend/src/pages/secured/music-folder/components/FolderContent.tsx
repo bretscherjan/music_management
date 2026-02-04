@@ -6,9 +6,8 @@ import { musicFolderService } from '@/services/musicFolderService';
 import { sheetMusicService } from '@/services/sheetMusicService';
 import { useIsAdmin } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
-import { Download, Plus, Trash2, GripVertical, Eye, Save, X } from 'lucide-react';
+import { Download, Plus, Trash2, GripVertical, Save, X } from 'lucide-react';
 import { toast } from 'sonner';
-import { PDFViewer } from '@/components/sheet-music/PDFViewer';
 import { Dialog, DialogContent, DialogTrigger, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import type { MusicFolderItem } from '@/services/musicFolderService';
 
@@ -38,7 +37,6 @@ export const FolderContent = ({ folderId }: FolderContentProps) => {
     const isAdmin = useIsAdmin();
     const queryClient = useQueryClient();
     const navigate = useNavigate();
-    const [viewPdfUrl, setViewPdfUrl] = useState<string | null>(null);
     const [editMode, setEditMode] = useState(false);
 
     const deleteFolderMutation = useMutation({
@@ -130,12 +128,6 @@ export const FolderContent = ({ folderId }: FolderContentProps) => {
         setItems(items.filter(i => i.id !== itemId));
     };
 
-    const handleViewPdf = (sheetId: number) => {
-        // Use proxy view endpoint
-        const url = `${import.meta.env.VITE_API_URL || '/api'}/sheet-music/${sheetId}/view`;
-        setViewPdfUrl(url);
-    };
-
     const SortableItem = ({ item }: { item: MusicFolderItem }) => {
         const {
             attributes,
@@ -167,12 +159,6 @@ export const FolderContent = ({ folderId }: FolderContentProps) => {
                 </div>
 
                 <div className="flex items-center gap-2">
-                    {!editMode && (
-                        <Button variant="ghost" size="sm" onClick={() => handleViewPdf(item.sheetMusic.id)}>
-                            <Eye className="h-4 w-4 mr-2" />
-                            Vorschau
-                        </Button>
-                    )}
                     {editMode && (
                         <Button variant="ghost" size="icon" className="text-red-500 hover:text-red-600 hover:bg-red-50" onClick={() => handleRemoveItem(item.id)}>
                             <Trash2 className="h-4 w-4" />
@@ -189,14 +175,15 @@ export const FolderContent = ({ folderId }: FolderContentProps) => {
     return (
         <div className="h-full flex flex-col bg-slate-50">
             {/* Header */}
-            <div className="bg-white border-b px-6 py-4 flex items-center justify-between shadow-sm z-10">
+            {/* Header */}
+            <div className="bg-white border-b p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-sm z-10 sticky top-0">
                 <div>
-                    <h1 className="text-2xl font-bold text-gray-800">{folder.name}</h1>
-                    {folder.description && <p className="text-gray-500 mt-1">{folder.description}</p>}
+                    <h1 className="text-xl sm:text-2xl font-bold text-gray-800 break-all">{folder.name}</h1>
+                    {folder.description && <p className="text-gray-500 mt-1 text-sm">{folder.description}</p>}
                 </div>
-                <div className="flex gap-2">
+                <div className="flex flex-wrap gap-2">
                     {isAdmin && !editMode && (
-                        <Button variant="outline" onClick={() => setEditMode(true)}>
+                        <Button variant="outline" size="sm" onClick={() => setEditMode(true)}>
                             Bearbeiten
                         </Button>
                     )}
@@ -204,6 +191,7 @@ export const FolderContent = ({ folderId }: FolderContentProps) => {
                         <>
                             <Button
                                 variant="destructive"
+                                size="sm"
                                 onClick={() => {
                                     if (confirm('Möchten Sie diese Mappe wirklich löschen?')) {
                                         deleteFolderMutation.mutate(folderId);
@@ -211,14 +199,15 @@ export const FolderContent = ({ folderId }: FolderContentProps) => {
                                 }}
                                 disabled={deleteFolderMutation.isPending}
                             >
-                                <Trash2 className="h-4 w-4 mr-2" />
-                                Mappe Löschen
+                                <Trash2 className="h-4 w-4 sm:mr-2" />
+                                <span className="hidden sm:inline">Mappe Löschen</span>
                             </Button>
                             <Dialog>
                                 <DialogTrigger asChild>
-                                    <Button variant="secondary">
-                                        <Plus className="h-4 w-4 mr-2" />
-                                        Stück hinzufügen
+                                    <Button variant="secondary" size="sm">
+                                        <Plus className="h-4 w-4 sm:mr-2" />
+                                        <span className="hidden sm:inline">Stück hinzufügen</span>
+                                        <span className="sm:hidden">Neu</span>
                                     </Button>
                                 </DialogTrigger>
                                 <DialogContent className="max-w-2xl max-h-[80vh] flex flex-col">
@@ -253,9 +242,9 @@ export const FolderContent = ({ folderId }: FolderContentProps) => {
                                     </div>
                                 </DialogContent>
                             </Dialog>
-                            <Button onClick={handleSave} disabled={updateItemsMutation.isPending}>
-                                <Save className="h-4 w-4 mr-2" />
-                                Speichern
+                            <Button size="sm" onClick={handleSave} disabled={updateItemsMutation.isPending}>
+                                <Save className="h-4 w-4 sm:mr-2" />
+                                <span className="hidden sm:inline">Speichern</span>
                             </Button>
                             <Button variant="ghost" size="icon" onClick={() => {
                                 setEditMode(false);
@@ -271,6 +260,22 @@ export const FolderContent = ({ folderId }: FolderContentProps) => {
                             {isAdmin && (
                                 <Button
                                     variant="destructive"
+                                    size="icon"
+                                    className="sm:hidden"
+                                    onClick={() => {
+                                        if (confirm('Möchten Sie diese Mappe wirklich löschen?')) {
+                                            deleteFolderMutation.mutate(folderId);
+                                        }
+                                    }}
+                                    disabled={deleteFolderMutation.isPending}
+                                >
+                                    <Trash2 className="h-4 w-4" />
+                                </Button>
+                            )}
+                            {isAdmin && (
+                                <Button
+                                    variant="destructive"
+                                    className="hidden sm:flex"
                                     onClick={() => {
                                         if (confirm('Möchten Sie diese Mappe wirklich löschen?')) {
                                             deleteFolderMutation.mutate(folderId);
@@ -283,6 +288,7 @@ export const FolderContent = ({ folderId }: FolderContentProps) => {
                                 </Button>
                             )}
                             <Button
+                                size="sm"
                                 onClick={async () => {
                                     try {
                                         const blob = await musicFolderService.exportPdf(folderId);
@@ -298,8 +304,9 @@ export const FolderContent = ({ folderId }: FolderContentProps) => {
                                     }
                                 }}
                             >
-                                <Download className="h-4 w-4 mr-2" />
-                                Mappe als PDF Liste
+                                <Download className="h-4 w-4 sm:mr-2" />
+                                <span className="hidden sm:inline">Liste als PDF</span>
+                                <span className="sm:hidden">PDF</span>
                             </Button>
                         </>
                     )}
@@ -332,21 +339,6 @@ export const FolderContent = ({ folderId }: FolderContentProps) => {
                 </DndContext>
             </div>
 
-            {/* PDF Overlay */}
-            {viewPdfUrl && (
-                <div className="fixed inset-0 z-50 bg-black/80 flex flex-col animate-in fade-in duration-200">
-                    <div className="flex bg-white text-gray-900 p-2 justify-between items-center">
-                        <span className="font-semibold ml-4">PDF Vorschau</span>
-                        <Button variant="ghost" onClick={() => setViewPdfUrl(null)}>
-                            <X className="h-5 w-5" />
-                            Schließen
-                        </Button>
-                    </div>
-                    <div className="flex-1 bg-gray-100 overflow-hidden relative">
-                        <PDFViewer fileUrl={viewPdfUrl} />
-                    </div>
-                </div>
-            )}
         </div>
     );
 };

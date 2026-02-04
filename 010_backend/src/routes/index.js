@@ -30,6 +30,7 @@ router.use('/calendar', require('./calendar.routes'));
 router.use('/push', pushRoutes);
 router.use('/stats', require('./stats.routes'));
 router.use('/music-folders', require('./musicFolder.routes'));
+router.use('/workspace', require('./workspace.routes'));
 
 module.exports = router;
 

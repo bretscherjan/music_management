@@ -9,6 +9,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Trash2, Calendar, Filter, AlertTriangle } from 'lucide-react';
 import { formatDate, getCategoryLabel } from '@/lib/utils';
 import type { Event, EventCategory } from '@/types';
+import { ZoomableTableWrapper } from '@/components/common/ZoomableTableWrapper';
 
 const categories: { value: EventCategory | 'all'; label: string }[] = [
     { value: 'all', label: 'Alle' },
@@ -164,9 +165,9 @@ export function EventManagementPage() {
                         </span>
                     </CardTitle>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="p-0">
                     {isLoading ? (
-                        <div className="space-y-3">
+                        <div className="p-6 space-y-3">
                             {[1, 2, 3, 4, 5].map((i) => (
                                 <Skeleton key={i} className="h-12 w-full" />
                             ))}
@@ -176,36 +177,40 @@ export function EventManagementPage() {
                             Fehler beim Laden der Termine
                         </p>
                     ) : (
-                        <div className="space-y-1">
-                            {/* Header Row */}
-                            <div className="flex items-center gap-4 p-3 border-b font-medium text-sm text-muted-foreground">
-                                <Checkbox
-                                    checked={allSelected}
-                                    onCheckedChange={handleSelectAll}
-                                    aria-label="Alle auswählen"
-                                />
-                                <span className="w-24">Datum</span>
-                                <span className="flex-1">Titel</span>
-                                <span className="w-24 hidden sm:block">Kategorie</span>
+                        <ZoomableTableWrapper title="Terminliste">
+                            <div className="min-w-[500px]">
+                                {/* Header Row */}
+                                <div className="flex items-center gap-4 p-3 border-b font-medium text-sm text-muted-foreground bg-muted/5">
+                                    <Checkbox
+                                        checked={allSelected}
+                                        onCheckedChange={handleSelectAll}
+                                        aria-label="Alle auswählen"
+                                    />
+                                    <span className="w-24">Datum</span>
+                                    <span className="flex-1">Titel</span>
+                                    <span className="w-24 hidden sm:block">Kategorie</span>
+                                </div>
+
+                                {/* Event Rows */}
+                                <div className="space-y-1 p-2">
+                                    {filteredEvents.map((event) => (
+                                        <EventRow
+                                            key={event.id}
+                                            event={event}
+                                            isSelected={selectedIds.includes(event.id)}
+                                            onSelect={(checked) => handleSelectOne(event.id, checked)}
+                                            categoryVariant={categoryVariant}
+                                        />
+                                    ))}
+                                </div>
+
+                                {filteredEvents.length === 0 && (
+                                    <p className="text-center text-muted-foreground py-8">
+                                        Keine Termine gefunden
+                                    </p>
+                                )}
                             </div>
-
-                            {/* Event Rows */}
-                            {filteredEvents.map((event) => (
-                                <EventRow
-                                    key={event.id}
-                                    event={event}
-                                    isSelected={selectedIds.includes(event.id)}
-                                    onSelect={(checked) => handleSelectOne(event.id, checked)}
-                                    categoryVariant={categoryVariant}
-                                />
-                            ))}
-
-                            {filteredEvents.length === 0 && (
-                                <p className="text-center text-muted-foreground py-8">
-                                    Keine Termine gefunden
-                                </p>
-                            )}
-                        </div>
+                        </ZoomableTableWrapper>
                     )}
                 </CardContent>
             </Card>

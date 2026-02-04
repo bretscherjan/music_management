@@ -4,13 +4,21 @@ const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 const path = require('path');
+const http = require('http');
 
 const routes = require('./src/routes');
 const { errorHandler } = require('./src/middlewares/errorHandler.middleware');
 const { initializeDefaultSettings } = require('./src/controllers/settings.controller');
+const { initializeWebSocket, attachIO } = require('./src/services/websocket.service');
 
 const app = express();
 const PORT = process.env.PORT || 3004;
+
+// Create HTTP server for WebSocket support
+const server = http.createServer(app);
+
+// Initialize WebSocket
+const io = initializeWebSocket(server);
 
 // Security Middleware
 app.use(helmet());
@@ -25,6 +33,9 @@ app.use(cors({
 // Body Parser
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// Attach Socket.io to requests for workspace routes
+app.use('/api/workspace', attachIO);
 
 // Health Check Endpoint
 app.get('/health', (req, res) => {
@@ -48,8 +59,8 @@ app.use((req, res, next) => {
 // Global Error Handler
 app.use(errorHandler);
 
-// Start Server
-app.listen(PORT, async () => {
+// Start Server (using http server instead of app.listen)
+server.listen(PORT, async () => {
   // Initialize default settings
   try {
     await initializeDefaultSettings();

@@ -10,6 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Loader2, Plus, Pencil, Trash2, Users } from 'lucide-react';
 import type { Register } from '@/types/register';
+import { ZoomableTableWrapper } from '@/components/common/ZoomableTableWrapper';
 
 export function RegisterManagementPage() {
     const queryClient = useQueryClient();
@@ -152,50 +153,52 @@ export function RegisterManagementPage() {
                             <Loader2 className="mx-auto h-8 w-8 animate-spin text-primary" />
                         </div>
                     ) : (
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead>Name</TableHead>
-                                    <TableHead>Mitglieder</TableHead>
-                                    <TableHead className="w-[100px] text-right">Aktionen</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {registers?.map((register) => (
-                                    <TableRow key={register.id}>
-                                        <TableCell className="font-medium">{register.name}</TableCell>
-                                        <TableCell>{(register as any).memberCount || 0} Mitglieder</TableCell>
-                                        <TableCell className="text-right">
-                                            <div className="flex justify-end gap-2">
-                                                <Button
-                                                    variant="ghost"
-                                                    size="icon"
-                                                    onClick={() => handleOpenEdit(register)}
-                                                    className="h-8 w-8"
-                                                >
-                                                    <Pencil className="h-4 w-4" />
-                                                </Button>
-                                                <Button
-                                                    variant="ghost"
-                                                    size="icon"
-                                                    onClick={() => handleDelete(register.id)}
-                                                    className="h-8 w-8 text-destructive hover:text-destructive"
-                                                >
-                                                    <Trash2 className="h-4 w-4" />
-                                                </Button>
-                                            </div>
-                                        </TableCell>
-                                    </TableRow>
-                                ))}
-                                {registers?.length === 0 && (
+                        <ZoomableTableWrapper title="Registerliste">
+                            <Table className="min-w-[500px]">
+                                <TableHeader>
                                     <TableRow>
-                                        <TableCell colSpan={3} className="text-center text-muted-foreground">
-                                            Keine Register gefunden
-                                        </TableCell>
+                                        <TableHead>Name</TableHead>
+                                        <TableHead>Mitglieder</TableHead>
+                                        <TableHead className="w-[100px] text-right">Aktionen</TableHead>
                                     </TableRow>
-                                )}
-                            </TableBody>
-                        </Table>
+                                </TableHeader>
+                                <TableBody>
+                                    {registers?.map((register) => (
+                                        <TableRow key={register.id}>
+                                            <TableCell className="font-medium">{register.name}</TableCell>
+                                            <TableCell>{(register as any).memberCount || 0} Mitglieder</TableCell>
+                                            <TableCell className="text-right">
+                                                <div className="flex justify-end gap-2">
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        onClick={() => handleOpenEdit(register)}
+                                                        className="h-8 w-8"
+                                                    >
+                                                        <Pencil className="h-4 w-4" />
+                                                    </Button>
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        onClick={() => handleDelete(register.id)}
+                                                        className="h-8 w-8 text-destructive hover:text-destructive"
+                                                    >
+                                                        <Trash2 className="h-4 w-4" />
+                                                    </Button>
+                                                </div>
+                                            </TableCell>
+                                        </TableRow>
+                                    ))}
+                                    {registers?.length === 0 && (
+                                        <TableRow>
+                                            <TableCell colSpan={3} className="text-center text-muted-foreground">
+                                                Keine Register gefunden
+                                            </TableCell>
+                                        </TableRow>
+                                    )}
+                                </TableBody>
+                            </Table>
+                        </ZoomableTableWrapper>
                     )}
                 </CardContent>
             </Card>

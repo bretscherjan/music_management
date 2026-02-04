@@ -37,6 +37,7 @@ import { Badge } from '@/components/ui/badge';
 import { Folder, Plus, FileUp, FileDown, Search, Star, Edit2, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { musicFolderService } from '@/services/musicFolderService';
+import { ZoomableTableWrapper } from '@/components/common/ZoomableTableWrapper';
 
 export function SheetMusicManagementPage() {
     const { user } = useAuth();
@@ -322,7 +323,7 @@ export function SheetMusicManagementPage() {
                 </div>
 
                 {/* Action Buttons */}
-                <div className="flex gap-2">
+                <div className="flex gap-2 flex-wrap">
                     <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
                         <DialogTrigger asChild>
                             <Button>
@@ -409,11 +410,11 @@ export function SheetMusicManagementPage() {
 
                     <Button variant="outline" onClick={() => exportMutation.mutate()} disabled={exportMutation.isPending}>
                         <FileDown className="h-4 w-4 mr-2" />
-                        CSV Export
+                        Export
                     </Button>
                     <Button variant="outline" onClick={() => exportPdfMutation.mutate()} disabled={exportPdfMutation.isPending}>
                         <FileDown className="h-4 w-4 mr-2" />
-                        PDF Export
+                        PDF
                     </Button>
                 </div>
             </div>
@@ -424,8 +425,8 @@ export function SheetMusicManagementPage() {
                     <div className="text-center py-8">Lädt...</div>
                 ) : (
                     <>
-                        <div className="border rounded-lg overflow-hidden">
-                            <Table>
+                        <ZoomableTableWrapper title="Notenbestand">
+                            <Table className="min-w-[800px]">
                                 <TableHeader>
                                     <TableRow>
                                         <TableHead>Titel</TableHead>
@@ -521,7 +522,7 @@ export function SheetMusicManagementPage() {
                                     ))}
                                 </TableBody>
                             </Table>
-                        </div>
+                        </ZoomableTableWrapper>
 
                         {/* Pagination */}
                         {data && data.pagination.totalPages > 1 && (
@@ -597,49 +598,17 @@ function CreateEditDialog({
     setFormData,
     onSubmit,
     isLoading,
-    sheetId,
 }: CreateEditDialogProps) {
-    const queryClient = useQueryClient();
 
-    // File Queries
-    const { data: files } = useQuery({
-        queryKey: ['sheetMusicFiles', sheetId],
-        queryFn: () => import('@/services/fileService').then(m => m.fileService.getAll({ sheetMusicId: sheetId })),
-        enabled: !!sheetId,
-    });
 
-    const uploadFileMutation = useMutation({
-        mutationFn: (file: File) => import('@/services/fileService').then(m => m.fileService.upload(file, { sheetMusicId: sheetId, visibility: 'all' })),
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['sheetMusicFiles', sheetId] });
-            toast.success('Datei hochgeladen');
-        },
-        onError: () => toast.error('Upload fehlgeschlagen')
-    });
 
-    const deleteFileMutation = useMutation({
-        mutationFn: (id: number) => import('@/services/fileService').then(m => m.fileService.delete(id)),
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['sheetMusicFiles', sheetId] });
-            toast.success('Datei gelöscht');
-        },
-        onError: () => toast.error('Löschen fehlgeschlagen')
-    });
-
-    const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-        if (e.target.files?.[0] && sheetId) {
-            uploadFileMutation.mutate(e.target.files[0]);
-            // Reset input
-            e.target.value = '';
-        }
-    };
 
     return (
         <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
                 <DialogTitle>{title}</DialogTitle>
             </DialogHeader>
-            <div className="grid md:grid-cols-2 gap-6">
+            <div className="grid md:grid-cols-1 gap-6">
                 <div className="space-y-4">
                     <h3 className="font-medium border-b pb-2">Metadaten</h3>
                     <div>
@@ -709,54 +678,6 @@ function CreateEditDialog({
                     </div>
                 </div>
 
-                <div className="space-y-4">
-                    <h3 className="font-medium border-b pb-2">Dateien</h3>
-                    {sheetId ? (
-                        <>
-                            <div className="flex items-center gap-4">
-                                <Button variant="outline" className="relative cursor-pointer" asChild>
-                                    <label>
-                                        <FileUp className="h-4 w-4 mr-2" />
-                                        Datei hochladen
-                                        <input type="file" className="hidden" onChange={handleFileSelect} disabled={uploadFileMutation.isPending} />
-                                    </label>
-                                </Button>
-                                {uploadFileMutation.isPending && <span className="text-sm text-muted-foreground">Upload läuft...</span>}
-                            </div>
-
-                            <div className="border rounded-md divide-y max-h-[400px] overflow-y-auto">
-                                {files?.map(file => (
-                                    <div key={file.id} className="p-2 flex items-center justify-between hover:bg-slate-50">
-                                        <a href="#" className="flex items-center gap-2 truncate text-sm hover:underline" onClick={(e) => {
-                                            e.preventDefault();
-                                            import('@/services/fileService').then(m => m.fileService.downloadAndSave(file.id, file.originalName));
-                                        }}>
-                                            <FileDown className="h-4 w-4 text-slate-400" />
-                                            {file.originalName}
-                                        </a>
-                                        <Button
-                                            size="icon"
-                                            variant="ghost"
-                                            className="h-8 w-8 text-destructive"
-                                            onClick={() => deleteFileMutation.mutate(file.id)}
-                                        >
-                                            <Trash2 className="h-4 w-4" />
-                                        </Button>
-                                    </div>
-                                ))}
-                                {(!files || files.length === 0) && (
-                                    <div className="p-4 text-center text-muted-foreground text-sm">
-                                        Keine Dateien vorhanden
-                                    </div>
-                                )}
-                            </div>
-                        </>
-                    ) : (
-                        <div className="p-8 border rounded-md border-dashed text-center text-muted-foreground">
-                            Speichern Sie die Note zuerst, um Dateien hochzuladen.
-                        </div>
-                    )}
-                </div>
             </div>
 
             <DialogFooter>

@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Loader2, TrendingUp, TrendingDown, Minus } from 'lucide-react';
 import { useState } from 'react';
+import { ZoomableTableWrapper } from '@/components/common/ZoomableTableWrapper';
 
 interface AttendanceStat {
     id: number;
@@ -76,7 +77,7 @@ export function AttendanceStats() {
                         <Loader2 className="h-8 w-8 animate-spin text-primary" />
                     </div>
                 ) : (
-                    <div className="rounded-md border">
+                    <ZoomableTableWrapper title="Daten">
                         <Table>
                             <TableHeader>
                                 <TableRow>
@@ -119,7 +120,7 @@ export function AttendanceStats() {
                                 )}
                             </TableBody>
                         </Table>
-                    </div>
+                    </ZoomableTableWrapper>
                 )}
             </CardContent>
         </Card>

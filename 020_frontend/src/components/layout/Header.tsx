@@ -14,7 +14,8 @@ import {
     Settings,
     Library,
     BarChart,
-    Folder
+    Folder,
+    Shield
 } from 'lucide-react';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
@@ -27,13 +28,17 @@ interface NavItem {
     adminOnly?: boolean;
 }
 
-const navItems: NavItem[] = [
+const mainNavItems: NavItem[] = [
     { label: 'Dashboard', href: '/member', icon: <Home className="h-5 w-5" /> },
     { label: 'Termine', href: '/member/events', icon: <Calendar className="h-5 w-5" /> },
-    { label: 'Termine Admin', href: '/member/admin/events', icon: <Calendar className="h-5 w-5" />, adminOnly: true },
     { label: 'Dateien', href: '/member/files', icon: <FileText className="h-5 w-5" /> },
     { label: 'Mappen', href: '/member/music-folders', icon: <Folder className="h-5 w-5" /> },
-    { label: 'Mitglieder', href: '/member/members', icon: <Users className="h-5 w-5" /> }, // Accessible to all
+    { label: 'Mitglieder', href: '/member/members', icon: <Users className="h-5 w-5" /> },
+];
+
+const adminNavItems: NavItem[] = [
+    { label: 'Termine admin', href: '/member/admin/events', icon: <Calendar className="h-5 w-5" />, adminOnly: true },
+    { label: 'Workspace', href: '/member/admin/workspace', icon: <Folder className="h-5 w-5" />, adminOnly: true },
     { label: 'Noten', href: '/member/admin/sheet-music', icon: <Library className="h-5 w-5" />, adminOnly: true },
     { label: 'Register', href: '/member/admin/registers', icon: <Music className="h-5 w-5" />, adminOnly: true },
     { label: 'News', href: '/member/admin/news', icon: <Newspaper className="h-5 w-5" />, adminOnly: true },
@@ -41,50 +46,26 @@ const navItems: NavItem[] = [
 ];
 
 export function Header() {
-    const { user, logout } = useAuth();
+    const { logout } = useAuth();
     const isAdmin = useIsAdmin();
     const location = useLocation();
     const navigate = useNavigate();
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-    const filteredNavItems = navItems.filter(item => !item.adminOnly || isAdmin);
-
     return (
         <header className="sticky top-0 z-50 w-full border-b bg-background/80 backdrop-blur-md supports-[backdrop-filter]:bg-background/80">
             <div className="container-app flex h-16 items-center justify-between">
-                {/* Logo */}
+                {/* Logo & Mobile Menu Trigger (Left align on mobile?) No, standart right aligned hamburger usually. */}
                 <Link to="/member" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
                     <Music className="h-8 w-8 text-primary" />
-                    <div className="hidden sm:flex flex-col">
+                    <div className="flex flex-col">
                         <span className="font-bold text-lg leading-tight">Musig Elgg</span>
                         <span className="text-xs text-muted-foreground">Mitgliederbereich</span>
                     </div>
                 </Link>
 
-                {/* Desktop Navigation */}
-                <nav className="hidden md:flex items-center gap-1">
-                    {filteredNavItems.map((item) => (
-                        <Link
-                            key={item.href}
-                            to={item.href}
-                            className={cn(
-                                "flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-all duration-200",
-                                location.pathname === item.href
-                                    ? "bg-primary/10 text-primary font-semibold"
-                                    : "text-muted-foreground hover:bg-primary/5 hover:text-primary"
-                            )}
-                        >
-                            {item.icon}
-                            {item.label}
-                        </Link>
-                    ))}
-                </nav>
-
-                {/* User Menu */}
-                <div className="flex items-center gap-4">
-                    <div className="hidden sm:block text-sm text-muted-foreground">
-                        {user?.firstName} {user?.lastName}
-                    </div>
+                {/* Right Side Actions */}
+                <div className="flex items-center gap-2 md:gap-4">
                     <Button
                         variant="ghost"
                         size="icon"
@@ -94,7 +75,7 @@ export function Header() {
                         <Settings className="h-5 w-5" />
                     </Button>
 
-                    <Button variant="ghost" size="icon" onClick={logout} title="Abmelden">
+                    <Button variant="ghost" size="icon" onClick={logout} title="Abmelden" className="hidden md:inline-flex">
                         <LogOut className="h-5 w-5" />
                     </Button>
 
@@ -110,29 +91,78 @@ export function Header() {
                 </div>
             </div>
 
-            {/* Mobile Navigation */}
+            {/* Mobile Navigation Overlay */}
             {mobileMenuOpen && (
-                <nav className="md:hidden border-t bg-background p-4 space-y-2">
-                    {filteredNavItems.map((item) => (
-                        <Link
-                            key={item.href}
-                            to={item.href}
-                            onClick={() => setMobileMenuOpen(false)}
-                            className={cn(
-                                "flex items-center gap-3 px-4 py-3 rounded-md text-base font-medium transition-colors",
-                                location.pathname === item.href
-                                    ? "bg-primary text-primary-foreground"
-                                    : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
-                            )}
-                        >
-                            {item.icon}
-                            {item.label}
-                        </Link>
-                    ))}
-                </nav>
+                <div
+                    className="fixed inset-0 top-16 z-40 bg-background/95 backdrop-blur-sm md:hidden animate-in slide-in-from-top-5 fade-in-0"
+                    style={{ height: 'calc(100vh - 4rem)' }}
+                >
+                    <nav className="h-full overflow-y-auto p-4 space-y-6 pb-20">
+                        <div className="space-y-1">
+                            <h4 className="px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
+                                Allgemein
+                            </h4>
+                            {mainNavItems.map((item) => (
+                                <Link
+                                    key={item.href}
+                                    to={item.href}
+                                    onClick={() => setMobileMenuOpen(false)}
+                                    className={cn(
+                                        "flex items-center gap-3 px-4 py-3 rounded-md text-base font-medium transition-colors active:bg-muted",
+                                        location.pathname === item.href
+                                            ? "bg-primary/10 text-primary"
+                                            : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                                    )}
+                                >
+                                    {item.icon}
+                                    {item.label}
+                                </Link>
+                            ))}
+                        </div>
+
+                        {isAdmin && (
+                            <div className="space-y-1">
+                                <div className="flex items-center px-4 mb-2 gap-2 text-muted-foreground">
+                                    <Shield className="h-3 w-3" />
+                                    <h4 className="text-xs font-semibold uppercase tracking-wider">
+                                        Verwaltung
+                                    </h4>
+                                </div>
+                                {adminNavItems.map((item) => (
+                                    <Link
+                                        key={item.href}
+                                        to={item.href}
+                                        onClick={() => setMobileMenuOpen(false)}
+                                        className={cn(
+                                            "flex items-center gap-3 px-4 py-3 rounded-md text-base font-medium transition-colors active:bg-muted",
+                                            location.pathname === item.href
+                                                ? "bg-primary/10 text-primary"
+                                                : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                                        )}
+                                    >
+                                        {item.icon}
+                                        {item.label}
+                                    </Link>
+                                ))}
+                            </div>
+                        )}
+
+                        <div className="border-t pt-4 mt-4">
+                            <Button
+                                variant="ghost"
+                                className="w-full justify-start gap-3 text-muted-foreground hover:text-destructive h-12 text-base"
+                                onClick={logout}
+                            >
+                                <LogOut className="h-5 w-5" />
+                                Abmelden
+                            </Button>
+                        </div>
+                    </nav>
+                </div>
             )}
         </header>
     );
 }
 
 export default Header;
+

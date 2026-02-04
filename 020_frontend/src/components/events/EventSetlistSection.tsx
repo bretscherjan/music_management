@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, type DragEndEvent } from '@dnd-kit/core';
+import { DndContext, closestCenter, KeyboardSensor, PointerSensor, TouchSensor, useSensor, useSensors, type DragEndEvent } from '@dnd-kit/core';
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
@@ -53,6 +53,12 @@ export function EventSetlistSection({ event, isAdmin }: EventSetlistSectionProps
         useSensor(PointerSensor),
         useSensor(KeyboardSensor, {
             coordinateGetter: sortableKeyboardCoordinates,
+        }),
+        useSensor(TouchSensor, {
+            activationConstraint: {
+                delay: 250,
+                tolerance: 5,
+            },
         })
     );
 
@@ -165,12 +171,12 @@ export function EventSetlistSection({ event, isAdmin }: EventSetlistSectionProps
 
     return (
         <div className="mt-6 border rounded-lg p-6">
-            <div className="flex items-center justify-between mb-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
                 <div className="flex items-center gap-2">
                     <Music className="h-5 w-5 text-primary" />
                     <h3 className="text-lg font-semibold">Programm / Setlist</h3>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex flex-wrap gap-2">
                     <Button asChild variant="outline" size="sm">
                         <a href={eventService.getPdfExportUrl(event.id)} target="_blank" rel="noopener noreferrer">
                             <Download className="h-4 w-4 mr-2" />
@@ -494,10 +500,10 @@ function SetlistItem({ item, index, isAdmin, onEdit, onRemove }: SetlistItemProp
         <div
             ref={setNodeRef}
             style={style}
-            className="flex items-center gap-4 p-3 border rounded-lg bg-background"
+            className="flex items-center gap-3 sm:gap-4 p-3 border rounded-lg bg-background"
         >
             {isAdmin && (
-                <div {...attributes} {...listeners} className="cursor-grab active:cursor-grabbing">
+                <div {...attributes} {...listeners} className="cursor-grab active:cursor-grabbing touch-none shrink-0">
                     <GripVertical className="h-5 w-5 text-muted-foreground" />
                 </div>
             )}
@@ -505,26 +511,28 @@ function SetlistItem({ item, index, isAdmin, onEdit, onRemove }: SetlistItemProp
                 {index + 1}
             </div>
 
+            {/* Content Section - Wrapped in flex-1 min-w-0 for truncation */}
             {item.type === 'sheetMusic' && item.sheetMusic ? (
                 <>
-                    <Music className="h-5 w-5 text-primary" />
-                    <div className="flex-1">
-                        <div className="font-medium">
+                    <Music className="h-5 w-5 text-primary shrink-0" />
+                    <div className="flex-1 min-w-0">
+                        <div className="font-medium truncate">
                             {item.customTitle || item.sheetMusic.title}
                             {item.customTitle && <span className="text-xs text-muted-foreground ml-2">(Original: {item.sheetMusic.title})</span>}
                         </div>
-                        <div className="text-sm text-muted-foreground">
+                        <div className="text-sm text-muted-foreground truncate">
                             {item.customDescription && <div className="mb-1 italic">{item.customDescription}</div>}
-                            {item.sheetMusic.composer && <span>{item.sheetMusic.composer}</span>}
-                            {item.sheetMusic.composer && item.sheetMusic.arranger && <span> • Arr.: {item.sheetMusic.arranger}</span>}
-                            {!item.sheetMusic.composer && item.sheetMusic.arranger && <span>Arr.: {item.sheetMusic.arranger}</span>}
+                            {item.sheetMusic.composer && <span className="inline-block mr-1">{item.sheetMusic.composer}</span>}
+                            {item.sheetMusic.composer && item.sheetMusic.arranger && <span className="inline-block mr-1"> • Arr.: {item.sheetMusic.arranger}</span>}
+                            {!item.sheetMusic.composer && item.sheetMusic.arranger && <span className="inline-block mr-1">Arr.: {item.sheetMusic.arranger}</span>}
                             {item.duration && <span> • {item.duration} Min.</span>}
                         </div>
                     </div>
-                    <div className="flex gap-2 items-center">
-                        {item.sheetMusic.genre && <Badge variant="secondary">{item.sheetMusic.genre}</Badge>}
+                    <div className="flex gap-2 items-center flex-wrap sm:flex-nowrap justify-end">
+                        {item.sheetMusic.genre && <Badge variant="secondary" className="hidden sm:inline-flex">{item.sheetMusic.genre}</Badge>}
                         {item.sheetMusic.difficulty && (
                             <Badge
+                                className="hidden sm:inline-flex"
                                 variant={
                                     item.sheetMusic.difficulty === 'easy'
                                         ? 'secondary'
@@ -541,7 +549,7 @@ function SetlistItem({ item, index, isAdmin, onEdit, onRemove }: SetlistItemProp
                             </Badge>
                         )}
                         {isAdmin && (
-                            <Button size="icon" variant="ghost" onClick={() => onEdit(item)}>
+                            <Button size="icon" variant="ghost" onClick={() => onEdit(item)} className="shrink-0">
                                 <Edit2 className="h-4 w-4" />
                             </Button>
                         )}
@@ -549,28 +557,28 @@ function SetlistItem({ item, index, isAdmin, onEdit, onRemove }: SetlistItemProp
                 </>
             ) : item.type === 'pause' ? (
                 <>
-                    <Clock className="h-5 w-5 text-orange-500" />
-                    <div className="flex-1">
+                    <Clock className="h-5 w-5 text-orange-500 shrink-0" />
+                    <div className="flex-1 min-w-0">
                         <div className="font-medium">Pause</div>
                         <div className="text-sm text-muted-foreground">{item.duration} Minuten</div>
                     </div>
                     {isAdmin && (
-                        <Button size="icon" variant="ghost" onClick={() => onEdit(item)}>
+                        <Button size="icon" variant="ghost" onClick={() => onEdit(item)} className="shrink-0">
                             <Edit2 className="h-4 w-4" />
                         </Button>
                     )}
                 </>
             ) : (
                 <>
-                    <FileText className="h-5 w-5 text-blue-500" />
-                    <div className="flex-1">
-                        <div className="font-medium">{item.customTitle}</div>
+                    <FileText className="h-5 w-5 text-blue-500 shrink-0" />
+                    <div className="flex-1 min-w-0">
+                        <div className="font-medium truncate">{item.customTitle}</div>
                         {item.customDescription && (
-                            <div className="text-sm text-muted-foreground">{item.customDescription}</div>
+                            <div className="text-sm text-muted-foreground truncate">{item.customDescription}</div>
                         )}
                     </div>
                     {isAdmin && (
-                        <Button size="icon" variant="ghost" onClick={() => onEdit(item)}>
+                        <Button size="icon" variant="ghost" onClick={() => onEdit(item)} className="shrink-0">
                             <Edit2 className="h-4 w-4" />
                         </Button>
                     )}
@@ -580,7 +588,7 @@ function SetlistItem({ item, index, isAdmin, onEdit, onRemove }: SetlistItemProp
 
             {
                 isAdmin && (
-                    <Button size="icon" variant="ghost" onClick={() => onRemove(item)}>
+                    <Button size="icon" variant="ghost" onClick={() => onRemove(item)} className="shrink-0 text-destructive hover:text-destructive">
                         <Trash2 className="h-4 w-4" />
                     </Button>
                 )

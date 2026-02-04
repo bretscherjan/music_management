@@ -76,7 +76,7 @@ export function DraggableTaskItem({ task, users, onComplete, onDelete, onUpdateT
             <div
                 {...attributes}
                 {...listeners}
-                className="cursor-move text-muted-foreground hover:text-foreground"
+                className="cursor-move text-muted-foreground hover:text-foreground touch-none"
             >
                 <GripVertical className="h-4 w-4" />
             </div>

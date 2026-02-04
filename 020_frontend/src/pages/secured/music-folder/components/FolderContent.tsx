@@ -16,6 +16,7 @@ import {
     closestCenter,
     KeyboardSensor,
     PointerSensor,
+    TouchSensor,
     useSensor,
     useSensors,
     type DragEndEvent
@@ -92,6 +93,12 @@ export const FolderContent = ({ folderId }: FolderContentProps) => {
         useSensor(PointerSensor),
         useSensor(KeyboardSensor, {
             coordinateGetter: sortableKeyboardCoordinates,
+        }),
+        useSensor(TouchSensor, {
+            activationConstraint: {
+                delay: 250,
+                tolerance: 5,
+            },
         })
     );
 
@@ -143,10 +150,10 @@ export const FolderContent = ({ folderId }: FolderContentProps) => {
         };
 
         return (
-            <div ref={setNodeRef} style={style} className="bg-white p-3 rounded-lg border shadow-sm flex items-center gap-3">
+            <div ref={setNodeRef} style={style} className={`bg-white p-3 rounded-lg border shadow-sm flex items-center gap-3 ${editMode ? 'border-primary/40 bg-accent/10' : ''}`}>
                 {editMode && (
-                    <div {...attributes} {...listeners} className="cursor-grab text-gray-400 hover:text-gray-600">
-                        <GripVertical className="h-5 w-5" />
+                    <div {...attributes} {...listeners} className="cursor-grab text-gray-400 hover:text-gray-600 touch-none p-2 -ml-2 active:text-primary">
+                        <GripVertical className="h-6 w-6" />
                     </div>
                 )}
 
@@ -160,8 +167,8 @@ export const FolderContent = ({ folderId }: FolderContentProps) => {
 
                 <div className="flex items-center gap-2">
                     {editMode && (
-                        <Button variant="ghost" size="icon" className="text-red-500 hover:text-red-600 hover:bg-red-50" onClick={() => handleRemoveItem(item.id)}>
-                            <Trash2 className="h-4 w-4" />
+                        <Button variant="ghost" size="icon" className="h-10 w-10 text-destructive hover:text-destructive hover:bg-destructive/10" onClick={() => handleRemoveItem(item.id)}>
+                            <Trash2 className="h-5 w-5" />
                         </Button>
                     )}
                 </div>
@@ -314,7 +321,7 @@ export const FolderContent = ({ folderId }: FolderContentProps) => {
             </div>
 
             {/* List */}
-            <div className="flex-1 overflow-y-auto p-6">
+            <div className="flex-1 overflow-y-auto p-6 pt-10">
                 <DndContext
                     sensors={sensors}
                     collisionDetection={closestCenter}

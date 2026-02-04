@@ -13,6 +13,22 @@ import {
     FileText,
     Settings,
 } from 'lucide-react';
+import {
+    DndContext,
+    closestCenter,
+    KeyboardSensor,
+    PointerSensor,
+    TouchSensor,
+    useSensor,
+    useSensors,
+    type DragEndEvent
+} from '@dnd-kit/core';
+import {
+    arrayMove,
+    SortableContext,
+    sortableKeyboardCoordinates,
+    verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
 
 import { authService } from '@/services/authService';
 import workspaceService from '@/services/workspaceService';
@@ -61,6 +77,20 @@ export function WorkspacePage() {
     const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null);
     const [searchQuery, setSearchQuery] = useState('');
     const [debouncedSearch] = useDebounce(searchQuery, 300);
+
+    // DnD Sensors
+    const sensors = useSensors(
+        useSensor(PointerSensor),
+        useSensor(KeyboardSensor, {
+            coordinateGetter: sortableKeyboardCoordinates,
+        }),
+        useSensor(TouchSensor, {
+            activationConstraint: {
+                delay: 250,
+                tolerance: 5,
+            },
+        })
+    );
 
     // Inline form states
     const [newTaskTitle, setNewTaskTitle] = useState('');
@@ -219,6 +249,38 @@ export function WorkspacePage() {
             toast.success('Task gelöscht');
         },
     });
+
+    const reorderTasksMutation = useMutation({
+        mutationFn: (tasks: { id: number; position: number }[]) =>
+            workspaceService.reorderTasks(tasks),
+        onError: () => {
+            toast.error('Fehler beim Sortieren');
+            queryClient.invalidateQueries({ queryKey: ['workspace', 'tasks'] });
+        },
+    });
+
+    const handleDragEnd = (event: DragEndEvent) => {
+        const { active, over } = event;
+
+        if (over && active.id !== over.id) {
+            // Logic for optimistically updating the cache
+            const oldIndex = tasks.findIndex((t) => t.id === active.id);
+            const newIndex = tasks.findIndex((t) => t.id === over.id);
+
+            if (oldIndex !== -1 && newIndex !== -1) {
+                const newTasks = arrayMove(tasks, oldIndex, newIndex);
+
+                // Optimistic update
+                queryClient.setQueryData(['workspace', 'tasks', selectedCategoryId], { tasks: newTasks });
+
+                const payload = newTasks.map((t, i) => ({
+                    id: t.id,
+                    position: i,
+                }));
+                reorderTasksMutation.mutate(payload);
+            }
+        }
+    };
 
     // Create Note Mutation
     const createNoteMutation = useMutation({
@@ -469,22 +531,33 @@ export function WorkspacePage() {
                                 Keine Tasks vorhanden. Erstelle einen neuen Task!
                             </div>
                         ) : (
-                            <div className="space-y-2">
-                                {tasks.map((task: Task) => (
-                                    <DraggableTaskItem
-                                        key={task.id}
-                                        task={task}
-                                        users={users}
-                                        onComplete={(id, val) =>
-                                            completeTaskMutation.mutate({ id, completed: val })
-                                        }
-                                        onDelete={(id) => deleteTaskMutation.mutate(id)}
-                                        onUpdateTitle={(id, title) =>
-                                            updateTaskMutation.mutate({ id, title })
-                                        }
-                                    />
-                                ))}
-                            </div>
+                            <DndContext
+                                sensors={sensors}
+                                collisionDetection={closestCenter}
+                                onDragEnd={handleDragEnd}
+                            >
+                                <SortableContext
+                                    items={tasks.map((t) => t.id)}
+                                    strategy={verticalListSortingStrategy}
+                                >
+                                    <div className="space-y-2">
+                                        {tasks.map((task: Task) => (
+                                            <DraggableTaskItem
+                                                key={task.id}
+                                                task={task}
+                                                users={users}
+                                                onComplete={(id, val) =>
+                                                    completeTaskMutation.mutate({ id, completed: val })
+                                                }
+                                                onDelete={(id) => deleteTaskMutation.mutate(id)}
+                                                onUpdateTitle={(id, title) =>
+                                                    updateTaskMutation.mutate({ id, title })
+                                                }
+                                            />
+                                        ))}
+                                    </div>
+                                </SortableContext>
+                            </DndContext>
                         )}
                     </div>
                 )}

@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { Plus, Trash, Edit, GripVertical } from 'lucide-react';
-import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, type DragEndEvent } from '@dnd-kit/core';
+import { DndContext, closestCenter, KeyboardSensor, PointerSensor, TouchSensor, useSensor, useSensors, type DragEndEvent } from '@dnd-kit/core';
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 
@@ -74,7 +74,7 @@ function SortableCategoryRow({
             <div
                 {...attributes}
                 {...listeners}
-                className="cursor-move p-1 hover:bg-muted rounded"
+                className="cursor-move p-1 hover:bg-muted rounded touch-none"
             >
                 <GripVertical className="h-4 w-4 text-muted-foreground" />
             </div>
@@ -160,6 +160,12 @@ export function CategoryManager({ open, onClose, categories }: CategoryManagerPr
         useSensor(PointerSensor),
         useSensor(KeyboardSensor, {
             coordinateGetter: sortableKeyboardCoordinates,
+        }),
+        useSensor(TouchSensor, {
+            activationConstraint: {
+                delay: 250,
+                tolerance: 5,
+            },
         })
     );
 

@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ArrowLeft, Calendar, Clock, MapPin, Edit } from 'lucide-react';
 import { formatDate, formatTime, getCategoryLabel } from '@/lib/utils';
+import { renderMarkdown } from '@/utils/markdownRenderer';
 import { AttendanceSection } from '@/components/events/AttendanceSection';
 import { VerificationSection } from '@/components/events/VerificationSection';
 import { EventSetlistSection } from '@/components/events/EventSetlistSection';
@@ -133,7 +134,7 @@ export function EventDetailPage() {
                     {event.description && (
                         <div className="pt-4 border-t">
                             <h3 className="font-medium mb-2">Beschreibung</h3>
-                            <p className="text-muted-foreground whitespace-pre-wrap">{event.description}</p>
+                            <div className="text-muted-foreground whitespace-pre-wrap">{renderMarkdown(event.description)}</div>
                         </div>
                     )}
                 </CardContent>

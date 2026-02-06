@@ -31,6 +31,8 @@ router.use('/push', pushRoutes);
 router.use('/stats', require('./stats.routes'));
 router.use('/music-folders', require('./musicFolder.routes'));
 router.use('/workspace', require('./workspace.routes'));
+router.use('/public', require('./public.routes'));
+// router.use('/onlyoffice', require('./onlyoffice.routes'));
 
 module.exports = router;
 

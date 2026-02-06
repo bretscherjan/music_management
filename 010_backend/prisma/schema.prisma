@@ -234,6 +234,7 @@ model File {
 
   // Access Control
   accessRules  FileAccess[]
+  shareTokens  FileShareToken[]
 
   // Optional target associations (Deprecating these in favor of FileAccess but keeping for migration/compat)
   targetRegisterId Int?
@@ -631,3 +632,15 @@ model NoteContribution {
   @@index([userId])
 }
 
+
+model FileShareToken {
+  id        Int      @id @default(autoincrement())
+  token     String   @unique
+  fileId    Int
+  file      File     @relation(fields: [fileId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  expiresAt DateTime
+  used      Boolean  @default(false)
+
+  @@index([token])
+}

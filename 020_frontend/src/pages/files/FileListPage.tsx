@@ -12,7 +12,8 @@ import {
     Trash2,
     Loader2,
     FolderPlus,
-    CornerUpLeft
+    CornerUpLeft,
+    Eye
 } from 'lucide-react';
 import {
     DropdownMenu,
@@ -50,6 +51,7 @@ import { FileUploadDialog } from '@/components/files/FileUploadDialog';
 import { CreateFolderDialog } from '@/components/files/CreateFolderDialog';
 import { ManageAccessDialog } from '@/components/files/ManageAccessDialog';
 import { ManageFolderAccessDialog } from '@/components/files/ManageFolderAccessDialog';
+import { FilePreviewDialog } from '@/components/files/FilePreviewDialog';
 
 export function FileListPage() {
     const isAdmin = useIsAdmin();
@@ -65,6 +67,7 @@ export function FileListPage() {
     const [manageAccessFolder, setManageAccessFolder] = useState<any | null>(null);
     const [deleteFileId, setDeleteFileId] = useState<number | null>(null);
     const [deleteFolderId, setDeleteFolderId] = useState<number | null>(null);
+    const [previewFileId, setPreviewFileId] = useState<number | null>(null);
 
     const { data: folderContents, isLoading } = useQuery({
         queryKey: ['folderContents', currentFolderId],
@@ -96,6 +99,10 @@ export function FileListPage() {
         } finally {
             setDownloading(null);
         }
+    };
+
+    const handlePreview = (id: number) => {
+        setPreviewFileId(id);
     };
 
     const handleDeleteFile = () => {
@@ -284,14 +291,15 @@ export function FileListPage() {
                             {files.map((file) => (
                                 <div
                                     key={file.id}
-                                    className="flex items-center justify-between p-3 rounded-lg hover:bg-accent/50 transition-colors border border-transparent hover:border-border"
+                                    className="flex items-center justify-between p-3 rounded-lg hover:bg-accent/50 transition-colors border border-transparent hover:border-border cursor-pointer group"
+                                    onClick={() => handlePreview(file.id)}
                                 >
                                     <div className="flex items-center gap-3 min-w-0 flex-1">
                                         <span className="text-2xl flex-shrink-0">
                                             {getFileIcon(file.mimetype)}
                                         </span>
                                         <div className="min-w-0 flex-1">
-                                            <p className="font-medium truncate">{file.originalName}</p>
+                                            <p className="font-medium truncate group-hover:text-primary transition-colors">{file.originalName}</p>
                                             <div className="flex gap-2 text-xs text-muted-foreground">
                                                 <span>{formatFileSize(file.size)}</span>
                                                 {file.visibility !== 'all' && (
@@ -309,7 +317,23 @@ export function FileListPage() {
                                         <Button
                                             variant="ghost"
                                             size="sm"
-                                            onClick={() => handleDownload(file.id, file.originalName)}
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                handlePreview(file.id);
+                                            }}
+                                            className="hidden sm:flex"
+                                        >
+                                            <Eye className="h-4 w-4 mr-2" />
+                                            Vorschau
+                                        </Button>
+
+                                        <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                handleDownload(file.id, file.originalName);
+                                            }}
                                         >
                                             {downloading === file.id ? (
                                                 <Loader2 className="h-4 w-4 animate-spin" />
@@ -320,15 +344,25 @@ export function FileListPage() {
 
                                         <DropdownMenu>
                                             <DropdownMenuTrigger asChild>
-                                                <Button variant="ghost" className="h-8 w-8 p-0">
+                                                <Button variant="ghost" className="h-8 w-8 p-0" onClick={(e) => e.stopPropagation()}>
                                                     <span className="sr-only">Open menu</span>
                                                     <MoreVertical className="h-4 w-4" />
                                                 </Button>
                                             </DropdownMenuTrigger>
                                             <DropdownMenuContent align="end">
                                                 <DropdownMenuLabel>Aktionen</DropdownMenuLabel>
+                                                <DropdownMenuItem onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    handlePreview(file.id);
+                                                }}>
+                                                    <Eye className="mr-2 h-4 w-4" />
+                                                    Vorschau
+                                                </DropdownMenuItem>
 
-                                                <DropdownMenuItem onClick={() => handleDownload(file.id, file.originalName)}>
+                                                <DropdownMenuItem onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    handleDownload(file.id, file.originalName);
+                                                }}>
                                                     <Download className="mr-2 h-4 w-4" />
                                                     Herunterladen
                                                 </DropdownMenuItem>
@@ -336,12 +370,18 @@ export function FileListPage() {
                                                 {isAdmin && (
                                                     <>
                                                         <DropdownMenuSeparator />
-                                                        <DropdownMenuItem onClick={() => setManageAccessFile(file)}>
+                                                        <DropdownMenuItem onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            setManageAccessFile(file);
+                                                        }}>
                                                             <Shield className="mr-2 h-4 w-4" />
                                                             Berechtigungen
                                                         </DropdownMenuItem>
                                                         <DropdownMenuItem
-                                                            onClick={() => setDeleteFileId(file.id)}
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                setDeleteFileId(file.id);
+                                                            }}
                                                             className="text-red-600 focus:text-red-600"
                                                         >
                                                             <Trash2 className="mr-2 h-4 w-4" />
@@ -461,6 +501,14 @@ export function FileListPage() {
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
+
+            {/* File Preview Dialog */}
+            <FilePreviewDialog
+                open={previewFileId !== null}
+                onOpenChange={(open) => !open && setPreviewFileId(null)}
+                files={files}
+                initialFileId={previewFileId}
+            />
         </div>
     );
 }

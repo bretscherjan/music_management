@@ -6,6 +6,7 @@ const { PrismaClient } = require('@prisma/client');
 const { asyncHandler, AppError } = require('../middlewares/errorHandler.middleware');
 const { allowedMimeTypes } = require('../validations/file.validation');
 const notificationService = require('../services/notification.service');
+const fileTokenService = require('../services/fileToken.service');
 
 const prisma = new PrismaClient();
 
@@ -193,6 +194,7 @@ const getFileById = asyncHandler(async (req, res) => {
 
     // Check if file exists on disk
     if (!fs.existsSync(file.path)) {
+        console.error(`[DEBUG] File not found on disk. ID: ${id}, Path: ${file.path}`);
         // Log error but don't delete from DB here, let admin handle it or lazy cleanup?
         // Better validation:
         throw new AppError('Datei nicht auf dem Server gefunden', 404);
@@ -621,6 +623,44 @@ const updateFileAccess = asyncHandler(async (req, res) => {
     });
 });
 
+/**
+ * Generate a one-time view token for a file
+ * POST /files/:id/view-token
+ */
+const generateViewToken = asyncHandler(async (req, res) => {
+    const { id } = req.params;
+    const user = req.user;
+
+    const file = await prisma.file.findUnique({
+        where: { id: parseInt(id) },
+        include: { accessRules: true } // Need access rules for permission check
+    });
+
+    if (!file) {
+        throw new AppError('Datei nicht gefunden', 404);
+    }
+
+    // Check permissions
+    const hasAccess = checkFileAccess(file, user);
+    if (!hasAccess) {
+        throw new AppError('Keine Berechtigung für diese Datei', 403);
+    }
+
+    const token = await fileTokenService.generateToken(file.id, user.id);
+
+    // Construct public URL
+    // Assume frontend can handle the full link or just return the token + relative path
+    // Let's return the full public API URL
+    const apiUrl = process.env.API_URL || `${req.protocol}://${req.get('host')}/api`;
+    const publicUrl = `${apiUrl}/public/files/${token}`;
+
+    res.json({
+        token,
+        url: publicUrl,
+        expiresIn: 10 * 60 // 10 minutes in seconds
+    });
+});
+
 module.exports = {
     upload,
     uploadFile,
@@ -632,4 +672,5 @@ module.exports = {
     getFolders,
     createFolder,
     deleteFolder,
+    generateViewToken,
 };

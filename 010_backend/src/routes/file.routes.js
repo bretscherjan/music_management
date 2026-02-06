@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 
 const fileController = require('../controllers/file.controller');
+const onlyOfficeController = require('../controllers/onlyoffice.controller');
 const { authMiddleware } = require('../middlewares/auth.middleware');
 const { adminOnly } = require('../middlewares/roleCheck.middleware');
 const { validate } = require('../middlewares/validate.middleware');
@@ -30,6 +31,18 @@ router.post(
  * @access  Private
  */
 router.get('/', authMiddleware, validate(queryFilesSchema), fileController.getAllFiles);
+
+/**
+ * @route   POST /api/files/onlyoffice/callback
+ * @desc    Callback from OnlyOffice
+ */
+router.post('/onlyoffice/callback', onlyOfficeController.callback);
+
+/**
+ * @route   GET /api/files/:id/onlyoffice/config
+ * @desc    Get editor config
+ */
+router.get('/:id/onlyoffice/config', authMiddleware, onlyOfficeController.getEditorConfig);
 
 
 
@@ -60,5 +73,12 @@ router.delete('/:id', authMiddleware, adminOnly, validate(getFileByIdSchema), fi
  * @access  Admin only
  */
 router.put('/:id/access', authMiddleware, adminOnly, fileController.updateFileAccess);
+
+/**
+ * @route   POST /api/files/:id/view-token
+ * @desc    Generate a one-time public view token
+ * @access  Private (based on visibility)
+ */
+router.post('/:id/view-token', authMiddleware, validate(getFileByIdSchema), fileController.generateViewToken);
 
 module.exports = router;

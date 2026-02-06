@@ -93,6 +93,16 @@ export const fileService = {
     async updateFolderAccess(id: number, accessRules: any[]): Promise<void> {
         await api.put(`/folders/${id}`, { accessRules });
     },
+
+    async getOneTimeToken(id: number): Promise<{ token: string; url: string }> {
+        const response = await api.post<{ token: string; url: string }>(`/files/${id}/view-token`);
+        return response.data;
+    },
+
+    async getOnlyOfficeConfig(id: number): Promise<any> {
+        const response = await api.get<any>(`/files/${id}/onlyoffice/config`);
+        return response.data;
+    },
 };
 
 export default fileService;

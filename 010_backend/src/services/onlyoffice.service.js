@@ -26,6 +26,10 @@ class OnlyOfficeService {
             throw new AppError('Datei nicht gefunden', 404);
         }
 
+        if (!this.secret) {
+            throw new AppError('Server configuration error: ONLYOFFICE_SECRET is missing', 500);
+        }
+
         // Generate a download token/url for the document
         // This URL is used by OnlyOffice (server) to download the file from our backend
         // We use the internal Docker DNS if needed, or the public URL if loopback is supported.
@@ -42,8 +46,7 @@ class OnlyOfficeService {
         if (['ppt', 'pptx', 'odp', 'fodp', 'ppsx', 'pps'].includes(fileExt)) documentType = 'slide';
 
         // Callback URL - where OnlyOffice sends updates
-        // Callback URL - where OnlyOffice sends updates
-        // Using /api/files/onlyoffice/callback to piggyback on existing API route prefix that is definitely proxied
+        // Uses /api/files/onlyoffice/callback to piggyback on existing API route prefix that is definitely proxied
         const callbackUrl = `${this.callbackHost}/api/files/onlyoffice/callback?fileId=${file.id}`;
 
         const config = {
@@ -63,7 +66,7 @@ class OnlyOfficeService {
                 callbackUrl: callbackUrl,
                 user: {
                     id: String(user.id),
-                    name: `${user.vorname} ${user.nachname}`
+                    name: `${user.firstName} ${user.lastName}`
                 },
                 customization: {
                     forcesave: true,

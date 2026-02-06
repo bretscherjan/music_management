@@ -16,12 +16,15 @@ const fileTokenService = require('../services/fileToken.service');
  */
 router.get('/files/:token', asyncHandler(async (req, res) => {
     const { token } = req.params;
+    console.log(`[PublicRoute] Request received for token: ${token.substring(0, 10)}...`);
 
     try {
         const file = await fileTokenService.consumeToken(token);
+        console.log(`[PublicRoute] File retrieved from token service: ${file.originalName}, Path: ${file.path}`);
 
         // Check if file exists on disk
         if (!file.path || !fs.existsSync(file.path)) {
+            console.error(`[PublicRoute] File NOT found on disk: ${file.path}`);
             throw new AppError('Datei nicht auf dem Server gefunden', 404);
         }
 
@@ -33,12 +36,20 @@ router.get('/files/:token', asyncHandler(async (req, res) => {
         res.setHeader('Content-Disposition', `inline; filename="${encodeURIComponent(file.originalName)}"`);
 
         res.setHeader('Content-Length', file.size);
+        console.log(`[PublicRoute] Sending file stream... Size: ${file.size}`);
 
         // Stream file
         const fileStream = fs.createReadStream(file.path);
+
+        fileStream.on('error', (err) => {
+            console.error(`[PublicRoute] Stream Error:`, err);
+        });
+
         fileStream.pipe(res);
+        console.log(`[PublicRoute] Stream pipe set up.`);
 
     } catch (error) {
+        console.error(`[PublicRoute] Error processing download:`, error);
         // If it's an AppError, we can just throw it
         if (error instanceof AppError) {
             throw error;

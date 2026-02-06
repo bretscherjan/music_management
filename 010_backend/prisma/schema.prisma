@@ -640,7 +640,7 @@ model FileShareToken {
   file      File     @relation(fields: [fileId], references: [id], onDelete: Cascade)
   createdAt DateTime @default(now())
   expiresAt DateTime
-  used      Boolean  @default(false)
+  usageCount Int     @default(0)
 
   @@index([token])
 }

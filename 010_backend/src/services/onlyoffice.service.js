@@ -12,6 +12,7 @@ class OnlyOfficeService {
     constructor() {
         this.secret = process.env.ONLYOFFICE_SECRET;
         this.callbackHost = process.env.ONLYOFFICE_CALLBACK_HOST;
+        this.documentServerUrl = process.env.ONLYOFFICE_DOCUMENT_SERVER;
     }
 
     /**
@@ -30,6 +31,10 @@ class OnlyOfficeService {
             throw new AppError('Server configuration error: ONLYOFFICE_SECRET is missing', 500);
         }
 
+        if (!this.documentServerUrl) {
+            throw new AppError('Server configuration error: ONLYOFFICE_DOCUMENT_SERVER is missing', 500);
+        }
+
         // Generate a download token/url for the document
         // This URL is used by OnlyOffice (server) to download the file from our backend
         // We use the internal Docker DNS if needed, or the public URL if loopback is supported.
@@ -41,9 +46,17 @@ class OnlyOfficeService {
         const fileExt = path.extname(file.originalName).replace('.', '').toLowerCase();
 
         // Define document type
-        let documentType = 'text';
+        let documentType = 'word'; // Default for text documents
         if (['xls', 'xlsx', 'csv', 'ods', 'fods'].includes(fileExt)) documentType = 'cell';
         if (['ppt', 'pptx', 'odp', 'fodp', 'ppsx', 'pps'].includes(fileExt)) documentType = 'slide';
+        if (['pdf', 'djvu', 'xps'].includes(fileExt)) documentType = 'pdf';
+
+        console.log(`[OnlyOfficeService] Generated config for file ${fileId}:`);
+        console.log(`   - OriginalName: ${file.originalName}`);
+        console.log(`   - Extension: ${fileExt}`);
+        console.log(`   - DocumentType: ${documentType}`);
+        console.log(`   - DownloadUrl: ${downloadUrl}`);
+        console.log(`   - DocumentServerUrl: ${this.documentServerUrl}`);
 
         // Callback URL - where OnlyOffice sends updates
         // Uses /api/files/onlyoffice/callback to piggyback on existing API route prefix that is definitely proxied
@@ -81,11 +94,10 @@ class OnlyOfficeService {
         // Usually, we just put everything in the payload.
         const token = jwt.sign(config, this.secret, { expiresIn: '5m', algorithm: 'HS256' });
 
-        // Return both the configuration and the token.
-        // The frontend will pass this token in the initialization.
         return {
             ...config,
-            token
+            token,
+            documentServerUrl: this.documentServerUrl
         };
     }
 

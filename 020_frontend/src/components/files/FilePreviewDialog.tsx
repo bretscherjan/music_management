@@ -24,9 +24,7 @@ import fileService from '@/services/fileService';
 // We use a CDN version to avoid complex build config changes for now
 const PDF_WORKER_URL = 'https://unpkg.com/pdfjs-dist@3.4.120/build/pdf.worker.min.js';
 
-// Configuration for OnlyOffice
-// IMPORTANT: This URL must be accessible from the user's browser
-const ONLYOFFICE_SERVER_URL = 'https://argos.letsbuild.ch:8888/';
+// OnlyOffice document server URL is now provided by the backend config
 
 interface FilePreviewDialogProps {
     open: boolean;
@@ -307,8 +305,8 @@ export function FilePreviewDialog({
                         ) : isOfficeFile(currentFile.mimetype) && onlyOfficeConfig ? (
                             <div className="flex-1 w-full h-full bg-white">
                                 <DocumentEditor
-                                    id={`docEditor - ${currentFile.id} `}
-                                    documentServerUrl={ONLYOFFICE_SERVER_URL}
+                                    id={`docEditor-${currentFile.id}`}
+                                    documentServerUrl={onlyOfficeConfig?.documentServerUrl}
                                     config={onlyOfficeConfig}
                                     onLoadComponentError={(errorCode, errorDescription) => {
                                         console.error("OnlyOffice Load Error:", errorCode, errorDescription);

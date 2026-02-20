@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 
 // Import all sponsor images statically
 import suzuki from '@/img/sponsoren/suzuki.jpeg';
@@ -19,38 +19,29 @@ const SPONSORS = [
     { src: crea_hairstyle, alt: 'Crea Hairstyle' },
 ];
 
-// Duplicate list for seamless infinite scroll
-const ITEMS = [...SPONSORS, ...SPONSORS];
+// 4× kopiert: Animation scrollt genau eine Kopie (25 % des Tracks),
+// dann springt sie nahtlos zurück — für den Beobachter unsichtbar.
+const ITEMS = [...SPONSORS, ...SPONSORS, ...SPONSORS, ...SPONSORS, ...SPONSORS, ...SPONSORS];
 
 export function SponsorSlider() {
     const trackRef = useRef<HTMLDivElement>(null);
     const [isPaused, setIsPaused] = useState(false);
-    const animFrameRef = useRef<number>(0);
-    const positionRef = useRef(0);
-    const SPEED = 0.5; // px per frame
-
-    useEffect(() => {
-        const track = trackRef.current;
-        if (!track) return;
-
-        const animate = () => {
-            if (!isPaused) {
-                positionRef.current += SPEED;
-                const halfWidth = track.scrollWidth / 2;
-                if (positionRef.current >= halfWidth) {
-                    positionRef.current = 0;
-                }
-                track.style.transform = `translateX(-${positionRef.current}px)`;
-            }
-            animFrameRef.current = requestAnimationFrame(animate);
-        };
-
-        animFrameRef.current = requestAnimationFrame(animate);
-        return () => cancelAnimationFrame(animFrameRef.current);
-    }, [isPaused]);
 
     return (
         <section className="py-10 bg-[hsl(var(--background))] border-t border-[hsl(var(--border))]">
+            <style>{`
+                @keyframes sponsor-scroll {
+                    0%   { transform: translateX(0); }
+                    100% { transform: translateX(-25%); }
+                }
+                .sponsor-track {
+                    animation: sponsor-scroll 30s linear infinite;
+                }
+                .sponsor-track.paused {
+                    animation-play-state: paused;
+                }
+            `}</style>
+
             <div className="container-app mb-6">
                 <p className="text-center text-sm font-semibold uppercase tracking-widest text-[hsl(var(--muted-foreground))] opacity-70">
                     Unsere Gönner
@@ -68,7 +59,10 @@ export function SponsorSlider() {
                 {/* Right fade */}
                 <div className="pointer-events-none absolute right-0 top-0 z-10 h-full w-24 bg-gradient-to-l from-[hsl(var(--background))] to-transparent" />
 
-                <div ref={trackRef} className="flex items-center gap-10 will-change-transform">
+                <div
+                    ref={trackRef}
+                    className={`flex items-center gap-10 will-change-transform sponsor-track${isPaused ? ' paused' : ''}`}
+                >
                     {ITEMS.map((sponsor, i) => (
                         <div
                             key={i}

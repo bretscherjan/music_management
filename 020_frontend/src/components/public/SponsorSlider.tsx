@@ -1,6 +1,6 @@
-import { useRef, useState } from 'react';
+import { useState } from 'react';
 
-// Import all sponsor images statically
+// Images bleiben gleich
 import suzuki from '@/img/sponsoren/suzuki.jpeg';
 import car_market from '@/img/sponsoren/car_market.png';
 import maeschli from '@/img/sponsoren/maeschli.jpg';
@@ -19,59 +19,57 @@ const SPONSORS = [
     { src: crea_hairstyle, alt: 'Crea Hairstyle' },
 ];
 
-// 4× kopiert: Animation scrollt genau eine Kopie (25 % des Tracks),
-// dann springt sie nahtlos zurück — für den Beobachter unsichtbar.
-const ITEMS = [...SPONSORS, ...SPONSORS, ...SPONSORS, ...SPONSORS, ...SPONSORS, ...SPONSORS];
+// Zweimal reicht völlig aus für einen nahtlosen Loop
+const ITEMS = [...SPONSORS, ...SPONSORS];
 
 export function SponsorSlider() {
-    const trackRef = useRef<HTMLDivElement>(null);
     const [isPaused, setIsPaused] = useState(false);
 
     return (
-        <section className="py-10 bg-[hsl(var(--background))] border-t border-[hsl(var(--border))]">
+        <section className="py-10 bg-[hsl(var(--background))] border-t border-[hsl(var(--border))] overflow-hidden">
             <style>{`
-                @keyframes sponsor-scroll {
-                    0%   { transform: translateX(0); }
-                    100% { transform: translateX(-25%); }
+                @keyframes scroll {
+                    from { transform: translateX(0); }
+                    to { transform: translateX(-50%); }
                 }
-                .sponsor-track {
-                    animation: sponsor-scroll 30s linear infinite;
+                .animate-scroll {
+                    animation: scroll var(--animation-duration, 30s) linear infinite;
                 }
-                .sponsor-track.paused {
+                .paused {
                     animation-play-state: paused;
                 }
             `}</style>
 
-            <div className="container-app mb-6">
-                <p className="text-center text-sm font-semibold uppercase tracking-widest text-[hsl(var(--muted-foreground))] opacity-70">
+            <div className="container-app mb-8">
+                <p className="text-center text-xs md:text-sm font-semibold uppercase tracking-[0.2em] text-[hsl(var(--muted-foreground))] opacity-70">
                     Unsere Gönner
                 </p>
             </div>
 
-            {/* Slider wrapper with fade edges */}
             <div
-                className="relative overflow-hidden"
+                className="group relative flex overflow-hidden p-2"
                 onMouseEnter={() => setIsPaused(true)}
                 onMouseLeave={() => setIsPaused(false)}
+                onTouchStart={() => setIsPaused(true)}
+                onTouchEnd={() => setIsPaused(false)}
             >
-                {/* Left fade */}
-                <div className="pointer-events-none absolute left-0 top-0 z-10 h-full w-24 bg-gradient-to-r from-[hsl(var(--background))] to-transparent" />
-                {/* Right fade */}
-                <div className="pointer-events-none absolute right-0 top-0 z-10 h-full w-24 bg-gradient-to-l from-[hsl(var(--background))] to-transparent" />
+                {/* Fade Overlays - auf Mobile etwas schmaler für mehr Sichtbarkeit */}
+                <div className="pointer-events-none absolute inset-y-0 left-0 z-10 w-16 md:w-32 bg-gradient-to-r from-[hsl(var(--background))] to-transparent" />
+                <div className="pointer-events-none absolute inset-y-0 right-0 z-10 w-16 md:w-32 bg-gradient-to-l from-[hsl(var(--background))] to-transparent" />
 
                 <div
-                    ref={trackRef}
-                    className={`flex items-center gap-10 will-change-transform sponsor-track${isPaused ? ' paused' : ''}`}
+                    className={`flex min-w-full shrink-0 items-center justify-around gap-12 md:gap-20 animate-scroll ${isPaused ? 'paused' : ''}`}
+                    style={{ '--animation-duration': '25s' } as React.CSSProperties}
                 >
                     {ITEMS.map((sponsor, i) => (
                         <div
                             key={i}
-                            className="flex-shrink-0 h-20 w-40 flex items-center justify-center"
+                            className="flex shrink-0 items-center justify-center w-32 md:w-40"
                         >
                             <img
                                 src={sponsor.src}
                                 alt={sponsor.alt}
-                                className="max-h-16 max-w-[9rem] w-auto object-contain grayscale hover:grayscale-0 opacity-60 hover:opacity-100 transition-all duration-500"
+                                className="h-10 md:h-14 w-auto object-contain grayscale hover:grayscale-0 opacity-50 hover:opacity-100 transition-all duration-500"
                                 draggable={false}
                             />
                         </div>

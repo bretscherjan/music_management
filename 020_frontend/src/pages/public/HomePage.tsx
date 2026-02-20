@@ -4,6 +4,7 @@ import { Calendar, MapPin, Music2, ArrowRight } from 'lucide-react';
 import { formatTime } from '@/lib/utils';
 import { eventService } from '@/services/eventService';
 import type { Event } from '@/types';
+import { SponsorSlider } from '@/components/public/SponsorSlider';
 
 export function HomePage() {
     // Fetch upcoming public events only (no auth token)
@@ -98,6 +99,9 @@ export function HomePage() {
                     )}
                 </div>
             </section>
+
+            {/* Sponsor Slider */}
+            <SponsorSlider />
 
             {/* Call to Action */}
             <section className="py-16 md:py-24 bg-gradient-to-r from-[hsl(var(--musig-primary))]/5 to-[hsl(var(--musig-contrast))]/5">

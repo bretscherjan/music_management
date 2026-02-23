@@ -15,8 +15,7 @@ import {
     CornerUpLeft,
     Eye,
     CheckSquare,
-    Square,
-    Check
+    Square
 } from 'lucide-react';
 import {
     DropdownMenu,

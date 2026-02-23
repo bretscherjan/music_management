@@ -29,6 +29,7 @@ import { SheetMusicManagementPage } from '@/pages/admin/SheetMusicManagementPage
 import { StatisticsPage } from '@/pages/admin/StatisticsPage';
 import { MusicFolderPage } from '@/pages/secured/music-folder/MusicFolderPage';
 import { WorkspacePage } from '@/pages/admin/WorkspacePage';
+import { Toaster } from 'sonner';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -44,8 +45,8 @@ function App() {
   useEffect(() => {
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('/service-worker.js')
-        .then(registration => {
-          console.log('Service Worker registered:', registration);
+        .then(() => {
+          // Service Worker registered
         })
         .catch(error => {
           console.error('Service Worker registration failed:', error);
@@ -158,6 +159,7 @@ function App() {
             {/* Fallback */}
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
+          <Toaster position="top-center" richColors />
         </AuthProvider>
       </BrowserRouter>
     </QueryClientProvider>

@@ -31,7 +31,6 @@ class SocketService {
             });
 
             this.socket.on('connect', () => {
-                console.log('🔌 Connected to workspace');
                 this.reconnectAttempts = 0;
                 resolve();
             });
@@ -44,8 +43,8 @@ class SocketService {
                 }
             });
 
-            this.socket.on('disconnect', (reason) => {
-                console.log('🔌 Disconnected:', reason);
+            this.socket.on('disconnect', () => {
+                // disconnected
             });
 
             // Set up event forwarding

@@ -50,8 +50,7 @@ export function AttendanceSection({ eventId }: AttendanceSectionProps) {
     const { mutate: setAttendance, isPending } = useMutation({
         mutationFn: ({ status, userId, comment }: { status: AttendanceStatus; userId?: number; comment?: string }) =>
             eventService.setAttendance(eventId, { status, userId, comment }),
-        onSuccess: (data) => {
-            setDebugStatus(`Erfolg! Server: ${data.status} (ID: ${data.userId})`);
+        onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['attendances', eventId] });
             queryClient.invalidateQueries({ queryKey: ['events'] });
             setIsCommentModified(false);
@@ -59,7 +58,6 @@ export function AttendanceSection({ eventId }: AttendanceSectionProps) {
         },
         onError: (err: any) => {
             const msg = err.response?.data?.message || err.message || "Fehler beim Speichern";
-            setDebugStatus(`Fehler: ${msg}`);
             setError(msg);
         },
     });
@@ -106,17 +104,13 @@ export function AttendanceSection({ eventId }: AttendanceSectionProps) {
         }
     }, [userAttendance?.comment, isCommentModified]);
 
-    const [debugStatus, setDebugStatus] = useState<string>('Bereit');
-    console.log(debugStatus);
 
     const handleStatusChange = (status: AttendanceStatus, userId?: number) => {
-        setDebugStatus(`Sende Status: ${status} (User: ${userId || 'me'})`);
         const commentToSend = isCommentModified ? comment : undefined;
         setAttendance({ status, userId, comment: commentToSend });
     };
 
     const handleCommentChange = (userId: number, newComment: string) => {
-        setDebugStatus(`Sende Kommentar für User: ${userId}`);
         const currentAttendance = attendances.find((a: Attendance) => a.userId === userId);
         const status = currentAttendance?.status || 'maybe';
         setAttendance({ status, userId, comment: newComment });

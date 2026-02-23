@@ -12,6 +12,7 @@ import { Calendar, MapPin, Clock, ChevronRight, Newspaper, Plus } from 'lucide-r
 import { formatDate, formatTime, getCategoryLabel } from '@/lib/utils';
 import type { Event, News } from '@/types';
 import { AttendanceSummary } from '@/components/events/AttendanceSummary';
+import { SwipeableEventCard } from '@/components/events/SwipeableEventCard';
 import { useState } from 'react';
 
 export function Dashboard() {
@@ -139,51 +140,56 @@ function EventCard({ event }: { event: Event }) {
         other: 'warning',
     };
 
-    return (
-        <Link to={`/member/events/${event.id}`}>
-            <Card className="transition-all duration-200 hover:shadow-md hover:border-primary/50 group bg-card hover:bg-accent/5 active-scale">
-                <CardContent className="p-5">
-                    <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
-                        <div className="space-y-3 flex-1">
-                            <div className="flex items-center gap-3 flex-wrap">
-                                <h3 className="font-bold text-lg text-foreground group-hover:text-primary transition-colors">
-                                    {event.title}
-                                </h3>
-                                <Badge variant={categoryColors[event.category]} className="capitalize">
-                                    {getCategoryLabel(event.category)}
-                                </Badge>
-                            </div>
+    const myAttendance = (event as any).attendances?.[0];
+    const status = myAttendance?.status ?? null;
 
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-2 gap-x-6 text-sm text-muted-foreground">
-                                <span className="flex items-center gap-2">
-                                    <Calendar className="h-4 w-4 text-primary/70" />
-                                    {formatDate(event.date)}
-                                </span>
-                                <span className="flex items-center gap-2">
-                                    <Clock className="h-4 w-4 text-primary/70" />
-                                    {formatTime(event.startTime)} - {formatTime(event.endTime)}
-                                </span>
-                                {event.location && (
-                                    <span className="flex items-center gap-2 sm:col-span-2">
-                                        <MapPin className="h-4 w-4 text-primary/70" />
-                                        {event.location}
+    return (
+        <SwipeableEventCard eventId={event.id} currentStatus={status}>
+            <Link to={`/member/events/${event.id}`}>
+                <Card className="transition-all duration-200 hover:shadow-md hover:border-primary/50 group bg-card hover:bg-accent/5 active-scale">
+                    <CardContent className="p-5">
+                        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+                            <div className="space-y-3 flex-1">
+                                <div className="flex items-center gap-3 flex-wrap">
+                                    <h3 className="font-bold text-lg text-foreground group-hover:text-primary transition-colors">
+                                        {event.title}
+                                    </h3>
+                                    <Badge variant={categoryColors[event.category]} className="capitalize">
+                                        {getCategoryLabel(event.category)}
+                                    </Badge>
+                                </div>
+
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-2 gap-x-6 text-sm text-muted-foreground">
+                                    <span className="flex items-center gap-2">
+                                        <Calendar className="h-4 w-4 text-primary/70" />
+                                        {formatDate(event.date)}
                                     </span>
+                                    <span className="flex items-center gap-2">
+                                        <Clock className="h-4 w-4 text-primary/70" />
+                                        {formatTime(event.startTime)} - {formatTime(event.endTime)}
+                                    </span>
+                                    {event.location && (
+                                        <span className="flex items-center gap-2 sm:col-span-2">
+                                            <MapPin className="h-4 w-4 text-primary/70" />
+                                            {event.location}
+                                        </span>
+                                    )}
+                                </div>
+
+                                {/* Attendance Summary */}
+                                {event.attendanceSummary && (
+                                    <div className="mt-4 pt-3 border-t border-border/50">
+                                        <AttendanceSummary summary={event.attendanceSummary} />
+                                    </div>
                                 )}
                             </div>
 
-                            {/* Attendance Summary */}
-                            {event.attendanceSummary && (
-                                <div className="mt-4 pt-3 border-t border-border/50">
-                                    <AttendanceSummary summary={event.attendanceSummary} />
-                                </div>
-                            )}
+                            <ChevronRight className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors self-center" />
                         </div>
-
-                        <ChevronRight className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors self-center" />
-                    </div>
-                </CardContent>
-            </Card>
-        </Link>
+                    </CardContent>
+                </Card>
+            </Link>
+        </SwipeableEventCard>
     );
 }
 

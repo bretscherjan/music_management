@@ -46,14 +46,17 @@ export function Sidebar() {
         <aside className="hidden md:flex flex-col w-[100px] bg-white border-r border-gray-200 h-[calc(100vh-4rem)] sticky top-16 shrink-0 z-30">
 
             {/* Profile Section (Top) */}
-            <div className="pt-4 pb-2 flex flex-col items-center justify-center border-b border-gray-100 mx-4 mb-2">
+            <Link
+                to="/member/settings"
+                className="pt-4 pb-2 flex flex-col items-center justify-center border-b border-gray-100 mx-4 mb-2 hover:bg-gray-50 transition-colors rounded-b-lg"
+            >
                 <div className="h-9 w-9 rounded-full bg-[#BDD18C] flex items-center justify-center text-[#405116] font-bold text-sm shadow-sm mb-1">
                     {user?.firstName?.[0]}{user?.lastName?.[0]}
                 </div>
                 <span className="text-[10px] text-gray-500 font-medium truncate max-w-full">
-                    Profil
+                    Einstellungen
                 </span>
-            </div>
+            </Link>
 
             <div className="px-2 py-1 flex-1 flex flex-col gap-1 overflow-hidden hover:overflow-y-auto custom-scrollbar">
 

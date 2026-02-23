@@ -11,10 +11,14 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Loader2, Plus, Pencil, Trash2, Users } from 'lucide-react';
 import type { Register } from '@/types/register';
 import { ZoomableTableWrapper } from '@/components/common/ZoomableTableWrapper';
+import { ConfirmDialog } from '@/components/common/ConfirmDialog';
+import { toast } from 'sonner';
 
 export function RegisterManagementPage() {
     const queryClient = useQueryClient();
     const [isDialogOpen, setIsDialogOpen] = useState(false);
+    const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+    const [selectedRegisterId, setSelectedRegisterId] = useState<number | null>(null);
     const [editingRegister, setEditingRegister] = useState<Register | null>(null);
     const [name, setName] = useState('');
     const [assignedUserIds, setAssignedUserIds] = useState<number[]>([]);
@@ -43,10 +47,12 @@ export function RegisterManagementPage() {
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['registers'] });
             queryClient.invalidateQueries({ queryKey: ['users'] }); // Refresh users to show new register assignments
+            toast.success('Register erfolgreich gespeichert');
             handleClose();
         },
         onError: (err: any) => {
             setError(err.response?.data?.message || 'Fehler beim Speichern');
+            toast.error(err.response?.data?.message || 'Fehler beim Speichern');
         },
     });
 
@@ -55,7 +61,12 @@ export function RegisterManagementPage() {
         mutationFn: registerService.delete,
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['registers'] });
+            toast.success('Register erfolgreich gelöscht');
+            setIsDeleteDialogOpen(false);
         },
+        onError: (err: any) => {
+            toast.error(err.response?.data?.message || 'Fehler beim Löschen des Registers');
+        }
     });
 
     const handleOpenCreate = () => {
@@ -105,12 +116,17 @@ export function RegisterManagementPage() {
         // Find register to check member count
         const reg = registers?.find(r => r.id === id);
         if (reg && (reg as any).memberCount > 0) {
-            alert('Register mit Mitgliedern können nicht gelöscht werden. Bitte entfernen Sie zuerst die Mitglieder.');
+            toast.error('Register mit Mitgliedern können nicht gelöscht werden. Bitte entfernen Sie zuerst die Mitglieder.');
             return;
         }
 
-        if (window.confirm('Wollen Sie dieses Register wirklich löschen?')) {
-            deleteMutation.mutate(id);
+        setSelectedRegisterId(id);
+        setIsDeleteDialogOpen(true);
+    };
+
+    const confirmDelete = () => {
+        if (selectedRegisterId) {
+            deleteMutation.mutate(selectedRegisterId);
         }
     };
 
@@ -274,6 +290,17 @@ export function RegisterManagementPage() {
                     </form>
                 </DialogContent>
             </Dialog>
+
+            <ConfirmDialog
+                open={isDeleteDialogOpen}
+                onOpenChange={setIsDeleteDialogOpen}
+                title="Register löschen"
+                description="Wollen Sie dieses Register wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden."
+                onConfirm={confirmDelete}
+                confirmText="Löschen"
+                variant="destructive"
+                isLoading={deleteMutation.isPending}
+            />
         </div>
     );
 }

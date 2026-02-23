@@ -48,48 +48,46 @@ const checkFileAccess = (file, user) => {
     if (!user) return false;
     if (user.role === 'admin') return true;
 
-    const { accessRules } = file;
-
-    // Check for ADMIN_ONLY rule - if present, deny non-admins
-    const adminOnlyRule = accessRules?.find(r => r.targetType === 'ADMIN_ONLY');
+    // Check for explicit ADMIN_ONLY rule
+    const adminOnlyRule = file.accessRules?.find(r => r.targetType === 'ADMIN_ONLY');
     if (adminOnlyRule) return false;
 
     // 1. Explicit Deny on User
-    const userDeny = accessRules?.find(r => r.targetType === 'USER' && r.userId === user.id && r.accessType === 'DENY');
+    const userDeny = file.accessRules?.find(r => r.targetType === 'USER' && r.userId === user.id && r.accessType === 'DENY');
     if (userDeny) return false;
 
     // 2. Explicit Deny on Register
     if (user.registerId) {
-        const regDeny = accessRules?.find(r => r.targetType === 'REGISTER' && r.registerId === user.registerId && r.accessType === 'DENY');
+        const regDeny = file.accessRules?.find(r => r.targetType === 'REGISTER' && r.registerId === user.registerId && r.accessType === 'DENY');
         if (regDeny) return false;
     }
 
     // 3. Explicit Allow on User
-    const userAllow = accessRules?.find(r => r.targetType === 'USER' && r.userId === user.id && r.accessType === 'ALLOW');
+    const userAllow = file.accessRules?.find(r => r.targetType === 'USER' && r.userId === user.id && r.accessType === 'ALLOW');
     if (userAllow) return true;
 
     // 4. Explicit Allow on Register
     if (user.registerId) {
-        const regAllow = accessRules?.find(r => r.targetType === 'REGISTER' && r.registerId === user.registerId && r.accessType === 'ALLOW');
+        const regAllow = file.accessRules?.find(r => r.targetType === 'REGISTER' && r.registerId === user.registerId && r.accessType === 'ALLOW');
         if (regAllow) return true;
     }
 
-    // 5. Fallback to legacy visibility if no custom rules
-    const hasCustomRules = (accessRules?.length ?? 0) > 0;
+    // 5. Fallback logic
+    const hasCustomRules = (file.accessRules?.length ?? 0) > 0;
     if (!hasCustomRules) {
         if (file.visibility === 'all') return true;
         if (file.visibility === 'admin') return false;
         if (file.visibility === 'register') {
             return file.targetRegisterId === user.registerId;
         }
-        return true; // Default allow if no rules and no visibility set
+        return true;
     }
 
-    // Has custom rules but none matched -> check if allowlist mode
-    const hasAllowRules = accessRules.some(r => r.accessType === 'ALLOW');
-    if (hasAllowRules) return false; // Allowlist mode, not in list -> deny
+    // Has custom rules but none matched -> check if it's "Allowlist" mode
+    const hasAllowRules = file.accessRules.some(r => r.accessType === 'ALLOW');
+    if (hasAllowRules) return false;
 
-    return true; // Only deny rules exist, not denied -> allow
+    return true;
 };
 
 /**

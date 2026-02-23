@@ -34,6 +34,9 @@ export const fileService = {
         if (options?.sheetMusicId) {
             formData.append('sheetMusicId', options.sheetMusicId.toString());
         }
+        if (options?.accessRules) {
+            formData.append('accessRules', options.accessRules);
+        }
 
         const response = await api.post<{ file: FileEntity }>('/files/upload', formData, {
             headers: {
@@ -56,7 +59,7 @@ export const fileService = {
 
     // Helper: Trigger browser download
     async downloadAndSave(id: number, filename: string): Promise<void> {
-        const blob = await this.download(id);
+        const blob = await fileService.download(id);
         const url = window.URL.createObjectURL(blob);
         const link = document.createElement('a');
         link.href = url;
@@ -92,6 +95,16 @@ export const fileService = {
 
     async updateFolderAccess(id: number, accessRules: any[]): Promise<void> {
         await api.put(`/folders/${id}`, { accessRules });
+    },
+
+    async bulkUpdateAccess(data: {
+        fileIds: number[];
+        folderIds: number[];
+        visibility?: string;
+        accessRules: string;
+        recursive?: boolean;
+    }): Promise<void> {
+        await api.post('/files/bulk-access', data);
     },
 
     async getOneTimeToken(id: number): Promise<{ token: string; url: string }> {

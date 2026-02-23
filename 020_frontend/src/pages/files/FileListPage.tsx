@@ -13,7 +13,10 @@ import {
     Loader2,
     FolderPlus,
     CornerUpLeft,
-    Eye
+    Eye,
+    CheckSquare,
+    Square,
+    Check
 } from 'lucide-react';
 import {
     DropdownMenu,
@@ -42,16 +45,18 @@ import {
     DialogTitle,
 } from '@/components/ui/dialog';
 
+import { toast } from 'sonner';
 import { useIsAdmin } from '@/context/AuthContext';
 import { fileService } from '@/services/fileService';
 import { formatFileSize } from '@/lib/utils';
 import type { FileEntity } from '@/types';
-
 import { FileUploadDialog } from '@/components/files/FileUploadDialog';
 import { CreateFolderDialog } from '@/components/files/CreateFolderDialog';
 import { ManageAccessDialog } from '@/components/files/ManageAccessDialog';
 import { ManageFolderAccessDialog } from '@/components/files/ManageFolderAccessDialog';
+import { ManageBulkAccessDialog } from '@/components/files/ManageBulkAccessDialog';
 import { FilePreviewDialog } from '@/components/files/FilePreviewDialog';
+import { Checkbox } from '@/components/ui/checkbox';
 
 export function FileListPage() {
     const isAdmin = useIsAdmin();
@@ -68,6 +73,11 @@ export function FileListPage() {
     const [deleteFileId, setDeleteFileId] = useState<number | null>(null);
     const [deleteFolderId, setDeleteFolderId] = useState<number | null>(null);
     const [previewFileId, setPreviewFileId] = useState<number | null>(null);
+
+    // Bulk selection state
+    const [selectedFileIds, setSelectedFileIds] = useState<number[]>([]);
+    const [selectedFolderIds, setSelectedFolderIds] = useState<number[]>([]);
+    const [isBulkAccessOpen, setIsBulkAccessOpen] = useState(false);
 
     const { data: folderContents, isLoading } = useQuery({
         queryKey: ['folderContents', currentFolderId],
@@ -92,10 +102,14 @@ export function FileListPage() {
 
     const handleDownload = async (id: number, name: string) => {
         setDownloading(id);
+        const toastId = toast.loading(`${name} wird heruntergeladen...`);
         try {
             await fileService.downloadAndSave(id, name);
-        } catch (error) {
+            toast.success(`${name} heruntergeladen`, { id: toastId });
+        } catch (error: any) {
             console.error('Download failed:', error);
+            const msg = error.response?.data?.message || 'Download fehlgeschlagen';
+            toast.error(msg, { id: toastId });
         } finally {
             setDownloading(null);
         }
@@ -142,6 +156,33 @@ export function FileListPage() {
     const files = folderContents?.files || [];
     const breadcrumbs = folderContents?.breadcrumbs || [];
     const currentFolderName = folderContents?.currentFolder?.name || 'Root';
+
+    const toggleFileSelection = (fileId: number) => {
+        setSelectedFileIds(prev =>
+            prev.includes(fileId) ? prev.filter(id => id !== fileId) : [...prev, fileId]
+        );
+    };
+
+    const toggleFolderSelection = (folderId: number) => {
+        setSelectedFolderIds(prev =>
+            prev.includes(folderId) ? prev.filter(id => id !== folderId) : [...prev, folderId]
+        );
+    };
+
+    const toggleSelectAll = () => {
+        if (selectedFileIds.length + selectedFolderIds.length === files.length + folders.length) {
+            setSelectedFileIds([]);
+            setSelectedFolderIds([]);
+        } else {
+            setSelectedFileIds(files.map(f => f.id));
+            setSelectedFolderIds(folders.map(f => f.id));
+        }
+    };
+
+    const clearSelection = () => {
+        setSelectedFileIds([]);
+        setSelectedFolderIds([]);
+    };
 
     return (
         <div className="space-y-6 container-app py-8">
@@ -221,196 +262,286 @@ export function FileListPage() {
             ) : (
                 <Card>
                     <CardHeader>
-                        <CardTitle className="text-lg flex items-center gap-2">
-                            <Folder className="h-5 w-5 fill-primary/20 text-primary" />
-                            {currentFolderName}
+                        <CardTitle className="text-lg flex items-center justify-between gap-2 overflow-hidden">
+                            <div className="flex items-center gap-2 overflow-hidden">
+                                <Folder className="h-5 w-5 fill-primary/20 text-primary shrink-0" />
+                                <span className="truncate">{currentFolderName}</span>
+                            </div>
+
+                            {isAdmin && (files.length > 0 || folders.length > 0) && (
+                                <div className="flex items-center gap-2">
+                                    <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={toggleSelectAll}
+                                        className="text-xs h-8 px-2"
+                                    >
+                                        {selectedFileIds.length + selectedFolderIds.length === files.length + folders.length
+                                            ? <CheckSquare className="h-4 w-4 mr-1.5" />
+                                            : <Square className="h-4 w-4 mr-1.5" />
+                                        }
+                                        Alle {selectedFileIds.length + selectedFolderIds.length > 0 ? 'abwählen' : 'auswählen'}
+                                    </Button>
+                                </div>
+                            )}
                         </CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <div className="space-y-2">
+                        <div className="space-y-4">
                             {/* Subfolders */}
-                            {folders.map((folder) => (
-                                <div
-                                    key={folder.id}
-                                    className="flex items-center justify-between p-3 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors group"
-                                >
-                                    <div
-                                        className="flex items-center gap-3 flex-1 cursor-pointer"
-                                        onClick={() => navigateToFolder(folder.id)}
-                                    >
-                                        <Folder className="h-10 w-10 fill-primary/20 text-primary transition-transform group-hover:scale-110" />
-                                        <div className="flex flex-col">
-                                            <span className="font-medium text-base">
-                                                {folder.name}
-                                            </span>
-                                            <span className="text-xs text-muted-foreground">
-                                                {(folder._count?.files || 0) + (folder._count?.children || 0)} Objekte
-                                            </span>
-                                        </div>
-                                    </div>
-                                    <div className="flex items-center gap-2">
-                                        <ChevronRight className="h-4 w-4 text-muted-foreground mr-2" />
-                                        {isAdmin && (
-                                            <DropdownMenu>
-                                                <DropdownMenuTrigger asChild>
-                                                    <Button variant="ghost" className="h-8 w-8 p-0 opacity-0 group-hover: opacity-100 transition-opacity">
-                                                        <span className="sr-only">Open menu</span>
-                                                        <MoreVertical className="h-4 w-4" />
-                                                    </Button>
-                                                </DropdownMenuTrigger>
-                                                <DropdownMenuContent align="end">
-                                                    <DropdownMenuLabel>Aktionen</DropdownMenuLabel>
-                                                    <DropdownMenuSeparator />
-                                                    <DropdownMenuItem
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            setManageAccessFolder(folder);
-                                                        }}
-                                                    >
-                                                        <Shield className="mr-2 h-4 w-4" />
-                                                        Berechtigungen
-                                                    </DropdownMenuItem>
-                                                    <DropdownMenuItem
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            setDeleteFolderId(folder.id);
-                                                        }}
-                                                        className="text-red-600 focus:text-red-600"
-                                                    >
-                                                        <Trash2 className="mr-2 h-4 w-4" />
-                                                        Löschen
-                                                    </DropdownMenuItem>
-                                                </DropdownMenuContent>
-                                            </DropdownMenu>
-                                        )}
-                                    </div>
-                                </div>
-                            ))}
-
-                            {/* Files */}
-                            {files.map((file) => (
-                                <div
-                                    key={file.id}
-                                    className="flex items-center justify-between p-3 rounded-lg hover:bg-accent/50 transition-colors border border-transparent hover:border-border cursor-pointer group"
-                                    onClick={() => handlePreview(file.id)}
-                                >
-                                    <div className="flex items-center gap-3 min-w-0 flex-1">
-                                        <span className="text-2xl flex-shrink-0">
-                                            {getFileIcon(file.mimetype)}
-                                        </span>
-                                        <div className="min-w-0 flex-1">
-                                            <p className="font-medium truncate group-hover:text-primary transition-colors">{file.originalName}</p>
-                                            <div className="flex gap-2 text-xs text-muted-foreground">
-                                                <span>{formatFileSize(file.size)}</span>
-                                                {file.visibility !== 'all' && (
-                                                    <Badge variant="outline" className="text-xs ml-2">
-                                                        {file.visibility === 'admin' ? 'Admin' :
-                                                            file.visibility === 'register' ? 'Register' :
-                                                                'Begrenzt'}
-                                                    </Badge>
+                            {folders.length > 0 && (
+                                <div className="space-y-2">
+                                    <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-1">Ordner</h4>
+                                    {folders.map((folder) => (
+                                        <div
+                                            key={folder.id}
+                                            className={`flex items-center justify-between p-3 rounded-lg transition-colors group relative border ${selectedFolderIds.includes(folder.id) ? 'bg-primary/10 border-primary/20' : 'bg-muted/30 hover:bg-muted/50 border-transparent'
+                                                }`}
+                                        >
+                                            <div className="flex items-center gap-3 flex-1 min-w-0">
+                                                {isAdmin && (
+                                                    <div className="flex items-center justify-center p-1" onClick={(e) => e.stopPropagation()}>
+                                                        <Checkbox
+                                                            id={`folder-${folder.id}`}
+                                                            checked={selectedFolderIds.includes(folder.id)}
+                                                            onCheckedChange={() => toggleFolderSelection(folder.id)}
+                                                            className="h-5 w-5"
+                                                        />
+                                                    </div>
+                                                )}
+                                                <div
+                                                    className="flex items-center gap-3 flex-1 cursor-pointer overflow-hidden"
+                                                    onClick={() => navigateToFolder(folder.id)}
+                                                >
+                                                    <Folder className="h-10 w-10 fill-primary/20 text-primary transition-transform group-hover:scale-110 shrink-0" />
+                                                    <div className="flex flex-col overflow-hidden">
+                                                        <span className="font-medium text-base truncate">
+                                                            {folder.name}
+                                                        </span>
+                                                        <span className="text-xs text-muted-foreground">
+                                                            {(folder._count?.files || 0) + (folder._count?.children || 0)} Objekte
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div className="flex items-center gap-2">
+                                                <ChevronRight className="h-4 w-4 text-muted-foreground mr-2" />
+                                                {isAdmin && (
+                                                    <DropdownMenu>
+                                                        <DropdownMenuTrigger asChild>
+                                                            <Button variant="ghost" className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                                <span className="sr-only">Open menu</span>
+                                                                <MoreVertical className="h-4 w-4" />
+                                                            </Button>
+                                                        </DropdownMenuTrigger>
+                                                        <DropdownMenuContent align="end">
+                                                            <DropdownMenuLabel>Aktionen</DropdownMenuLabel>
+                                                            <DropdownMenuSeparator />
+                                                            <DropdownMenuItem
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    setManageAccessFolder(folder);
+                                                                }}
+                                                            >
+                                                                <Shield className="mr-2 h-4 w-4" />
+                                                                Berechtigungen
+                                                            </DropdownMenuItem>
+                                                            <DropdownMenuItem
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    setDeleteFolderId(folder.id);
+                                                                }}
+                                                                className="text-red-600 focus:text-red-600"
+                                                            >
+                                                                <Trash2 className="mr-2 h-4 w-4" />
+                                                                Löschen
+                                                            </DropdownMenuItem>
+                                                        </DropdownMenuContent>
+                                                    </DropdownMenu>
                                                 )}
                                             </div>
                                         </div>
-                                    </div>
+                                    ))}
+                                </div>
+                            )}
 
-                                    <div className="flex items-center gap-2">
-                                        <Button
-                                            variant="ghost"
-                                            size="sm"
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                handlePreview(file.id);
-                                            }}
-                                            className="hidden sm:flex"
+                            {/* Files */}
+                            {files.length > 0 && (
+                                <div className="space-y-2">
+                                    <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-1">Dateien</h4>
+                                    {files.map((file) => (
+                                        <div
+                                            key={file.id}
+                                            className={`flex items-center justify-between p-3 rounded-lg transition-colors border group relative ${selectedFileIds.includes(file.id)
+                                                ? 'bg-primary/10 border-primary/30'
+                                                : 'hover:bg-accent/50 border-transparent hover:border-border'
+                                                } cursor-pointer`}
+                                            onClick={() => handlePreview(file.id)}
                                         >
-                                            <Eye className="h-4 w-4 mr-2" />
-                                            Vorschau
-                                        </Button>
-
-                                        <Button
-                                            variant="ghost"
-                                            size="sm"
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                handleDownload(file.id, file.originalName);
-                                            }}
-                                        >
-                                            {downloading === file.id ? (
-                                                <Loader2 className="h-4 w-4 animate-spin" />
-                                            ) : (
-                                                <Download className="h-4 w-4" />
-                                            )}
-                                        </Button>
-
-                                        <DropdownMenu>
-                                            <DropdownMenuTrigger asChild>
-                                                <Button variant="ghost" className="h-8 w-8 p-0" onClick={(e) => e.stopPropagation()}>
-                                                    <span className="sr-only">Open menu</span>
-                                                    <MoreVertical className="h-4 w-4" />
-                                                </Button>
-                                            </DropdownMenuTrigger>
-                                            <DropdownMenuContent align="end">
-                                                <DropdownMenuLabel>Aktionen</DropdownMenuLabel>
-                                                <DropdownMenuItem onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    handlePreview(file.id);
-                                                }}>
-                                                    <Eye className="mr-2 h-4 w-4" />
-                                                    Vorschau
-                                                </DropdownMenuItem>
-
-                                                <DropdownMenuItem onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    handleDownload(file.id, file.originalName);
-                                                }}>
-                                                    <Download className="mr-2 h-4 w-4" />
-                                                    Herunterladen
-                                                </DropdownMenuItem>
-
+                                            <div className="flex items-center gap-3 min-w-0 flex-1">
                                                 {isAdmin && (
-                                                    <>
+                                                    <div className="flex items-center justify-center p-1" onClick={(e) => e.stopPropagation()}>
+                                                        <Checkbox
+                                                            id={`file-${file.id}`}
+                                                            checked={selectedFileIds.includes(file.id)}
+                                                            onCheckedChange={() => toggleFileSelection(file.id)}
+                                                            className="h-5 w-5"
+                                                        />
+                                                    </div>
+                                                )}
+                                                <div className="flex items-center gap-3 min-w-0 flex-1">
+                                                    <span className="text-2xl flex-shrink-0">
+                                                        {getFileIcon(file.mimetype)}
+                                                    </span>
+                                                    <div className="min-w-0 flex-1">
+                                                        <p className="font-medium truncate group-hover:text-primary transition-colors">{file.originalName}</p>
+                                                        <div className="flex gap-2 text-xs text-muted-foreground">
+                                                            <span>{formatFileSize(file.size)}</span>
+                                                            {file.visibility !== 'all' && (
+                                                                <Badge variant="outline" className="text-[10px] h-4 py-0 flex items-center gap-1 border-primary/30">
+                                                                    <Shield className="h-3 w-3" />
+                                                                    {file.visibility === 'admin' ? 'Admins' : 'Limit'}
+                                                                </Badge>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div className="flex items-center gap-1">
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    className="h-8 w-8 text-muted-foreground hover:text-primary opacity-0 group-hover:opacity-100 transition-opacity"
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        handleDownload(file.id, file.originalName);
+                                                    }}
+                                                    disabled={downloading === file.id}
+                                                >
+                                                    {downloading === file.id ? (
+                                                        <Loader2 className="h-4 w-4 animate-spin" />
+                                                    ) : (
+                                                        <Download className="h-4 w-4" />
+                                                    )}
+                                                </Button>
+
+                                                <DropdownMenu>
+                                                    <DropdownMenuTrigger asChild>
+                                                        <Button variant="ghost" className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                            <MoreVertical className="h-4 w-4" />
+                                                        </Button>
+                                                    </DropdownMenuTrigger>
+                                                    <DropdownMenuContent align="end">
+                                                        <DropdownMenuLabel>Aktionen</DropdownMenuLabel>
                                                         <DropdownMenuSeparator />
                                                         <DropdownMenuItem onClick={(e) => {
                                                             e.stopPropagation();
-                                                            setManageAccessFile(file);
+                                                            handlePreview(file.id);
                                                         }}>
-                                                            <Shield className="mr-2 h-4 w-4" />
-                                                            Berechtigungen
+                                                            <Eye className="mr-2 h-4 w-4" />
+                                                            Vorschau
                                                         </DropdownMenuItem>
                                                         <DropdownMenuItem
                                                             onClick={(e) => {
                                                                 e.stopPropagation();
-                                                                setDeleteFileId(file.id);
+                                                                handleDownload(file.id, file.originalName);
                                                             }}
-                                                            className="text-red-600 focus:text-red-600"
+                                                            disabled={downloading === file.id}
                                                         >
-                                                            <Trash2 className="mr-2 h-4 w-4" />
-                                                            Löschen
+                                                            {downloading === file.id ? (
+                                                                <Loader2 className="mr-2 h-4 w-4 animate-spin text-muted-foreground" />
+                                                            ) : (
+                                                                <Download className="mr-2 h-4 w-4" />
+                                                            )}
+                                                            Herunterladen
                                                         </DropdownMenuItem>
-                                                    </>
-                                                )}
-                                            </DropdownMenuContent>
-                                        </DropdownMenu>
-                                    </div>
-                                </div>
-                            ))}
 
-                            {folders.length === 0 && files.length === 0 && (
-                                <div className="text-center text-muted-foreground py-12 flex flex-col items-center">
-                                    <div className="bg-muted rounded-full p-4 mb-3">
-                                        <Folder className="h-8 w-8 text-muted-foreground" />
-                                    </div>
+                                                        {isAdmin && (
+                                                            <>
+                                                                <DropdownMenuSeparator />
+                                                                <DropdownMenuItem onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    setManageAccessFile(file);
+                                                                }}>
+                                                                    <Shield className="mr-2 h-4 w-4" />
+                                                                    Berechtigungen
+                                                                </DropdownMenuItem>
+                                                                <DropdownMenuItem
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation();
+                                                                        setDeleteFileId(file.id);
+                                                                    }}
+                                                                    className="text-red-600 focus:text-red-600"
+                                                                >
+                                                                    <Trash2 className="mr-2 h-4 w-4" />
+                                                                    Löschen
+                                                                </DropdownMenuItem>
+                                                            </>
+                                                        )}
+                                                    </DropdownMenuContent>
+                                                </DropdownMenu>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+
+                            {files.length === 0 && folders.length === 0 && (
+                                <div className="text-center py-12 text-muted-foreground">
+                                    <Folder className="h-12 w-12 mx-auto mb-4 opacity-20" />
                                     <p>Dieser Ordner ist leer</p>
-                                    {isAdmin && currentFolderId !== null && (
-                                        <Button variant="link" onClick={() => setIsUploadOpen(true)}>
-                                            Erste Datei hochladen
-                                        </Button>
-                                    )}
                                 </div>
                             )}
                         </div>
                     </CardContent>
                 </Card>
+            )}
+
+            {/* Bulk Action Toolbar */}
+            {isAdmin && (selectedFileIds.length > 0 || selectedFolderIds.length > 0) && (
+                <div className="fixed bottom-20 left-1/2 -translate-x-1/2 z-50 animate-in fade-in slide-in-from-bottom-4 duration-300">
+                    <Card className="shadow-2xl border-primary/20 bg-background/95 backdrop-blur-sm">
+                        <CardContent className="p-4 flex items-center gap-4">
+                            <div className="flex items-center gap-2 px-2 border-r pr-4">
+                                <Badge variant="default" className="bg-primary hover:bg-primary px-2 py-0.5">
+                                    {selectedFileIds.length + selectedFolderIds.length}
+                                </Badge>
+                                <span className="text-sm font-medium whitespace-nowrap">ausgewählt</span>
+                                <Button variant="ghost" size="sm" onClick={clearSelection} className="h-7 text-xs px-2">
+                                    Aufheben
+                                </Button>
+                            </div>
+
+                            <div className="flex items-center gap-2">
+                                <Button
+                                    size="sm"
+                                    onClick={() => setIsBulkAccessOpen(true)}
+                                    className="h-9"
+                                >
+                                    <Shield className="h-4 w-4 mr-2" />
+                                    Berechtigungen setzen
+                                </Button>
+
+                                <Button
+                                    size="sm"
+                                    variant="destructive"
+                                    onClick={() => {
+                                        // Simple bulk delete confirmation or just open dialog? 
+                                        // For simplicity, let's just use existing dialogs for single delete
+                                        // Or we could implement bulk delete too.
+                                        // Plan didn't specify bulk delete, but it's logical.
+                                        // Let's stick to the plan: permissions.
+                                    }}
+                                    className="h-9 hidden sm:flex"
+                                    disabled
+                                >
+                                    <Trash2 className="h-4 w-4 mr-2" />
+                                    Löschen
+                                </Button>
+                            </div>
+                        </CardContent>
+                    </Card>
+                </div>
             )}
 
             {/* Upload Dialog */}
@@ -441,6 +572,14 @@ export function FileListPage() {
                 open={!!manageAccessFolder}
                 onOpenChange={(open) => !open && setManageAccessFolder(null)}
                 folder={manageAccessFolder}
+            />
+
+            {/* Manage Bulk Access Dialog */}
+            <ManageBulkAccessDialog
+                open={isBulkAccessOpen}
+                onOpenChange={setIsBulkAccessOpen}
+                selectedFileIds={selectedFileIds}
+                selectedFolderIds={selectedFolderIds}
             />
 
             {/* Delete File Confirmation Dialog */}

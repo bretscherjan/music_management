@@ -1,11 +1,15 @@
-import { useState } from 'react';
-import { useQueryClient } from '@tanstack/react-query';
+import { useState, useMemo } from 'react';
+import { useQueryClient, useQuery } from '@tanstack/react-query';
 import { fileService } from '@/services/fileService';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { registerService } from '@/services/registerService';
+import { userService } from '@/services/userService';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Loader2, Upload, File as FileIcon, X, CheckCircle2, AlertCircle } from 'lucide-react';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Loader2, Upload, File as FileIcon, X, CheckCircle2, AlertCircle, Shield } from 'lucide-react';
 import type { UploadFileDto } from '@/types';
 
 interface FileUploadDialogProps {
@@ -26,6 +30,44 @@ export function FileUploadDialog({ open, onOpenChange, currentFolderId, currentF
     const [fileStatuses, setFileStatuses] = useState<FileUploadStatus[]>([]);
     const [isUploading, setIsUploading] = useState(false);
     const [globalError, setGlobalError] = useState<string | null>(null);
+
+    // Permission state
+    const [mode, setMode] = useState<'all' | 'admin' | 'custom'>('all');
+    const [allowedRegisters, setAllowedRegisters] = useState<number[]>([]);
+    const [allowedUsers, setAllowedUsers] = useState<number[]>([]);
+    const [deniedUsers, setDeniedUsers] = useState<number[]>([]);
+
+    // Fetch master data
+    const { data: registers = [] } = useQuery({ queryKey: ['registers'], queryFn: registerService.getAll });
+    const { data: users = [] } = useQuery({
+        queryKey: ['users'],
+        queryFn: () => userService.getAll()
+    });
+
+    // --- Smart Dropdown Filtering ---
+    const usersWithRegisterAccess = useMemo(() => {
+        if (allowedRegisters.length === 0) return new Set<number>();
+        return new Set(
+            users
+                .filter((u: any) => u.registerId && allowedRegisters.includes(u.registerId))
+                .map((u: any) => u.id)
+        );
+    }, [users, allowedRegisters]);
+
+    const usersForAllowDropdown = useMemo(() => {
+        return users.filter((u: any) =>
+            !allowedUsers.includes(u.id) &&
+            !usersWithRegisterAccess.has(u.id)
+        );
+    }, [users, allowedUsers, usersWithRegisterAccess]);
+
+    const usersForDenyDropdown = useMemo(() => {
+        return users.filter((u: any) =>
+            usersWithRegisterAccess.has(u.id) &&
+            !deniedUsers.includes(u.id) &&
+            !allowedUsers.includes(u.id)
+        );
+    }, [users, usersWithRegisterAccess, deniedUsers, allowedUsers]);
 
     const handleClose = () => {
         if (isUploading) return;
@@ -56,9 +98,25 @@ export function FileUploadDialog({ open, onOpenChange, currentFolderId, currentF
         setIsUploading(true);
         setGlobalError(null);
 
+        const accessRules: any[] = [];
+        if (mode === 'admin') {
+            accessRules.push({ accessType: 'ALLOW', targetType: 'ADMIN_ONLY' });
+        } else if (mode === 'custom') {
+            allowedRegisters.forEach(regId => {
+                accessRules.push({ accessType: 'ALLOW', targetType: 'REGISTER', registerId: regId });
+            });
+            allowedUsers.forEach(userId => {
+                accessRules.push({ accessType: 'ALLOW', targetType: 'USER', userId: userId });
+            });
+            deniedUsers.forEach(userId => {
+                accessRules.push({ accessType: 'DENY', targetType: 'USER', userId: userId });
+            });
+        }
+
         const options: UploadFileDto = {
-            visibility: 'admin',
+            visibility: mode === 'all' ? 'all' : 'limit',
             folderId: currentFolderId,
+            accessRules: JSON.stringify(accessRules),
         };
 
         let hasError = false;
@@ -182,9 +240,116 @@ export function FileUploadDialog({ open, onOpenChange, currentFolderId, currentF
                             <Upload className="h-4 w-4" />
                             {currentFolderName}
                         </div>
-                        <p className="text-xs text-muted-foreground">
-                            Neue Dateien sind nur für Admins sichtbar. Berechtigungen können nachträglich über &quot;Berechtigungen verwalten&quot; angepasst werden.
-                        </p>
+                    </div>
+
+                    {/* Permission Section */}
+                    <div className="space-y-4 border rounded-md p-4">
+                        <Label className="flex items-center gap-2">
+                            <Shield className="h-4 w-4" />
+                            Berechtigungen setzen
+                        </Label>
+
+                        <RadioGroup value={mode} onValueChange={(v: 'all' | 'admin' | 'custom') => setMode(v)}>
+                            <div className="flex items-center space-x-2">
+                                <RadioGroupItem value="all" id="upload-all" />
+                                <Label htmlFor="upload-all" className="text-sm font-normal">Alle Mitglieder (Öffentlich)</Label>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                                <RadioGroupItem value="admin" id="upload-admin" />
+                                <Label htmlFor="upload-admin" className="text-sm font-normal">Nur Admins</Label>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                                <RadioGroupItem value="custom" id="upload-custom" />
+                                <Label htmlFor="upload-custom" className="text-sm font-normal">Benutzerdefiniert</Label>
+                            </div>
+                        </RadioGroup>
+
+                        {mode === 'custom' && (
+                            <div className="mt-4 space-y-4 text-sm scale-95 origin-top border-t pt-4">
+                                {/* Registers */}
+                                <div className="space-y-2">
+                                    <Label className="font-semibold text-xs">Register</Label>
+                                    <div className="grid grid-cols-2 gap-x-4 gap-y-1">
+                                        {registers.map(reg => (
+                                            <div key={reg.id} className="flex items-center space-x-2">
+                                                <Checkbox
+                                                    id={`up-reg-${reg.id}`}
+                                                    checked={allowedRegisters.includes(reg.id)}
+                                                    onCheckedChange={(checked: boolean) => {
+                                                        if (checked) setAllowedRegisters([...allowedRegisters, reg.id]);
+                                                        else {
+                                                            setAllowedRegisters(allowedRegisters.filter(id => id !== reg.id));
+                                                            const regUsers = users.filter((u: any) => u.registerId === reg.id).map((u: any) => u.id);
+                                                            setDeniedUsers(deniedUsers.filter(id => !regUsers.includes(id)));
+                                                        }
+                                                    }}
+                                                />
+                                                <label htmlFor={`up-reg-${reg.id}`} className="text-xs truncate">{reg.name}</label>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                {/* Additional Users */}
+                                <div className="space-y-2">
+                                    <Label className="font-semibold text-xs">Zusätzliche Benutzer</Label>
+                                    <select
+                                        className="w-full border p-1 rounded text-xs"
+                                        onChange={(e) => {
+                                            const uid = parseInt(e.target.value);
+                                            if (uid && !allowedUsers.includes(uid)) setAllowedUsers([...allowedUsers, uid]);
+                                            e.target.value = '';
+                                        }}
+                                    >
+                                        <option value="">Auswählen...</option>
+                                        {usersForAllowDropdown.map((u: any) => (
+                                            <option key={u.id} value={u.id}>{u.firstName} {u.lastName}</option>
+                                        ))}
+                                    </select>
+                                    <div className="flex flex-wrap gap-1 mt-1">
+                                        {allowedUsers.map(uid => {
+                                            const u = users.find((user: any) => user.id === uid);
+                                            return u ? (
+                                                <div key={uid} className="bg-green-100 text-green-800 text-[10px] px-1.5 py-0.5 rounded flex items-center gap-1">
+                                                    {u.firstName} {u.lastName}
+                                                    <button type="button" onClick={() => setAllowedUsers(allowedUsers.filter(id => id !== uid))}>x</button>
+                                                </div>
+                                            ) : null;
+                                        })}
+                                    </div>
+                                </div>
+
+                                {/* Denied Users */}
+                                <div className="space-y-2">
+                                    <Label className="font-semibold text-xs text-red-600">Ausnahmen (Blockieren)</Label>
+                                    <select
+                                        className="w-full border p-1 rounded text-xs"
+                                        disabled={usersForDenyDropdown.length === 0}
+                                        onChange={(e) => {
+                                            const uid = parseInt(e.target.value);
+                                            if (uid && !deniedUsers.includes(uid)) setDeniedUsers([...deniedUsers, uid]);
+                                            e.target.value = '';
+                                        }}
+                                    >
+                                        <option value="">Auswählen...</option>
+                                        {usersForDenyDropdown.map((u: any) => (
+                                            <option key={u.id} value={u.id}>{u.firstName} {u.lastName}</option>
+                                        ))}
+                                    </select>
+                                    <div className="flex flex-wrap gap-1 mt-1">
+                                        {deniedUsers.map(uid => {
+                                            const u = users.find((user: any) => user.id === uid);
+                                            return u ? (
+                                                <div key={uid} className="bg-red-100 text-red-800 text-[10px] px-1.5 py-0.5 rounded flex items-center gap-1">
+                                                    {u.firstName} {u.lastName}
+                                                    <button type="button" onClick={() => setDeniedUsers(deniedUsers.filter(id => id !== uid))}>x</button>
+                                                </div>
+                                            ) : null;
+                                        })}
+                                    </div>
+                                </div>
+                            </div>
+                        )}
                     </div>
 
                     {globalError && (

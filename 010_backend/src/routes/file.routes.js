@@ -75,6 +75,13 @@ router.delete('/:id', authMiddleware, adminOnly, validate(getFileByIdSchema), fi
 router.put('/:id/access', authMiddleware, adminOnly, fileController.updateFileAccess);
 
 /**
+ * @route   POST /api/files/bulk-access
+ * @desc    Update access permissions for multiple items
+ * @access  Admin only
+ */
+router.post('/bulk-access', authMiddleware, adminOnly, fileController.bulkUpdateAccess);
+
+/**
  * @route   POST /api/files/:id/view-token
  * @desc    Generate a one-time public view token
  * @access  Private (based on visibility)

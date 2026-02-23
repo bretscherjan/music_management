@@ -22,6 +22,8 @@ import type { UserStatus, User } from '@/types';
 import { AdminEditUserDialog } from '@/components/admin/AdminEditUserDialog';
 import { CreateUserDialog } from '@/components/admin/CreateUserDialog';
 import { ZoomableTableWrapper } from '@/components/common/ZoomableTableWrapper';
+import { ConfirmDialog } from '@/components/common/ConfirmDialog';
+import { toast } from 'sonner';
 
 export function UserManagementPage() {
     const isAdmin = useIsAdmin();
@@ -33,6 +35,7 @@ export function UserManagementPage() {
     // Dialog State
     const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
     const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+    const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
     const [selectedUser, setSelectedUser] = useState<User | null>(null);
 
     const { data: users, isLoading: usersLoading } = useQuery({
@@ -57,16 +60,23 @@ export function UserManagementPage() {
         mutationFn: userService.delete,
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['users'] });
+            toast.success('Mitglied erfolgreich gelöscht');
+            setIsDeleteDialogOpen(false);
         },
         onError: (err: any) => {
-            alert(err.response?.data?.message || 'Fehler beim Löschen des Benutzers');
+            toast.error(err.response?.data?.message || 'Fehler beim Löschen des Benutzers');
         }
     });
 
     const handleDeleteUser = (user: User) => {
         if (!isAdmin) return;
-        if (window.confirm(`Möchten Sie das Mitglied ${user.firstName} ${user.lastName} wirklich löschen?`)) {
-            deleteUserMutation.mutate(user.id);
+        setSelectedUser(user);
+        setIsDeleteDialogOpen(true);
+    };
+
+    const confirmDelete = () => {
+        if (selectedUser) {
+            deleteUserMutation.mutate(selectedUser.id);
         }
     };
 
@@ -301,6 +311,16 @@ export function UserManagementPage() {
                     <CreateUserDialog
                         open={isCreateDialogOpen}
                         onOpenChange={setIsCreateDialogOpen}
+                    />
+                    <ConfirmDialog
+                        open={isDeleteDialogOpen}
+                        onOpenChange={setIsDeleteDialogOpen}
+                        title="Mitglied löschen"
+                        description={`Möchten Sie das Mitglied ${selectedUser?.firstName} ${selectedUser?.lastName} wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden.`}
+                        onConfirm={confirmDelete}
+                        confirmText="Löschen"
+                        variant="destructive"
+                        isLoading={deleteUserMutation.isPending}
                     />
                 </>
             )}

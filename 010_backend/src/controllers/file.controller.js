@@ -172,6 +172,8 @@ const getFileById = asyncHandler(async (req, res) => {
     const { id } = req.params;
     const user = req.user;
 
+    console.log(`[DEBUG] getFileById call - ID: ${id}, User: ${user?.email}`);
+
     const file = await prisma.file.findUnique({
         where: { id: parseInt(id) },
         include: {
@@ -182,6 +184,7 @@ const getFileById = asyncHandler(async (req, res) => {
     });
 
     if (!file) {
+        console.warn(`[DEBUG] File not found in DB. ID: ${id}`);
         throw new AppError('Datei nicht gefunden', 404);
     }
 
@@ -192,12 +195,21 @@ const getFileById = asyncHandler(async (req, res) => {
         throw new AppError('Keine Berechtigung für diese Datei', 403);
     }
 
-    // Check if file exists on disk
-    if (!fs.existsSync(file.path)) {
-        console.error(`[DEBUG] File not found on disk. ID: ${id}, Path: ${file.path}`);
-        // Log error but don't delete from DB here, let admin handle it or lazy cleanup?
-        // Better validation:
-        throw new AppError('Datei nicht auf dem Server gefunden', 404);
+    // Resolve actual file path (handle absolute path breakage from migration/different environments)
+    let actualPath = file.path;
+    if (!fs.existsSync(actualPath)) {
+        console.warn(`[DEBUG] File path from DB not found: ${actualPath}. Trying fallback...`);
+        // Try relative to UPLOAD_DIR
+        const uploadDir = process.env.UPLOAD_DIR || 'uploads';
+        const fallbackPath = path.join(uploadDir, file.filename);
+
+        if (fs.existsSync(fallbackPath)) {
+            actualPath = fallbackPath;
+            console.log(`[DEBUG] Found file via fallback: ${actualPath}`);
+        } else {
+            console.error(`[DEBUG] File not found even with fallback. ID: ${id}, Filename: ${file.filename}`);
+            throw new AppError('Datei nicht auf dem Server gefunden', 404);
+        }
     }
 
     // Set appropriate headers
@@ -206,7 +218,7 @@ const getFileById = asyncHandler(async (req, res) => {
     res.setHeader('Content-Length', file.size);
 
     // Stream file to response
-    const fileStream = fs.createReadStream(file.path);
+    const fileStream = fs.createReadStream(actualPath);
     fileStream.pipe(res);
 });
 
@@ -375,6 +387,10 @@ function checkFileAccess(file, user) {
     // Admins have access to everything
     if (user.role === 'admin') return true;
 
+    // Check for explicit ADMIN_ONLY rule
+    const adminOnlyRule = file.accessRules?.find(r => r.targetType === 'ADMIN_ONLY');
+    if (adminOnlyRule) return false;
+
     // 1. Check for Explicit DENY on User
     const userDeny = file.accessRules?.find(r =>
         r.targetType === 'USER' && r.userId === user.id && r.accessType === 'DENY'
@@ -403,9 +419,7 @@ function checkFileAccess(file, user) {
         if (registerAllow) return true;
     }
 
-    // 5. Fallback to legacy visibility ONLY if no custom access rules exist.
-    // If there are custom rules (visibility = 'limit'), they take precedence.
-    // We only reach this point if no ALLOW rule matched above.
+    // 5. Fallback logic
     const hasCustomRules = (file.accessRules?.length ?? 0) > 0;
 
     if (!hasCustomRules) {
@@ -415,10 +429,16 @@ function checkFileAccess(file, user) {
         if (file.visibility === 'register') {
             return file.targetRegisterId === user.registerId;
         }
+        // Default allow if no rules and visibility is 'all' or not restricted
+        return true;
     }
 
-    // Default deny: custom rules exist but none matched, or visibility is restrictive
-    return false;
+    // Has custom rules but none matched -> check if it's "Allowlist" mode
+    const hasAllowRules = file.accessRules.some(r => r.accessType === 'ALLOW');
+    if (hasAllowRules) return false; // In allowlist mode, not matching an allow list means deny
+
+    // Only deny rules exist and none matched -> allow
+    return true;
 }
 
 /**
@@ -661,6 +681,122 @@ const generateViewToken = asyncHandler(async (req, res) => {
     });
 });
 
+/**
+ * Update access permissions for multiple files and folders (Admin)
+ * POST /files/bulk-access
+ */
+const bulkUpdateAccess = asyncHandler(async (req, res) => {
+    const { fileIds = [], folderIds = [], visibility, accessRules, recursive = false } = req.body;
+
+    if (fileIds.length === 0 && folderIds.length === 0) {
+        throw new AppError('Keine Dateien oder Ordner ausgewählt', 400);
+    }
+
+    // Parse access rules
+    let parsedAccessRules = [];
+    if (accessRules) {
+        try {
+            parsedAccessRules = typeof accessRules === 'string' ? JSON.parse(accessRules) : accessRules;
+        } catch (e) {
+            console.error("Failed to parse access rules:", e);
+        }
+    }
+
+    await prisma.$transaction(async (tx) => {
+        // 1. Update Files
+        let allFileIdsToUpdate = [...fileIds.map(id => parseInt(id))];
+
+        // 1a. If recursive, find all files inside these folders (and their subfolders)
+        if (recursive && folderIds.length > 0) {
+            const recursiveFolderIds = await getAllSubfolderIds(folderIds.map(id => parseInt(id)), tx);
+            const recursiveFiles = await tx.file.findMany({
+                where: { folderId: { in: recursiveFolderIds } },
+                select: { id: true }
+            });
+            allFileIdsToUpdate = [...new Set([...allFileIdsToUpdate, ...recursiveFiles.map(f => f.id)])];
+        }
+
+        if (allFileIdsToUpdate.length > 0) {
+            // Delete old rules for all files
+            await tx.fileAccess.deleteMany({
+                where: { fileId: { in: allFileIdsToUpdate } }
+            });
+
+            // Update each file (Prisma doesn't support nested createMany in updateMany)
+            for (const fileId of allFileIdsToUpdate) {
+                await tx.file.update({
+                    where: { id: fileId },
+                    data: {
+                        visibility: visibility || undefined,
+                        accessRules: {
+                            create: parsedAccessRules.map(rule => ({
+                                accessType: rule.accessType,
+                                targetType: rule.targetType,
+                                userId: rule.userId ? parseInt(rule.userId) : null,
+                                registerId: rule.registerId ? parseInt(rule.registerId) : null
+                            }))
+                        }
+                    }
+                });
+            }
+        }
+
+        // 2. Update Folders
+        let allFolderIdsToUpdate = [...folderIds.map(id => parseInt(id))];
+        if (recursive && folderIds.length > 0) {
+            allFolderIdsToUpdate = await getAllSubfolderIds(allFolderIdsToUpdate, tx);
+        }
+
+        if (allFolderIdsToUpdate.length > 0) {
+            // Delete old rules for all folders
+            await tx.folderAccess.deleteMany({
+                where: { folderId: { in: allFolderIdsToUpdate } }
+            });
+
+            // Update each folder
+            for (const folderId of allFolderIdsToUpdate) {
+                await tx.folder.update({
+                    where: { id: folderId },
+                    data: {
+                        accessRules: {
+                            create: parsedAccessRules.map(rule => ({
+                                accessType: rule.accessType,
+                                targetType: rule.targetType,
+                                userId: rule.userId ? parseInt(rule.userId) : null,
+                                registerId: rule.registerId ? parseInt(rule.registerId) : null
+                            }))
+                        }
+                    }
+                });
+            }
+        }
+    });
+
+    res.json({
+        message: 'Berechtigungen für ausgewählte Elemente aktualisiert',
+    });
+});
+
+/**
+ * Helper to get all subfolder IDs recursively
+ */
+async function getAllSubfolderIds(parentIds, tx) {
+    let allIds = [...parentIds];
+    let currentLevelIds = [...parentIds];
+
+    while (currentLevelIds.length > 0) {
+        const subfolders = await tx.folder.findMany({
+            where: { parentId: { in: currentLevelIds } },
+            select: { id: true }
+        });
+
+        currentLevelIds = subfolders.map(f => f.id);
+        allIds = [...allIds, ...currentLevelIds];
+    }
+
+    return [...new Set(allIds)];
+}
+
 module.exports = {
     upload,
     uploadFile,
@@ -673,4 +809,5 @@ module.exports = {
     createFolder,
     deleteFolder,
     generateViewToken,
+    bulkUpdateAccess,
 };

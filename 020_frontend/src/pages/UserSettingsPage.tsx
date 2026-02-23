@@ -6,9 +6,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import { Loader2, Save, Key, User as UserIcon, AlertCircle, CheckCircle, Bell } from 'lucide-react';
+import { Loader2, Save, Key, User as UserIcon, Bell, Eye, EyeOff } from 'lucide-react';
 import type { NotificationSettings } from '@/types';
 import { pushNotificationService } from '@/services/pushNotificationService';
+import { toast } from 'sonner';
 
 
 export function UserSettingsPage() {
@@ -21,11 +22,7 @@ export function UserSettingsPage() {
     const [newPassword, setNewPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
 
-    const [profileSuccess, setProfileSuccess] = useState(false);
-    const [profileError, setProfileError] = useState<string | null>(null);
-
-    const [passwordSuccess, setPasswordSuccess] = useState(false);
-    const [passwordError, setPasswordError] = useState<string | null>(null);
+    const [showPasswords, setShowPasswords] = useState(false);
 
     // Fetch Profile
     const { data: user, isLoading } = useQuery({
@@ -46,13 +43,10 @@ export function UserSettingsPage() {
         mutationFn: userService.updateProfile,
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['profile'] });
-            setProfileSuccess(true);
-            setProfileError(null);
-            setTimeout(() => setProfileSuccess(false), 3000);
+            toast.success('Profil erfolgreich aktualisiert');
         },
         onError: (err: any) => {
-            setProfileError(err.response?.data?.message || 'Fehler beim Aktualisieren des Profils');
-            setProfileSuccess(false);
+            toast.error(err.response?.data?.message || 'Fehler beim Aktualisieren des Profils');
         }
     });
 
@@ -63,13 +57,10 @@ export function UserSettingsPage() {
             setCurrentPassword('');
             setNewPassword('');
             setConfirmPassword('');
-            setPasswordSuccess(true);
-            setPasswordError(null);
-            setTimeout(() => setPasswordSuccess(false), 3000);
+            toast.success('Passwort erfolgreich geändert');
         },
         onError: (err: any) => {
-            setPasswordError(err.response?.data?.message || 'Fehler beim Ändern des Passworts');
-            setPasswordSuccess(false);
+            toast.error(err.response?.data?.message || 'Fehler beim Ändern des Passworts');
         }
     });
 
@@ -82,18 +73,18 @@ export function UserSettingsPage() {
         e.preventDefault();
 
         if (newPassword !== confirmPassword) {
-            setPasswordError('Die neuen Passwörter stimmen nicht überein');
+            toast.error('Die neuen Passwörter stimmen nicht überein');
             return;
         }
 
         if (newPassword.length < 8) {
-            setPasswordError('Das neue Passwort muss mindestens 8 Zeichen lang sein');
+            toast.error('Das neue Passwort muss mindestens 8 Zeichen lang sein');
             return;
         }
 
         const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/;
         if (!passwordRegex.test(newPassword)) {
-            setPasswordError('Das Passwort muss mindestens einen Grossbuchstaben, einen Kleinbuchstaben und eine Zahl enthalten');
+            toast.error('Das Passwort muss mindestens einen Grossbuchstaben, einen Kleinbuchstaben und eine Zahl enthalten');
             return;
         }
 
@@ -171,20 +162,6 @@ export function UserSettingsPage() {
                                 />
                             </div>
 
-                            {profileError && (
-                                <div className="p-3 rounded-md bg-destructive/15 text-destructive text-sm flex items-center gap-2">
-                                    <AlertCircle className="h-4 w-4" />
-                                    <span>{profileError}</span>
-                                </div>
-                            )}
-
-                            {profileSuccess && (
-                                <div className="p-3 rounded-md bg-green-50 text-green-700 dark:bg-green-900/20 dark:text-green-400 text-sm flex items-center gap-2">
-                                    <CheckCircle className="h-4 w-4" />
-                                    <span>Profil erfolgreich aktualisiert</span>
-                                </div>
-                            )}
-
                             <Button type="submit" disabled={updateProfileMutation.isPending}>
                                 {updateProfileMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                                 <Save className="mr-2 h-4 w-4" />
@@ -207,54 +184,67 @@ export function UserSettingsPage() {
                     </CardHeader>
                     <CardContent>
                         <form onSubmit={handlePasswordSubmit} className="space-y-4">
-                            <div className="space-y-2">
+                            <div className="space-y-2 relative">
                                 <Label htmlFor="currentPassword">Aktuelles Passwort</Label>
-                                <Input
-                                    id="currentPassword"
-                                    type="password"
-                                    value={currentPassword}
-                                    onChange={(e) => setCurrentPassword(e.target.value)}
-                                    required
-                                />
+                                <div className="relative">
+                                    <Input
+                                        id="currentPassword"
+                                        type={showPasswords ? "text" : "password"}
+                                        value={currentPassword}
+                                        onChange={(e) => setCurrentPassword(e.target.value)}
+                                        required
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowPasswords(!showPasswords)}
+                                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground h-4 w-4"
+                                    >
+                                        {showPasswords ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                                    </button>
+                                </div>
                             </div>
 
-                            <div className="space-y-2">
+                            <div className="space-y-2 relative">
                                 <Label htmlFor="newPassword">Neues Passwort</Label>
-                                <Input
-                                    id="newPassword"
-                                    type="password"
-                                    value={newPassword}
-                                    onChange={(e) => setNewPassword(e.target.value)}
-                                    required
-                                    minLength={8}
-                                    placeholder="Min. 8 Zeichen, A-Z, a-z, 0-9"
-                                />
+                                <div className="relative">
+                                    <Input
+                                        id="newPassword"
+                                        type={showPasswords ? "text" : "password"}
+                                        value={newPassword}
+                                        onChange={(e) => setNewPassword(e.target.value)}
+                                        required
+                                        minLength={8}
+                                        placeholder="Min. 8 Zeichen, A-Z, a-z, 0-9"
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowPasswords(!showPasswords)}
+                                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground h-4 w-4"
+                                    >
+                                        {showPasswords ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                                    </button>
+                                </div>
                             </div>
 
-                            <div className="space-y-2">
+                            <div className="space-y-2 relative">
                                 <Label htmlFor="confirmPassword">Passwort bestätigen</Label>
-                                <Input
-                                    id="confirmPassword"
-                                    type="password"
-                                    value={confirmPassword}
-                                    onChange={(e) => setConfirmPassword(e.target.value)}
-                                    required
-                                />
+                                <div className="relative">
+                                    <Input
+                                        id="confirmPassword"
+                                        type={showPasswords ? "text" : "password"}
+                                        value={confirmPassword}
+                                        onChange={(e) => setConfirmPassword(e.target.value)}
+                                        required
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowPasswords(!showPasswords)}
+                                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground h-4 w-4"
+                                    >
+                                        {showPasswords ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                                    </button>
+                                </div>
                             </div>
-
-                            {passwordError && (
-                                <div className="p-3 rounded-md bg-destructive/15 text-destructive text-sm flex items-center gap-2">
-                                    <AlertCircle className="h-4 w-4" />
-                                    <span>{passwordError}</span>
-                                </div>
-                            )}
-
-                            {passwordSuccess && (
-                                <div className="p-3 rounded-md bg-green-50 text-green-700 dark:bg-green-900/20 dark:text-green-400 text-sm flex items-center gap-2">
-                                    <CheckCircle className="h-4 w-4" />
-                                    <span>Passwort erfolgreich geändert</span>
-                                </div>
-                            )}
 
                             <Button type="submit" disabled={changePasswordMutation.isPending}>
                                 {changePasswordMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
@@ -275,7 +265,6 @@ export function UserSettingsPage() {
 
 function NotificationSettingsCard() {
     const queryClient = useQueryClient();
-    const [success, setSuccess] = useState(false);
     const [isPushSubscribed, setIsPushSubscribed] = useState(false);
 
     // Fetch Settings
@@ -288,7 +277,6 @@ function NotificationSettingsCard() {
     useEffect(() => {
         const checkPushStatus = async () => {
             const hasSubscription = await pushNotificationService.hasActiveSubscription();
-            console.log('Push subscription status:', hasSubscription);
             setIsPushSubscribed(hasSubscription);
 
             // Log details if subscribed
@@ -296,7 +284,6 @@ function NotificationSettingsCard() {
                 try {
                     const reg = await navigator.serviceWorker.getRegistration();
                     const sub = await reg?.pushManager?.getSubscription();
-                    console.log('Current Browser Subscription:', sub);
 
                     // Sync with backend to ensure it exists there too
                     await pushNotificationService.syncSubscription();
@@ -310,9 +297,7 @@ function NotificationSettingsCard() {
 
     const handleTestPush = async () => {
         try {
-            console.log('Sending test push notification...');
             await pushNotificationService.sendTestNotification();
-            console.log('Test push request sent.');
         } catch (error) {
             console.error('Test push failed:', error);
         }
@@ -323,8 +308,7 @@ function NotificationSettingsCard() {
         mutationFn: userService.updateNotificationSettings,
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['notificationSettings'] });
-            setSuccess(true);
-            setTimeout(() => setSuccess(false), 3000);
+            toast.success('Einstellungen gespeichert');
         },
     });
 
@@ -544,12 +528,6 @@ function NotificationSettingsCard() {
                     />
                 </div>
 
-                {success && (
-                    <div className="p-3 rounded-md bg-green-50 text-green-700 dark:bg-green-900/20 dark:text-green-400 text-sm flex items-center gap-2">
-                        <CheckCircle className="h-4 w-4" />
-                        <span>Einstellungen gespeichert</span>
-                    </div>
-                )}
             </CardContent>
         </Card >
     );

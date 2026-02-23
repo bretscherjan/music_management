@@ -137,6 +137,40 @@ body {
   transition: transform 0.1s;
 }
 
+/* Swipeable card styles */
+.swipeable-card-wrapper {
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--radius-lg);
+  /* Prevent content from overflowing during swipe */
+  isolation: isolate;
+}
+
+.swipeable-card-content {
+  position: relative;
+  will-change: transform;
+  /* Prevent text selection & image drag during swipe */
+  -webkit-user-drag: none;
+  user-select: none;
+}
+
+.swipeable-card-content a {
+  /* Keep pointer events active on links */
+  pointer-events: auto;
+}
+
+.swipeable-action-panel button:focus-visible {
+  outline: 2px solid white;
+  outline-offset: -3px;
+}
+
+/* Fade-in hint arrows on hover (desktop) */
+@media (hover: hover) {
+  .swipeable-card-wrapper:hover .swipe-hint-indicator {
+    opacity: 0.45 !important;
+  }
+}
+
 @theme inline {
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);

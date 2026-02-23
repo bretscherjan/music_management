@@ -11,6 +11,7 @@ import { MapPin, Clock, Plus, Filter, Users, CheckCircle, XCircle, HelpCircle } 
 import { formatTime, getCategoryLabel } from '@/lib/utils';
 import type { Event, EventCategory } from '@/types';
 import { CalendarExportDialog } from '@/components/events/CalendarExportDialog';
+import { SwipeableEventCard } from '@/components/events/SwipeableEventCard';
 
 const categories: { value: EventCategory | 'all'; label: string }[] = [
     { value: 'all', label: 'Alle' },
@@ -30,12 +31,6 @@ export function EventListPage() {
         ),
     });
 
-    if (events) {
-        console.log('Events Data:', events);
-        events.forEach(e => {
-            console.log(`Event ${e.id} summary:`, e.attendanceSummary);
-        });
-    }
 
     const filteredEvents = events?.filter(event => {
         if (selectedCategory === 'all') return true;
@@ -168,91 +163,91 @@ function EventListItem({ event }: { event: Event }) {
         yes: 'border-l-green-500',
         no: 'border-l-red-500',
         maybe: 'border-l-yellow-500',
-        undefined: 'border-l-transparent' // or gray
+        undefined: 'border-l-transparent'
     };
 
     const borderColor = status ? statusBorderColor[status as keyof typeof statusBorderColor] : 'border-l-transparent';
 
-    console.log(event);
-
     const summary = event.attendanceSummary || { yes: 0, no: 0, maybe: 0, pending: 0, total: 0 };
 
     return (
-        <Link to={`/member/events/${event.id}`}>
-            <Card className={`transition-all hover:shadow-md hover:border-primary/50 border-l-4 ${borderColor}`}>
-                <CardContent className="p-4 sm:p-6">
-                    <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
-                        {/* Date Badge */}
-                        <div className="flex-shrink-0 text-center bg-primary/20 rounded-lg p-2 w-16 flex flex-col items-center justify-center">
-                            <div className="text-xs text-secondary/80 uppercase font-semibold">
-                                {new Date(event.date).toLocaleDateString('de-CH', { weekday: 'short' })}
+        <SwipeableEventCard eventId={event.id} currentStatus={status ?? null}>
+            <Link to={`/member/events/${event.id}`}>
+                <Card className={`transition-all hover:shadow-md hover:border-primary/50 border-l-4 ${borderColor}`}>
+                    <CardContent className="p-4 sm:p-6">
+                        <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
+                            {/* Date Badge */}
+                            <div className="flex-shrink-0 text-center bg-primary/20 rounded-lg p-2 w-16 flex flex-col items-center justify-center">
+                                <div className="text-xs text-secondary/80 uppercase font-semibold">
+                                    {new Date(event.date).toLocaleDateString('de-CH', { weekday: 'short' })}
+                                </div>
+                                <div className="text-xl font-bold text-secondary">
+                                    {new Date(event.date).getDate()}
+                                </div>
+                                <div className="text-xs text-secondary/80">
+                                    {new Date(event.date).toLocaleDateString('de-CH', { month: 'short' })}
+                                </div>
                             </div>
-                            <div className="text-xl font-bold text-secondary">
-                                {new Date(event.date).getDate()}
-                            </div>
-                            <div className="text-xs text-secondary/80">
-                                {new Date(event.date).toLocaleDateString('de-CH', { month: 'short' })}
-                            </div>
-                        </div>
 
-                        {/* Event Info */}
-                        <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 flex-wrap mb-1">
-                                <h3 className="font-semibold truncate">{event.title}</h3>
-                                <Badge variant={categoryVariant[event.category]} className="flex-shrink-0">
-                                    {getCategoryLabel(event.category)}
-                                </Badge>
-                                {status && (
-                                    <Badge variant="outline" className={`ml-auto ${status === 'yes' ? 'text-green-600 border-green-200 bg-green-50' : status === 'no' ? 'text-red-600 border-red-200 bg-red-50' : 'text-yellow-600 border-yellow-200 bg-yellow-50'}`}>
-                                        {status === 'yes' ? 'Zugesagt' : status === 'no' ? 'Abgesagt' : 'Vielleicht'}
+                            {/* Event Info */}
+                            <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2 flex-wrap mb-1">
+                                    <h3 className="font-semibold truncate">{event.title}</h3>
+                                    <Badge variant={categoryVariant[event.category]} className="flex-shrink-0">
+                                        {getCategoryLabel(event.category)}
                                     </Badge>
-                                )}
-                            </div>
+                                    {status && (
+                                        <Badge variant="outline" className={`ml-auto ${status === 'yes' ? 'text-green-600 border-green-200 bg-green-50' : status === 'no' ? 'text-red-600 border-red-200 bg-red-50' : 'text-yellow-600 border-yellow-200 bg-yellow-50'}`}>
+                                            {status === 'yes' ? 'Zugesagt' : status === 'no' ? 'Abgesagt' : 'Vielleicht'}
+                                        </Badge>
+                                    )}
+                                </div>
 
-                            <div className="flex flex-wrap gap-3 text-sm text-muted-foreground">
-                                <span className="flex items-center gap-1">
-                                    <Clock className="h-3.5 w-3.5" />
-                                    {formatTime(event.startTime)} - {formatTime(event.endTime)}
-                                </span>
-                                {event.location && (
+                                <div className="flex flex-wrap gap-3 text-sm text-muted-foreground">
                                     <span className="flex items-center gap-1">
-                                        <MapPin className="h-3.5 w-3.5" />
-                                        {event.location}
+                                        <Clock className="h-3.5 w-3.5" />
+                                        {formatTime(event.startTime)} - {formatTime(event.endTime)}
                                     </span>
-                                )}
-                            </div>
-
-                            <div className="mt-4 flex items-center justify-between flex-wrap gap-4 pt-3 border-t">
-                                <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-                                    <Users className="h-4 w-4" />
-                                    Anwesenheit
+                                    {event.location && (
+                                        <span className="flex items-center gap-1">
+                                            <MapPin className="h-3.5 w-3.5" />
+                                            {event.location}
+                                        </span>
+                                    )}
                                 </div>
 
-                                {/* Summary Badges */}
-                                <div className="flex gap-2 flex-wrap">
-                                    <Badge variant="success" className="gap-1">
-                                        <CheckCircle className="h-3 w-3" />
-                                        {summary.yes}
-                                    </Badge>
-                                    <Badge variant="destructive" className="gap-1">
-                                        <XCircle className="h-3 w-3" />
-                                        {summary.no}
-                                    </Badge>
-                                    <Badge variant="warning" className="gap-1">
-                                        <HelpCircle className="h-3 w-3" />
-                                        {summary.maybe}
-                                    </Badge>
-                                    <Badge variant="outline" className="gap-1">
-                                        <Clock className="h-3 w-3" />
-                                        {summary.pending ?? 0}
-                                    </Badge>
+                                <div className="mt-4 flex items-center justify-between flex-wrap gap-4 pt-3 border-t">
+                                    <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+                                        <Users className="h-4 w-4" />
+                                        Anwesenheit
+                                    </div>
+
+                                    {/* Summary Badges */}
+                                    <div className="flex gap-2 flex-wrap">
+                                        <Badge variant="success" className="gap-1">
+                                            <CheckCircle className="h-3 w-3" />
+                                            {summary.yes}
+                                        </Badge>
+                                        <Badge variant="destructive" className="gap-1">
+                                            <XCircle className="h-3 w-3" />
+                                            {summary.no}
+                                        </Badge>
+                                        <Badge variant="warning" className="gap-1">
+                                            <HelpCircle className="h-3 w-3" />
+                                            {summary.maybe}
+                                        </Badge>
+                                        <Badge variant="outline" className="gap-1">
+                                            <Clock className="h-3 w-3" />
+                                            {summary.pending ?? 0}
+                                        </Badge>
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                    </div>
-                </CardContent>
-            </Card>
-        </Link>
+                    </CardContent>
+                </Card>
+            </Link>
+        </SwipeableEventCard>
     );
 }
 

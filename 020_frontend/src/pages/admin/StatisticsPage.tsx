@@ -215,8 +215,7 @@ export function StatisticsPage() {
                                             paddingAngle={5}
                                             dataKey="value"
                                         >
-                                            {distributionRepertoire.map((entry, index) => (
-                                                console.log(entry),
+                                            {distributionRepertoire.map((_, index) => (
                                                 <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                                             ))}
                                         </Pie>

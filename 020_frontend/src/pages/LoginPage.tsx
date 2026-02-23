@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { AlertCircle, ArrowLeft } from 'lucide-react';
+import { AlertCircle, ArrowLeft, Eye, EyeOff } from 'lucide-react'; // Eye & EyeOff hinzugefügt
 
 const loginSchema = z.object({
     email: z.string().email('Bitte gültige E-Mail-Adresse eingeben'),
@@ -23,6 +23,7 @@ export function LoginPage() {
     const location = useLocation();
     const [error, setError] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(false);
+    const [showPassword, setShowPassword] = useState(false); // State für die Sichtbarkeit
 
     const from = (location.state as { from?: { pathname: string } })?.from?.pathname || '/member';
 
@@ -50,7 +51,7 @@ export function LoginPage() {
 
     return (
         <div className="min-h-screen flex flex-col bg-[hsl(var(--background))]">
-            {/* Simple header with logo */}
+            {/* Header */}
             <header className="border-b bg-white">
                 <div className="container-app flex items-center justify-between h-16">
                     <Link to="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
@@ -118,13 +119,29 @@ export function LoginPage() {
                                         Passwort vergessen?
                                     </Link>
                                 </div>
-                                <Input
-                                    id="password"
-                                    type="password"
-                                    placeholder="••••••••"
-                                    autoComplete="current-password"
-                                    {...register('password')}
-                                />
+                                {/* Container für Input + Button */}
+                                <div className="relative">
+                                    <Input
+                                        id="password"
+                                        type={showPassword ? 'text' : 'password'}
+                                        placeholder="••••••••"
+                                        autoComplete="current-password"
+                                        className="pr-10" // Platz für das Icon rechts lassen
+                                        {...register('password')}
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowPassword(!showPassword)}
+                                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-[hsl(var(--musig-primary))] focus:outline-none"
+                                        aria-label={showPassword ? "Passwort verbergen" : "Passwort anzeigen"}
+                                    >
+                                        {showPassword ? (
+                                            <EyeOff className="h-4 w-4" />
+                                        ) : (
+                                            <Eye className="h-4 w-4" />
+                                        )}
+                                    </button>
+                                </div>
                                 {errors.password && (
                                     <p className="text-sm text-destructive">{errors.password.message}</p>
                                 )}

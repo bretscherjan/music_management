@@ -644,3 +644,63 @@ model FileShareToken {
 
   @@index([token])
 }
+
+// ============================================
+// CMS MODELS
+// ============================================
+
+model Sponsor {
+  id          Int      @id @default(autoincrement())
+  name        String
+  logoUrl     String   // Relative URL to the uploaded logo
+  websiteUrl  String?
+  active      Boolean  @default(true)
+  position    Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([active])
+  @@index([position])
+}
+
+model CarouselItem {
+  id          Int      @id @default(autoincrement())
+  imageUrl    String
+  title       String?
+  description String?  @db.Text
+  link        String?
+  active      Boolean  @default(true)
+  position    Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([active])
+  @@index([position])
+}
+
+model GalleryImage {
+  id          Int      @id @default(autoincrement())
+  filename    String
+  title       String?
+  description String?  @db.Text
+  category    String?  // Optional: for filtering in the future
+  position    Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([position])
+  @@index([createdAt])
+}
+
+model Flyer {
+  id          Int      @id @default(autoincrement())
+  filename    String
+  title       String
+  activeFrom  DateTime?
+  activeTo    DateTime?
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([active])
+}

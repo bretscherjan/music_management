@@ -37,6 +37,12 @@ app.use(express.urlencoded({ extended: true }));
 // Attach Socket.io to requests for workspace routes
 app.use('/api/workspace', attachIO);
 
+// Static serving for CMS uploads
+app.use('/uploads/cms/carousel', express.static(path.join(process.cwd(), 'uploads/cms/carousel')));
+app.use('/uploads/cms/sponsors', express.static(path.join(process.cwd(), 'uploads/cms/sponsors')));
+app.use('/uploads/cms/gallery', express.static(path.join(process.cwd(), 'uploads/cms/gallery')));
+app.use('/uploads/cms/flyers', express.static(path.join(process.cwd(), 'uploads/cms/flyers')));
+
 // Health Check Endpoint
 app.get('/health', (req, res) => {
   res.status(200).json({

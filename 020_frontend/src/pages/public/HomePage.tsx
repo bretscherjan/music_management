@@ -3,18 +3,38 @@ import { Link } from 'react-router-dom';
 import { Calendar, MapPin, Music2, ArrowRight } from 'lucide-react';
 import { formatTime } from '@/lib/utils';
 import { eventService } from '@/services/eventService';
+import { cmsService } from '@/services/cmsService';
 import type { Event } from '@/types';
 import { SponsorSlider } from '@/components/public/SponsorSlider';
+import { useState, useEffect } from 'react';
 
 export function HomePage() {
-    // Fetch upcoming public events only (no auth token)
+    // Fetch upcoming public events
     const { data: events = [] } = useQuery({
         queryKey: ['publicEvents'],
         queryFn: () => eventService.getPublicEvents(),
     });
 
-    // Filter to only show future events, sorted by date
-    // Create 'today' at midnight to include events happening today
+    // Fetch carousel items
+    const { data: carouselItems = [] } = useQuery({
+        queryKey: ['carousel', 'active'],
+        queryFn: async () => {
+            const all = await cmsService.getCarouselItems();
+            return all.filter(item => item.active);
+        }
+    });
+
+    const [currentSlide, setCurrentSlide] = useState(0);
+
+    useEffect(() => {
+        if (carouselItems.length > 1) {
+            const timer = setInterval(() => {
+                setCurrentSlide((prev) => (prev + 1) % carouselItems.length);
+            }, 5000);
+            return () => clearInterval(timer);
+        }
+    }, [carouselItems.length]);
+
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
@@ -25,48 +45,86 @@ export function HomePage() {
 
     return (
         <div>
-            {/* Hero Section */}
-            <section className="relative bg-gradient-to-br from-[hsl(var(--musig-primary))] to-[hsl(var(--musig-primary))]/80 text-white py-16 md:py-24 overflow-hidden">
-                <div className="absolute inset-0 opacity-10">
-                    <div className="absolute top-10 left-10 animate-pulse">
-                        <Music2 className="h-24 w-24 md:h-32 md:w-32" />
-                    </div>
-                    <div className="absolute bottom-10 right-10 animate-pulse delay-700">
-                        <Music2 className="h-16 w-16 md:h-24 md:w-24" />
-                    </div>
-                </div>
-
-                <div className="container-app relative z-10">
-                    <div className="max-w-3xl mx-auto text-center px-4">
-                        <img
-                            src="/logo.png"
-                            alt="Musig Elgg Logo"
-                            className="h-28 w-auto md:h-40 mx-auto mb-8 drop-shadow-2xl transition-transform hover:scale-105 duration-300"
-                        />
-                        <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 tracking-tight">
-                            Willkommen bei der <br />Musig Elgg
-                        </h1>
-                        <p className="text-lg md:text-xl lg:text-2xl text-white/90 mb-8 leading-relaxed max-w-2xl mx-auto">
-                            Tradition trifft Leidenschaft
-                        </p>
-                        <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                            <Link
-                                to="/about"
-                                className="inline-flex items-center justify-center gap-2 px-6 py-3 md:px-8 bg-white text-[hsl(var(--musig-primary))] rounded-lg hover:bg-white/90 transition-all font-medium text-base md:text-lg shadow-lg hover:shadow-xl active:scale-95"
-                            >
-                                Mehr über uns erfahren
-                                <ArrowRight className="h-5 w-5" />
-                            </Link>
-                            <Link
-                                to="/contact"
-                                className="inline-flex items-center justify-center gap-2 px-6 py-3 md:px-8 bg-[hsl(var(--musig-contrast))] text-[hsl(var(--musig-light))] rounded-lg hover:bg-[hsl(var(--musig-contrast))]/90 transition-all font-medium text-base md:text-lg shadow-lg hover:shadow-xl active:scale-95"
-                            >
-                                Kontakt aufnehmen
-                            </Link>
+            {/* Hero / Carousel Section */}
+            {carouselItems.length > 0 ? (
+                <section className="relative h-[500px] md:h-[600px] overflow-hidden bg-black">
+                    {carouselItems.map((item, idx) => (
+                        <div
+                            key={item.id}
+                            className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${idx === currentSlide ? 'opacity-100 z-10' : 'opacity-0 z-0'}`}
+                        >
+                            <img src={item.imageUrl} alt={item.title} className="w-full h-full object-cover opacity-60" />
+                            <div className="absolute inset-0 flex items-center justify-center">
+                                <div className="container-app text-white text-center px-4">
+                                    <h1 className="text-4xl md:text-6xl font-bold mb-4 drop-shadow-lg">{item.title}</h1>
+                                    {item.description && <p className="text-xl md:text-2xl mb-8 drop-shadow-md max-w-2xl mx-auto">{item.description}</p>}
+                                    {item.link && (
+                                        <a
+                                            href={item.link}
+                                            className="inline-flex items-center gap-2 px-8 py-3 bg-primary text-white rounded-lg hover:bg-primary/90 transition-all font-medium text-lg"
+                                        >
+                                            Mehr erfahren <ArrowRight className="h-5 w-5" />
+                                        </a>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                    ))}
+                    {carouselItems.length > 1 && (
+                        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-20 flex gap-2">
+                            {carouselItems.map((_, idx) => (
+                                <button
+                                    key={idx}
+                                    onClick={() => setCurrentSlide(idx)}
+                                    className={`w-3 h-3 rounded-full transition-all ${idx === currentSlide ? 'bg-white w-8' : 'bg-white/40'}`}
+                                />
+                            ))}
+                        </div>
+                    )}
+                </section>
+            ) : (
+                <section className="relative bg-gradient-to-br from-[hsl(var(--musig-primary))] to-[hsl(var(--musig-primary))]/80 text-white py-16 md:py-24 overflow-hidden">
+                    <div className="absolute inset-0 opacity-10">
+                        <div className="absolute top-10 left-10 animate-pulse">
+                            <Music2 className="h-24 w-24 md:h-32 md:w-32" />
+                        </div>
+                        <div className="absolute bottom-10 right-10 animate-pulse delay-700">
+                            <Music2 className="h-16 w-16 md:h-24 md:w-24" />
                         </div>
                     </div>
-                </div>
-            </section>
+
+                    <div className="container-app relative z-10">
+                        <div className="max-w-3xl mx-auto text-center px-4">
+                            <img
+                                src="/logo.png"
+                                alt="Musig Elgg Logo"
+                                className="h-28 w-auto md:h-40 mx-auto mb-8 drop-shadow-2xl transition-transform hover:scale-105 duration-300"
+                            />
+                            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 tracking-tight">
+                                Willkommen bei der <br />Musig Elgg
+                            </h1>
+                            <p className="text-lg md:text-xl lg:text-2xl text-white/90 mb-8 leading-relaxed max-w-2xl mx-auto">
+                                Tradition trifft Leidenschaft
+                            </p>
+                            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                                <Link
+                                    to="/about"
+                                    className="inline-flex items-center justify-center gap-2 px-6 py-3 md:px-8 bg-white text-[hsl(var(--musig-primary))] rounded-lg hover:bg-white/90 transition-all font-medium text-base md:text-lg shadow-lg hover:shadow-xl active:scale-95"
+                                >
+                                    Mehr über uns erfahren
+                                    <ArrowRight className="h-5 w-5" />
+                                </Link>
+                                <Link
+                                    to="/contact"
+                                    className="inline-flex items-center justify-center gap-2 px-6 py-3 md:px-8 bg-[hsl(var(--musig-contrast))] text-[hsl(var(--musig-light))] rounded-lg hover:bg-[hsl(var(--musig-contrast))]/90 transition-all font-medium text-base md:text-lg shadow-lg hover:shadow-xl active:scale-95"
+                                >
+                                    Kontakt aufnehmen
+                                </Link>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            )}
 
             {/* Upcoming Events */}
             <section className="py-16 md:py-24 bg-[hsl(var(--background))]">
@@ -100,7 +158,6 @@ export function HomePage() {
                 </div>
             </section>
 
-            {/* Sponsor Slider */}
             <SponsorSlider />
 
             {/* Call to Action */}
@@ -114,33 +171,6 @@ export function HomePage() {
                             Wir sind immer auf der Suche nach neuen Musikerinnen und Musikern.
                             Egal ob alt oder jung, routiniert oder schon lange nicht mehr gespielt.
                         </p>
-                        <p className="text-lg md:text-xl text-[hsl(var(--muted-foreground))] mb-12 max-w-2xl mx-auto">
-                            Alle Modelle sind herzlich willkommen, egal wieviel Zeit du investieren möchtest.
-                        </p>
-
-                        {/* Mitmach-Optionen als Grid */}
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12 text-left">
-                            {[
-                                {
-                                    title: "Projekt",
-                                    desc: "Einzelne Auftritte, Flexibilität für Kurzentschlossene.",
-                                },
-                                {
-                                    title: "Regelmässig",
-                                    desc: "Mehrere Auftritte und regelmässige Proben als fester Bestandteil.",
-                                },
-                                {
-                                    title: "Vereinsmitglied",
-                                    desc: "Vollwertiges Mitglied im Verein mit allen Rechten und Pflichten.",
-                                }
-                            ].map((item, index) => (
-                                <div key={index} className="bg-white/50 backdrop-blur-sm p-6 rounded-xl border border-[hsl(var(--musig-primary))]/10 shadow-sm">
-                                    <h3 className="text-xl font-bold text-[hsl(var(--musig-primary))] mb-2">{item.title}</h3>
-                                    <p className="text-[hsl(var(--muted-foreground))] leading-snug">{item.desc}</p>
-                                </div>
-                            ))}
-                        </div>
-
                         <Link
                             to="/contact"
                             className="inline-flex items-center gap-2 px-10 py-4 bg-[hsl(var(--musig-primary))] text-white rounded-full hover:bg-[hsl(var(--musig-primary))]/90 transition-all font-semibold text-lg shadow-lg hover:shadow-xl hover:-translate-y-1"
@@ -155,11 +185,7 @@ export function HomePage() {
     );
 }
 
-interface EventCardProps {
-    event: Event;
-}
-
-function EventCard({ event }: EventCardProps) {
+function EventCard({ event }: { event: Event }) {
     const eventDate = new Date(event.date);
     const formattedDate = eventDate.toLocaleDateString('de-CH', {
         weekday: 'long',

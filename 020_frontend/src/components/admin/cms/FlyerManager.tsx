@@ -9,6 +9,7 @@ import { Plus, Trash2, CheckCircle2, XCircle, FileText } from 'lucide-react';
 import { ConfirmDialog } from '@/components/common/ConfirmDialog';
 import { toast } from 'sonner';
 import { FlyerDialog } from './FlyerDialog';
+import { getMediaUrl } from '@/lib/api';
 
 export function FlyerManager() {
     const queryClient = useQueryClient();
@@ -69,7 +70,7 @@ export function FlyerManager() {
                                         </div>
                                     ) : (
                                         <img
-                                            src={`/uploads/cms/flyers/${flyer.filename}`}
+                                            src={getMediaUrl(`/uploads/cms/flyers/${flyer.filename}`)}
                                             alt={flyer.title}
                                             className="h-12 w-10 object-cover rounded shadow-sm"
                                         />

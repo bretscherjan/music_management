@@ -8,6 +8,7 @@ import { Plus, Trash2, Pencil } from 'lucide-react';
 import { ConfirmDialog } from '@/components/common/ConfirmDialog';
 import { toast } from 'sonner';
 import { GalleryDialog } from '@/components/admin/cms/GalleryDialog';
+import { getMediaUrl } from '@/lib/api';
 
 export function GalleryManager() {
     const queryClient = useQueryClient();
@@ -55,7 +56,7 @@ export function GalleryManager() {
                     {[...images].sort((a, b) => a.position - b.position).map((image) => (
                         <div key={image.id} className="group relative border rounded-lg overflow-hidden bg-muted">
                             <img
-                                src={`/uploads/cms/gallery/${image.filename}`}
+                                src={getMediaUrl(`/uploads/cms/gallery/${image.filename}`)}
                                 alt={image.title || ''}
                                 className="w-full aspect-square object-cover transition-transform group-hover:scale-105"
                             />

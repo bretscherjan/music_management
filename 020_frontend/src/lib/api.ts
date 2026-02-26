@@ -2,6 +2,13 @@ import axios from 'axios';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3004/api';
 
+export const getMediaUrl = (path: string) => {
+    if (!path) return '';
+    if (path.startsWith('http') || path.startsWith('data:') || path.startsWith('blob:')) return path;
+    const baseUrl = API_BASE_URL.replace(/\/api$/, '');
+    return `${baseUrl}${path.startsWith('/') ? '' : '/'}${path}`;
+};
+
 const api = axios.create({
     baseURL: API_BASE_URL,
     headers: {

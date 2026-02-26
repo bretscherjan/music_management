@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { cmsService } from '@/services/cmsService';
 import { Loader2, X, ChevronLeft, ChevronRight, Maximize2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { getMediaUrl } from '@/lib/api';
 
 export function GalleryPage() {
     const { data: images = [], isLoading } = useQuery({
@@ -60,7 +61,7 @@ export function GalleryPage() {
                                 onClick={() => openLightbox(index)}
                             >
                                 <img
-                                    src={`/uploads/cms/gallery/${image.filename}`}
+                                    src={getMediaUrl(`/uploads/cms/gallery/${image.filename}`)}
                                     alt={image.title || 'Galeriebild'}
                                     className="w-full h-auto object-cover transition-transform duration-700 group-hover:scale-105"
                                     loading="lazy"
@@ -116,7 +117,7 @@ export function GalleryPage() {
                     <div className="relative max-w-6xl w-full h-full flex flex-col items-center justify-center gap-6" onClick={(e) => e.stopPropagation()}>
                         <div className="relative group w-full h-full flex items-center justify-center">
                             <img
-                                src={`/uploads/cms/gallery/${images[selectedIndex].filename}`}
+                                src={getMediaUrl(`/uploads/cms/gallery/${images[selectedIndex].filename}`)}
                                 alt={images[selectedIndex].title || 'Vollbild'}
                                 className="max-w-full max-h-full object-contain shadow-2xl rounded-lg"
                             />

@@ -3,6 +3,7 @@ import { cmsService } from '@/services/cmsService';
 import { Loader2, ExternalLink, Download } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { getMediaUrl } from '@/lib/api';
 
 export function WerbungGrid() {
     const { data: promos = [], isLoading } = useQuery({
@@ -39,13 +40,13 @@ export function WerbungGrid() {
                             <div className="relative w-full aspect-[3/4] bg-zinc-100 overflow-hidden flex items-center justify-center">
                                 {promo.filename.toLowerCase().endsWith('.pdf') ? (
                                     <iframe
-                                        src={`/uploads/cms/flyers/${promo.filename}#toolbar=0&navpanes=0&scrollbar=0`}
+                                        src={`${getMediaUrl(`/uploads/cms/flyers/${promo.filename}`)}#toolbar=0&navpanes=0&scrollbar=0`}
                                         className="w-full h-full border-none"
                                         title={promo.title}
                                     />
                                 ) : (
                                     <img
-                                        src={`/uploads/cms/flyers/${promo.filename}`}
+                                        src={getMediaUrl(`/uploads/cms/flyers/${promo.filename}`)}
                                         alt={promo.title}
                                         className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                                     />
@@ -59,7 +60,7 @@ export function WerbungGrid() {
                                         asChild
                                         className="rounded-full shadow-lg"
                                     >
-                                        <a href={`/uploads/cms/flyers/${promo.filename}`} target="_blank" rel="noopener noreferrer">
+                                        <a href={getMediaUrl(`/uploads/cms/flyers/${promo.filename}`)} target="_blank" rel="noopener noreferrer">
                                             <ExternalLink className="h-4 w-4 mr-2" /> Ansehen
                                         </a>
                                     </Button>
@@ -69,7 +70,7 @@ export function WerbungGrid() {
                                         asChild
                                         className="rounded-full bg-white shadow-lg border-none"
                                     >
-                                        <a href={`/uploads/cms/flyers/${promo.filename}`} download={promo.filename}>
+                                        <a href={getMediaUrl(`/uploads/cms/flyers/${promo.filename}`)} download={promo.filename}>
                                             <Download className="h-4 w-4" />
                                         </a>
                                     </Button>

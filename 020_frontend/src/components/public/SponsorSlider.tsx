@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { cmsService } from '@/services/cmsService';
 import { Loader2 } from 'lucide-react';
+import { getMediaUrl } from '@/lib/api';
 
 export function SponsorSlider() {
     const { data: sponsors = [], isLoading } = useQuery({
@@ -46,7 +47,7 @@ export function SponsorSlider() {
                             draggable={false}
                         >
                             <img
-                                src={sponsor.logoUrl}
+                                src={getMediaUrl(sponsor.logoUrl)}
                                 alt={sponsor.name}
                                 className="h-12 w-auto grayscale hover:grayscale-0 transition-opacity opacity-60 hover:opacity-100 object-contain max-w-[150px]"
                                 draggable={false}

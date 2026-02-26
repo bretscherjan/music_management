@@ -46,10 +46,15 @@ app.use(express.urlencoded({ extended: true }));
 // Attach Socket.io to requests for workspace routes
 app.use('/api/workspace', attachIO);
 
-// Static serving for CMS uploads
+// Static serving for CMS uploads (without /api prefix, for legacy/local backwards compatibility)
 app.use('/uploads/cms/sponsors', express.static(path.join(process.cwd(), 'uploads/cms/sponsors')));
 app.use('/uploads/cms/gallery', express.static(path.join(process.cwd(), 'uploads/cms/gallery')));
 app.use('/uploads/cms/flyers', express.static(path.join(process.cwd(), 'uploads/cms/flyers')));
+
+// Static serving for CMS uploads (WITH /api prefix, to bypass proxy SPA fallback in production)
+app.use('/api/uploads/cms/sponsors', express.static(path.join(process.cwd(), 'uploads/cms/sponsors')));
+app.use('/api/uploads/cms/gallery', express.static(path.join(process.cwd(), 'uploads/cms/gallery')));
+app.use('/api/uploads/cms/flyers', express.static(path.join(process.cwd(), 'uploads/cms/flyers')));
 
 // Health Check Endpoint
 app.get('/health', (req, res) => {

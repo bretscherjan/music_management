@@ -9,6 +9,7 @@ import { Plus, Pencil, Trash2, ExternalLink, GripVertical } from 'lucide-react';
 import { ConfirmDialog } from '@/components/common/ConfirmDialog';
 import { toast } from 'sonner';
 import { SponsorDialog } from '@/components/admin/cms/SponsorDialog';
+import { getMediaUrl } from '@/lib/api';
 
 export function SponsorManager() {
     const queryClient = useQueryClient();
@@ -69,7 +70,7 @@ export function SponsorManager() {
                                 <TableCell><GripVertical className="h-4 w-4 text-muted-foreground cursor-move" /></TableCell>
                                 <TableCell>
                                     <img
-                                        src={sponsor.logoUrl}
+                                        src={getMediaUrl(sponsor.logoUrl)}
                                         alt={sponsor.name}
                                         className="h-10 w-20 object-contain bg-muted p-1 rounded"
                                     />

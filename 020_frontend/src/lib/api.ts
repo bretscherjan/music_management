@@ -5,8 +5,11 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3004/api'
 export const getMediaUrl = (path: string) => {
     if (!path) return '';
     if (path.startsWith('http') || path.startsWith('data:') || path.startsWith('blob:')) return path;
-    const baseUrl = API_BASE_URL.replace(/\/api$/, '');
-    return `${baseUrl}${path.startsWith('/') ? '' : '/'}${path}`;
+
+    // Use API_BASE_URL (including /api) so media requests go to /api/uploads/...
+    // This bypasses the frontend SPA fallback in production routing setups.
+    const cleanPath = path.startsWith('/') ? path.substring(1) : path;
+    return `${API_BASE_URL}/${cleanPath}`;
 };
 
 const api = axios.create({

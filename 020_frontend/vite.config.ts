@@ -12,7 +12,7 @@ export default defineConfig({
     VitePWA({
       workbox: {
         // Erhöhe das Limit auf 3MB oder 4MB
-        maximumFileSizeToCacheInBytes: 4 * 1024 * 1024, 
+        maximumFileSizeToCacheInBytes: 4 * 1024 * 1024,
       },
       registerType: 'autoUpdate',
       includeAssets: ['logo.png', 'vite.svg'],
@@ -48,6 +48,10 @@ export default defineConfig({
   server: {
     proxy: {
       '/api': {
+        target: 'http://localhost:3004',
+        changeOrigin: true,
+      },
+      '/uploads': {
         target: 'http://localhost:3004',
         changeOrigin: true,
       },

@@ -1,6 +1,10 @@
 import pdfMake from 'pdfmake/build/pdfmake';
 import pdfFonts from 'pdfmake/build/vfs_fonts';
 import type { Task, AdminNote, TaskHistory } from '@/types/workspace';
+import {
+    PDFMAKE_STYLES, PDFMAKE_DEFAULT_STYLE, PDFMAKE_TABLE_LAYOUT,
+    buildPdfTitleBlock, DEFAULT_PDF_OPTIONS, type PdfOptions
+} from '@/utils/pdfTheme';
 
 // Initialize vfs_fonts
 // @ts-ignore
@@ -92,34 +96,13 @@ const parseInlineFormatting = (text: string): any[] => {
     return parts;
 };
 
-export const generatePdf = (data: ExportData) => {
+export const generatePdf = (data: ExportData, opts: PdfOptions = DEFAULT_PDF_OPTIONS) => {
     const { tasks, notes, history } = data;
 
     const content: any[] = [];
 
-    // Header
-    /*
-    content.push({
-        image: 'logo', 
-        width: 150,
-        alignment: 'right',
-    });
-    */
-
-    content.push({
-        text: 'Admin Workspace Export',
-        style: 'header',
-        alignment: 'center',
-        margin: [0, 10, 0, 10]
-    });
-
-    content.push({
-        text: new Date().toLocaleDateString('de-CH', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
-            + ' ' + new Date().toLocaleTimeString('de-CH', { hour: '2-digit', minute: '2-digit' }),
-        alignment: 'right',
-        color: '#666666',
-        margin: [0, 0, 0, 20]
-    });
+    // Title block
+    content.push(...buildPdfTitleBlock('Admin Workspace Export', null, opts));
 
     // 1. Overview Stats
     content.push({
@@ -184,15 +167,7 @@ export const generatePdf = (data: ExportData) => {
                         ...taskRows
                     ]
                 },
-                layout: {
-                    hLineWidth: (i: number) => (i === 1) ? 1 : 0.5,
-                    vLineWidth: () => 0,
-                    hLineColor: (i: number) => (i === 1) ? '#000000' : '#aaaaaa',
-                    paddingLeft: () => 5,
-                    paddingRight: () => 5,
-                    paddingTop: () => 5,
-                    paddingBottom: () => 5,
-                },
+                layout: PDFMAKE_TABLE_LAYOUT,
                 margin: [0, 0, 0, 15]
             });
         });
@@ -256,35 +231,15 @@ export const generatePdf = (data: ExportData) => {
                     ...historyRows
                 ]
             },
-            layout: 'lightHorizontalLines'
+            layout: PDFMAKE_TABLE_LAYOUT
         });
     }
 
     const docDefinition: any = {
         pageOrientation: 'portrait',
         content,
-        styles: {
-            header: { fontSize: 22, bold: true, color: '#2c3e50' },
-            sectionHeader: { fontSize: 16, bold: true, color: '#34495e', margin: [0, 10, 0, 10] },
-            subheader: { fontSize: 14, bold: true, color: '#7f8c8d' },
-            categoryHeader: { fontSize: 13, bold: true, decoration: 'underline' },
-
-            noteTitle: { fontSize: 14, bold: true, color: '#2980b9' },
-            markdownH1: { fontSize: 13, bold: true, color: '#333333' },
-            markdownH2: { fontSize: 12, bold: true, color: '#444444' },
-            markdownH3: { fontSize: 11, bold: true, italics: true },
-
-            tableHeader: { bold: true, fontSize: 10, color: '#2c3e50', fillColor: '#ecf0f1' },
-
-            smallText: { fontSize: 9, color: '#555555' },
-            metaText: { fontSize: 8, color: '#7f8c8d', margin: [0, 2, 0, 2] },
-
-            statusDone: { fontSize: 9, color: '#27ae60', bold: true },
-            statusOpen: { fontSize: 9, color: '#c0392b', bold: true },
-
-            statBox: { fontSize: 11, bold: true, alignment: 'center', background: '#ecf0f1', padding: 5 }
-        },
-        defaultStyle: { fontSize: 10, lineHeight: 1.2 }
+        styles: PDFMAKE_STYLES,
+        defaultStyle: PDFMAKE_DEFAULT_STYLE
     };
 
     pdfMake.createPdf(docDefinition).download(`workspace-export-${new Date().toISOString().split('T')[0]}.pdf`);

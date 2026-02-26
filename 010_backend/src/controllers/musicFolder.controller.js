@@ -4,6 +4,7 @@ const archiver = require('archiver');
 const fs = require('fs');
 const path = require('path');
 const PdfPrinter = require('pdfmake/js/Printer').default;
+const { FONTS, STYLES, DEFAULT_STYLE, parseOpts, buildTitleBlock, buildHeaderFooter } = require('../utils/pdfStyles');
 
 const prisma = new PrismaClient();
 
@@ -349,21 +350,16 @@ const exportFolderPdf = asyncHandler(async (req, res) => {
         throw new AppError('Mappe nicht gefunden', 404);
     }
 
-    const fonts = {
-        Roboto: {
-            normal: path.join(__dirname, '../../node_modules/pdfmake/fonts/Roboto/Roboto-Regular.ttf'),
-            bold: path.join(__dirname, '../../node_modules/pdfmake/fonts/Roboto/Roboto-Medium.ttf'),
-            italics: path.join(__dirname, '../../node_modules/pdfmake/fonts/Roboto/Roboto-Italic.ttf'),
-            bolditalics: path.join(__dirname, '../../node_modules/pdfmake/fonts/Roboto/Roboto-MediumItalic.ttf')
-        }
-    };
+    const opts = parseOpts(req.query);
+
+    const fonts = FONTS;
 
     const printer = new PdfPrinter(fonts);
 
     const docDefinition = {
+        ...buildHeaderFooter('Musikmappe', opts),
         content: [
-            { text: folder.name, style: 'header' },
-            { text: folder.description || '', style: 'subheader' },
+            ...buildTitleBlock(folder.name, folder.description || null, opts),
             {
                 table: {
                     headerRows: 1,
@@ -385,26 +381,8 @@ const exportFolderPdf = asyncHandler(async (req, res) => {
                 }
             }
         ],
-        styles: {
-            header: {
-                fontSize: 18,
-                bold: true,
-                margin: [0, 0, 0, 10]
-            },
-            subheader: {
-                fontSize: 14,
-                margin: [0, 0, 0, 20]
-            },
-            tableHeader: {
-                bold: true,
-                fontSize: 12,
-                color: 'black',
-                fillColor: '#eeeeee'
-            }
-        },
-        defaultStyle: {
-            fontSize: 10
-        }
+        styles: STYLES,
+        defaultStyle: DEFAULT_STYLE
     };
 
     const pdfDoc = await printer.createPdfKitDocument(docDefinition);

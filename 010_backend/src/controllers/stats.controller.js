@@ -2,6 +2,7 @@ const { PrismaClient } = require('@prisma/client');
 const { asyncHandler, AppError } = require('../middlewares/errorHandler.middleware');
 const PdfPrinter = require('pdfmake/js/Printer').default;
 const path = require('path');
+const { FONTS, STYLES, DEFAULT_STYLE, TABLE_LAYOUT, parseOpts, buildTitleBlock, buildHeaderFooter } = require('../utils/pdfStyles');
 
 const prisma = new PrismaClient();
 
@@ -186,6 +187,7 @@ const getRepertoireStats = asyncHandler(async (req, res) => {
  */
 const exportRepertoirePdf = asyncHandler(async (req, res) => {
     const { startDate, endDate, category } = req.query;
+    const opts = parseOpts(req.query);
 
     // Reuse logic (duplicated for now to keep clean independence, or extract to helper)
     // For PDF we might want the same data logic.
@@ -248,25 +250,16 @@ const exportRepertoirePdf = asyncHandler(async (req, res) => {
     }).sort((a, b) => b.playCount - a.playCount); // Sort by usage desc
 
     // Generate PDF
-    const fonts = {
-        Roboto: {
-            normal: path.join(__dirname, '../../node_modules/pdfmake/fonts/Roboto/Roboto-Regular.ttf'),
-            bold: path.join(__dirname, '../../node_modules/pdfmake/fonts/Roboto/Roboto-Medium.ttf'),
-            italics: path.join(__dirname, '../../node_modules/pdfmake/fonts/Roboto/Roboto-Italic.ttf'),
-            bolditalics: path.join(__dirname, '../../node_modules/pdfmake/fonts/Roboto/Roboto-MediumItalic.ttf')
-        }
-    };
+    const periodStr = `${startDate ? new Date(startDate).toLocaleDateString('de-CH') : 'Anfang'} - ${endDate ? new Date(endDate).toLocaleDateString('de-CH') : 'Heute'}`;
+    const fonts = FONTS;
 
     const printer = new PdfPrinter(fonts);
 
     const docDefinition = {
         pageOrientation: 'portrait',
+        ...buildHeaderFooter('Repertoire Statistik', opts),
         content: [
-            { text: 'Repertoire Statistik: Musig Elgg', style: 'header' },
-            {
-                text: `Zeitraum: ${startDate ? new Date(startDate).toLocaleDateString('de-CH') : 'Anfang'} - ${endDate ? new Date(endDate).toLocaleDateString('de-CH') : 'Heute'}`,
-                style: 'subheader'
-            },
+            ...buildTitleBlock('Repertoire Statistik', `Zeitraum: ${periodStr}`, opts),
             {
                 table: {
                     headerRows: 1,
@@ -291,12 +284,7 @@ const exportRepertoirePdf = asyncHandler(async (req, res) => {
                 layout: 'lightHorizontalLines'
             }
         ],
-        styles: {
-            header: { fontSize: 18, bold: true, margin: [0, 0, 0, 10] },
-            subheader: { fontSize: 12, margin: [0, 0, 0, 20] },
-            tableHeader: { bold: true, fontSize: 10, color: 'black', fillColor: '#eeeeee' },
-            cellText: { fontSize: 10 }
-        }
+        styles: STYLES
     };
 
     const pdfDoc = await printer.createPdfKitDocument(docDefinition);
@@ -432,6 +420,7 @@ const getAttendanceStats = asyncHandler(async (req, res) => {
  */
 const exportAttendancePdf = asyncHandler(async (req, res) => {
     const { startDate, endDate } = req.query;
+    const opts = parseOpts(req.query);
 
     const whereClause = {};
     if (startDate || endDate) {
@@ -487,14 +476,7 @@ const exportAttendancePdf = asyncHandler(async (req, res) => {
     // Data sorted by Name
     data.sort((a, b) => a.name.localeCompare(b.name));
 
-    const fonts = {
-        Roboto: {
-            normal: path.join(__dirname, '../../node_modules/pdfmake/fonts/Roboto/Roboto-Regular.ttf'),
-            bold: path.join(__dirname, '../../node_modules/pdfmake/fonts/Roboto/Roboto-Medium.ttf'),
-            italics: path.join(__dirname, '../../node_modules/pdfmake/fonts/Roboto/Roboto-Italic.ttf'),
-            bolditalics: path.join(__dirname, '../../node_modules/pdfmake/fonts/Roboto/Roboto-MediumItalic.ttf')
-        }
-    };
+    const fonts = FONTS;
 
     const printer = new PdfPrinter(fonts);
     const today = new Date().toLocaleDateString('de-CH');
@@ -543,33 +525,15 @@ const exportAttendancePdf = asyncHandler(async (req, res) => {
 
     const docDefinition = {
         pageOrientation: 'portrait',
-        header: function (currentPage, pageCount) {
-            return {
-                text: currentPage > 1 ? `Anwesenheitsstatistik - ${today}` : '',
-                alignment: 'right',
-                margin: [0, 20, 20, 0],
-                fontSize: 9,
-                color: '#888888'
-            };
-        },
-        footer: function (currentPage, pageCount) {
-            return {
-                text: `${currentPage} / ${pageCount}`,
-                alignment: 'center',
-                margin: [0, 10, 0, 0],
-                fontSize: 9
-            };
-        },
+        ...buildHeaderFooter('Anwesenheitsstatistik', opts),
         content: [
             // Title Section
-            { text: `Anwesenheitsstatistik ${new Date().getFullYear()}`, style: 'header' },
-            { text: `Generiert am: ${today}`, style: 'subtext', margin: [0, 0, 0, 5] },
-            { text: `Zeitraum: ${periodStr}`, style: 'subtext', margin: [0, 0, 0, 20] },
+            ...buildTitleBlock('Anwesenheitsstatistik', `Zeitraum: ${periodStr}`, opts),
 
             // CHARTS SECTION
 
             // Distribution Chart (Stacked Bar)
-            { text: 'Gesamtverteilung', style: 'h3', margin: [0, 10, 0, 5] },
+            { text: 'Gesamtverteilung', style: 'sectionHeader', margin: [0, 10, 0, 5] },
             {
                 table: {
                     widths: [`${percentPresent}%`, `${percentExcused}%`, `${percentUnexcused}%`],
@@ -609,7 +573,7 @@ const exportAttendancePdf = asyncHandler(async (req, res) => {
             },
 
             // Top 10 Chart
-            { text: 'Top 10 Anwesende', style: 'h3', margin: [0, 0, 0, 10] },
+            { text: 'Top 10 Anwesende', style: 'sectionHeader', margin: [0, 0, 0, 10] },
             {
                 table: {
                     widths: [130, '*', 30],
@@ -619,7 +583,7 @@ const exportAttendancePdf = asyncHandler(async (req, res) => {
                 margin: [0, 0, 0, 30]
             },
 
-            { text: 'Detailliste', style: 'h3', margin: [0, 0, 0, 10], pageBreak: 'before' },
+            { text: 'Detailliste', style: 'sectionHeader', margin: [0, 0, 0, 10], pageBreak: 'before' },
 
             // Table
             {
@@ -670,15 +634,7 @@ const exportAttendancePdf = asyncHandler(async (req, res) => {
                 }
             }
         ],
-        styles: {
-            header: { fontSize: 22, bold: true, margin: [0, 0, 0, 5] },
-            subtext: { fontSize: 12, color: '#333333' },
-            h3: { fontSize: 14, bold: true, color: '#2B75A0' },
-            chartLabel: { fontSize: 10, color: '#333333' },
-            chartValue: { fontSize: 10, bold: true, color: '#333333' },
-            tableHeader: { bold: true, fontSize: 10, color: 'white', fillColor: '#2B75A0', margin: [0, 5, 0, 5] }, // Blue header like screenshot
-            cellText: { fontSize: 10, margin: [0, 2, 0, 2] }
-        }
+        styles: STYLES
     };
 
     const pdfDoc = await printer.createPdfKitDocument(docDefinition);

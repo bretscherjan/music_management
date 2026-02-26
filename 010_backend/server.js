@@ -1,6 +1,11 @@
 require('dotenv').config();
 
 const express = require('express');
+
+// Fix BigInt serialization for JSON
+BigInt.prototype.toJSON = function () {
+  return Number(this);
+};
 const cors = require('cors');
 const helmet = require('helmet');
 const path = require('path');
@@ -24,8 +29,12 @@ const io = initializeWebSocket(server);
 app.use(helmet());
 
 // CORS Configuration
+const corsOrigin = process.env.CORS_ORIGIN;
+if (!corsOrigin) {
+  console.warn('⚠️  CORS_ORIGIN not set — defaulting to localhost:5173 (set it explicitly in production!)');
+}
 app.use(cors({
-  origin: process.env.CORS_ORIGIN || '*',
+  origin: corsOrigin || 'http://localhost:5173',
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
   allowedHeaders: ['Content-Type', 'Authorization'],
 }));
@@ -36,6 +45,11 @@ app.use(express.urlencoded({ extended: true }));
 
 // Attach Socket.io to requests for workspace routes
 app.use('/api/workspace', attachIO);
+
+// Static serving for CMS uploads
+app.use('/uploads/cms/sponsors', express.static(path.join(process.cwd(), 'uploads/cms/sponsors')));
+app.use('/uploads/cms/gallery', express.static(path.join(process.cwd(), 'uploads/cms/gallery')));
+app.use('/uploads/cms/flyers', express.static(path.join(process.cwd(), 'uploads/cms/flyers')));
 
 // Health Check Endpoint
 app.get('/health', (req, res) => {

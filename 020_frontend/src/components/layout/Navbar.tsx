@@ -1,11 +1,20 @@
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Mail, Music, User, Menu, X } from 'lucide-react';
+import { Mail, Music, User, Menu, X, Image } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
+import { cmsService } from '@/services/cmsService';
 
 export function Navbar() {
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const location = useLocation();
 
+    const { data: galleryImages = [] } = useQuery({
+        queryKey: ['gallery', 'count'],
+        queryFn: () => cmsService.getGalleryImages(),
+        staleTime: 60000 // Only check every minute
+    });
+
+    const hasGallery = galleryImages.length > 0;
     const toggleMenu = () => setIsMobileMenuOpen(!isMobileMenuOpen);
     const closeMenu = () => setIsMobileMenuOpen(false);
 
@@ -34,6 +43,17 @@ export function Navbar() {
                         >
                             Start
                         </Link>
+                        {hasGallery && (
+                            <Link
+                                to="/gallery"
+                                className={`text-sm font-medium transition-colors ${location.pathname === '/gallery'
+                                    ? 'text-[hsl(var(--musig-primary))] font-bold'
+                                    : 'hover:text-[hsl(var(--musig-primary))]'
+                                    }`}
+                            >
+                                Galerie
+                            </Link>
+                        )}
                         <Link
                             to="/about"
                             className={`text-sm font-medium transition-colors ${location.pathname === '/about'
@@ -91,6 +111,19 @@ export function Navbar() {
                             <Music className="h-4 w-4" />
                             Start
                         </Link>
+                        {hasGallery && (
+                            <Link
+                                to="/gallery"
+                                className={`px-4 py-3 rounded-md text-sm font-medium transition-colors flex items-center gap-2 ${location.pathname === '/gallery'
+                                    ? 'bg-[hsl(var(--musig-primary))]/10 text-[hsl(var(--musig-primary))]'
+                                    : 'hover:bg-[hsl(var(--muted))]'
+                                    }`}
+                                onClick={closeMenu}
+                            >
+                                <Image className="h-4 w-4" />
+                                Galerie
+                            </Link>
+                        )}
                         <Link
                             to="/about"
                             className={`px-4 py-3 rounded-md text-sm font-medium transition-colors flex items-center gap-2 ${location.pathname === '/about'

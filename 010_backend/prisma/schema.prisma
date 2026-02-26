@@ -1,5 +1,3 @@
-// Prisma Schema for Vereinsverwaltung
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -9,9 +7,473 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// ============================================
-// ENUMS
-// ============================================
+model User {
+  id                   Int                   @id @default(autoincrement())
+  email                String                @unique
+  password             String
+  firstName            String
+  lastName             String
+  profilePicture       String?
+  status               UserStatus            @default(active)
+  role                 UserRole              @default(member)
+  registerId           Int?
+  createdAt            DateTime              @default(now())
+  updatedAt            DateTime              @updatedAt
+  phoneNumber          String?
+  calendarToken        String?               @unique
+  resetToken           String?               @unique
+  resetTokenExpiry     DateTime?
+  ownedNotes           AdminNote[]           @relation("NoteOwner")
+  attendances          Attendance[]
+  fileAccess           FileAccess[]
+  folderAccess         FolderAccess[]
+  news                 News[]
+  noteContributions    NoteContribution[]
+  notificationSettings NotificationSettings?
+  pushSubscriptions    PushSubscription[]
+  sheetMusicBookmarks  SheetMusicBookmark[]
+  tasksCompleted       Task[]                @relation("TaskCompleter")
+  tasksCreated         Task[]                @relation("TaskCreator")
+  taskHistory          TaskHistory[]
+  register             Register?             @relation(fields: [registerId], references: [id])
+  verifiedAttendances  VerifiedAttendance[]
+
+  @@index([email])
+  @@index([registerId])
+}
+
+model NotificationSettings {
+  id                     Int      @id @default(autoincrement())
+  userId                 Int      @unique
+  notifyOnEventCreate    Boolean  @default(true)
+  notifyOnEventUpdate    Boolean  @default(true)
+  notifyOnEventDelete    Boolean  @default(true)
+  notifyOnFileUpload     Boolean  @default(true)
+  notifyOnFileDelete     Boolean  @default(false)
+  updatedAt              DateTime @updatedAt
+  pushEventCancellations Boolean  @default(true)
+  pushEventUpdates       Boolean  @default(true)
+  pushFileDeleted        Boolean  @default(false)
+  pushNewEvents          Boolean  @default(true)
+  pushNewFiles           Boolean  @default(true)
+  reminderSettings       Json?
+  user                   User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Register {
+  id           Int            @id @default(autoincrement())
+  name         String         @unique
+  files        File[]
+  fileAccess   FileAccess[]
+  folderAccess FolderAccess[]
+  users        User[]
+  events       Event[]        @relation("EventToRegister")
+
+  @@index([name])
+}
+
+model Event {
+  id                    Int                  @id @default(autoincrement())
+  title                 String
+  description           String?              @db.Text
+  location              String?
+  category              EventCategory        @default(other)
+  visibility            EventVisibility      @default(all)
+  date                  DateTime
+  startTime             String
+  endTime               String
+  isRecurring           Boolean              @default(false)
+  recurrenceRule        String?
+  excludedDates         Json?
+  createdAt             DateTime             @default(now())
+  updatedAt             DateTime             @updatedAt
+  responseDeadlineHours Int                  @default(48)
+  setlistEnabled        Boolean              @default(false)
+  isPublic              Boolean              @default(false)
+  attendances           Attendance[]
+  sheetMusic            EventSheetMusic[]
+  files                 File[]
+  workspaceTasks        Task[]
+  verifiedAttendances   VerifiedAttendance[]
+  targetRegisters       Register[]           @relation("EventToRegister")
+
+  @@index([date])
+  @@index([category])
+}
+
+model Attendance {
+  id        Int              @id @default(autoincrement())
+  status    AttendanceStatus @default(maybe)
+  comment   String?          @db.Text
+  eventId   Int
+  userId    Int
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+  event     Event            @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([eventId, userId])
+  @@index([eventId])
+  @@index([userId])
+}
+
+model File {
+  id               Int              @id @default(autoincrement())
+  filename         String
+  originalName     String
+  path             String
+  mimetype         String
+  size             Int
+  visibility       FileVisibility   @default(all)
+  targetRegisterId Int?
+  eventId          Int?
+  createdAt        DateTime         @default(now())
+  folder           String           @default("/")
+  folderId         Int?
+  sheetMusicId     Int?
+  event            Event?           @relation(fields: [eventId], references: [id])
+  realFolder       Folder?          @relation(fields: [folderId], references: [id])
+  sheetMusic       SheetMusic?      @relation(fields: [sheetMusicId], references: [id])
+  targetRegister   Register?        @relation(fields: [targetRegisterId], references: [id])
+  accessRules      FileAccess[]
+  shareTokens      FileShareToken[]
+
+  @@index([visibility])
+  @@index([targetRegisterId])
+  @@index([eventId])
+  @@index([folder])
+  @@index([folderId], map: "File_folderId_fkey")
+  @@index([sheetMusicId], map: "File_sheetMusicId_fkey")
+}
+
+model FileAccess {
+  id         Int              @id @default(autoincrement())
+  fileId     Int
+  accessType AccessType       @default(ALLOW)
+  targetType AccessTargetType
+  userId     Int?
+  registerId Int?
+  createdAt  DateTime         @default(now())
+  file       File             @relation(fields: [fileId], references: [id], onDelete: Cascade)
+  register   Register?        @relation(fields: [registerId], references: [id], onDelete: Cascade)
+  user       User?            @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([fileId])
+  @@index([userId])
+  @@index([registerId])
+}
+
+model News {
+  id        Int      @id @default(autoincrement())
+  title     String
+  content   String   @db.Text
+  authorId  Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@index([authorId])
+  @@index([createdAt])
+}
+
+model Setting {
+  id    Int    @id @default(autoincrement())
+  key   String @unique
+  value String
+
+  @@index([key])
+}
+
+model SheetMusic {
+  id          Int                  @id @default(autoincrement())
+  title       String
+  composer    String?
+  arranger    String?
+  genre       String?
+  difficulty  Difficulty?
+  publisher   String?
+  notes       String?              @db.Text
+  createdAt   DateTime             @default(now())
+  updatedAt   DateTime             @updatedAt
+  events      EventSheetMusic[]
+  files       File[]
+  folderItems MusicFolderItem[]
+  bookmarks   SheetMusicBookmark[]
+
+  @@index([title])
+  @@index([genre])
+  @@index([difficulty])
+}
+
+model SheetMusicBookmark {
+  id           Int        @id @default(autoincrement())
+  userId       Int
+  sheetMusicId Int
+  createdAt    DateTime   @default(now())
+  sheetMusic   SheetMusic @relation(fields: [sheetMusicId], references: [id], onDelete: Cascade)
+  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, sheetMusicId])
+  @@index([userId])
+  @@index([sheetMusicId])
+}
+
+model EventSheetMusic {
+  id                Int             @id @default(autoincrement())
+  eventId           Int
+  sheetMusicId      Int?
+  position          Int             @default(0)
+  createdAt         DateTime        @default(now())
+  customDescription String?         @db.Text
+  customTitle       String?
+  duration          Int?
+  type              SetlistItemType @default(sheetMusic)
+  event             Event           @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  sheetMusic        SheetMusic?     @relation(fields: [sheetMusicId], references: [id], onDelete: Cascade)
+
+  @@unique([eventId, position])
+  @@index([eventId])
+  @@index([sheetMusicId])
+}
+
+model PushSubscription {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  endpoint  String   @unique @db.VarChar(500)
+  p256dh    String   @db.Text
+  auth      String   @db.Text
+  userAgent String?  @db.Text
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model Folder {
+  id          Int            @id @default(autoincrement())
+  name        String
+  parentId    Int?
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+  files       File[]
+  parent      Folder?        @relation("FolderToFolder", fields: [parentId], references: [id], onDelete: Cascade)
+  children    Folder[]       @relation("FolderToFolder")
+  accessRules FolderAccess[]
+
+  @@unique([name, parentId])
+  @@index([parentId])
+}
+
+model FolderAccess {
+  id         Int              @id @default(autoincrement())
+  folderId   Int
+  accessType AccessType       @default(ALLOW)
+  targetType AccessTargetType
+  userId     Int?
+  registerId Int?
+  createdAt  DateTime         @default(now())
+  folder     Folder           @relation(fields: [folderId], references: [id], onDelete: Cascade)
+  register   Register?        @relation(fields: [registerId], references: [id], onDelete: Cascade)
+  user       User?            @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([folderId])
+  @@index([userId])
+  @@index([registerId])
+}
+
+model VerifiedAttendance {
+  id        Int                @id @default(autoincrement())
+  eventId   Int
+  userId    Int
+  status    VerificationStatus
+  comment   String?
+  updatedAt DateTime           @updatedAt
+  adminId   Int
+  event     Event              @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  user      User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([eventId, userId])
+  @@index([eventId])
+  @@index([userId])
+}
+
+model MusicFolder {
+  id          Int               @id @default(autoincrement())
+  name        String
+  description String?
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+  items       MusicFolderItem[]
+}
+
+model MusicFolderItem {
+  id           Int         @id @default(autoincrement())
+  folderId     Int
+  sheetMusicId Int
+  position     Int         @default(0)
+  folder       MusicFolder @relation(fields: [folderId], references: [id], onDelete: Cascade)
+  sheetMusic   SheetMusic  @relation(fields: [sheetMusicId], references: [id], onDelete: Cascade)
+
+  @@unique([folderId, sheetMusicId])
+  @@index([folderId])
+  @@index([sheetMusicId])
+}
+
+model TaskCategory {
+  id        Int      @id @default(autoincrement())
+  name      String
+  color     String?
+  position  Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  tasks     Task[]
+
+  @@index([position])
+}
+
+model Task {
+  id            Int           @id @default(autoincrement())
+  title         String
+  description   String?       @db.Text
+  priority      TaskPriority  @default(medium)
+  dueDate       DateTime?
+  completed     Boolean       @default(false)
+  completedAt   DateTime?
+  archived      Boolean       @default(false)
+  position      Int           @default(0)
+  categoryId    Int
+  parentId      Int?
+  eventId       Int?
+  createdById   Int
+  completedById Int?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  category      TaskCategory  @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  completedBy   User?         @relation("TaskCompleter", fields: [completedById], references: [id])
+  createdBy     User          @relation("TaskCreator", fields: [createdById], references: [id])
+  event         Event?        @relation(fields: [eventId], references: [id])
+  parent        Task?         @relation("TaskSubtasks", fields: [parentId], references: [id], onDelete: Cascade)
+  subtasks      Task[]        @relation("TaskSubtasks")
+  history       TaskHistory[]
+
+  @@index([categoryId])
+  @@index([parentId])
+  @@index([eventId])
+  @@index([completed])
+  @@index([archived])
+  @@index([position])
+  @@index([completedById], map: "Task_completedById_fkey")
+  @@index([createdById], map: "Task_createdById_fkey")
+}
+
+model TaskHistory {
+  id        Int      @id @default(autoincrement())
+  taskId    Int
+  userId    Int
+  action    String
+  details   Json?
+  createdAt DateTime @default(now())
+  task      Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id])
+
+  @@index([taskId])
+  @@index([userId])
+  @@index([createdAt])
+}
+
+model AdminNote {
+  id            Int                @id @default(autoincrement())
+  title         String
+  content       String             @db.LongText
+  ownerId       Int
+  pinned        Boolean            @default(false)
+  position      Int                @default(0)
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
+  owner         User               @relation("NoteOwner", fields: [ownerId], references: [id])
+  contributions NoteContribution[]
+
+  @@index([ownerId])
+  @@index([pinned])
+  @@index([position])
+}
+
+model NoteContribution {
+  id        Int       @id @default(autoincrement())
+  noteId    Int
+  userId    Int
+  charCount Int       @default(0)
+  updatedAt DateTime  @updatedAt
+  note      AdminNote @relation(fields: [noteId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id])
+
+  @@unique([noteId, userId])
+  @@index([noteId])
+  @@index([userId])
+}
+
+model FileShareToken {
+  id         Int      @id @default(autoincrement())
+  token      String   @unique
+  fileId     Int
+  createdAt  DateTime @default(now())
+  expiresAt  DateTime
+  usageCount Int      @default(0)
+  file       File     @relation(fields: [fileId], references: [id], onDelete: Cascade)
+
+  @@index([token])
+  @@index([fileId], map: "FileShareToken_fileId_fkey")
+}
+
+model Sponsor {
+  id          Int      @id @default(autoincrement())
+  name        String
+  logoUrl     String
+  websiteUrl  String?
+  active      Boolean  @default(true)
+  position    Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  description String?  @db.Text
+
+  @@index([active])
+  @@index([position])
+}
+
+model GalleryImage {
+  id          Int      @id @default(autoincrement())
+  filename    String
+  title       String?
+  description String?  @db.Text
+  category    String?
+  active      Boolean  @default(true)
+  position    Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([active])
+  @@index([position])
+  @@index([createdAt])
+}
+
+model Flyer {
+  id             Int       @id @default(autoincrement())
+  filename       String
+  title          String
+  activeFrom     DateTime?
+  activeTo       DateTime?
+  active         Boolean   @default(true)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  description    String?   @db.Text
+  position       Int       @default(0)
+  showOnHomePage Boolean   @default(false)
+
+  @@index([active])
+  @@index([showOnHomePage])
+  @@index([position])
+}
 
 enum UserStatus {
   active
@@ -44,10 +506,7 @@ enum AttendanceStatus {
 
 enum FileVisibility {
   all
-  limit // changed from register/admin to limit for backward compat or just use the new system.
-  // actually, let's keep 'all' and just use 'restricted' or similar. 
-  // The plan said: "Adding FileAccess model ... Existing files will need migration logic"
-  // I will keep existing enums to avoid breaking immediate runtime, but logic will prefer FileAccess.
+  limit
   admin
   register
 }
@@ -63,315 +522,10 @@ enum AccessTargetType {
   ADMIN_ONLY
 }
 
-// ============================================
-// MODELS
-// ============================================
-
-model User {
-  id             Int        @id @default(autoincrement())
-  email          String     @unique
-  password       String
-  firstName      String
-  lastName       String
-  phoneNumber    String?
-  profilePicture String?
-  status         UserStatus @default(active)
-  role           UserRole   @default(member)
-
-  // Relations
-  registerId  Int?
-  register    Register?    @relation(fields: [registerId], references: [id], onDelete: SetNull)
-  attendances Attendance[]
-  news        News[]
-  fileAccess  FileAccess[]
-  folderAccess FolderAccess[]
-  sheetMusicBookmarks SheetMusicBookmark[]
-
-  // Timestamps
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  
-  calendarToken    String? @unique
-  resetToken       String? @unique
-  resetTokenExpiry DateTime?
-
-  notificationSettings NotificationSettings?
-  pushSubscriptions    PushSubscription[]
-  verifiedAttendances  VerifiedAttendance[]
-
-  // Workspace Relations
-  tasksCreated      Task[]             @relation("TaskCreator")
-  tasksCompleted    Task[]             @relation("TaskCompleter")
-  taskHistory       TaskHistory[]
-  ownedNotes        AdminNote[]        @relation("NoteOwner")
-  noteContributions NoteContribution[]
-
-  @@index([email])
-  @@index([registerId])
-}
-
-model NotificationSettings {
-  id     Int  @id @default(autoincrement())
-  userId Int  @unique
-  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  // Event Notifications (Email)
-  notifyOnEventCreate Boolean @default(true)
-  notifyOnEventUpdate Boolean @default(true)
-  notifyOnEventDelete Boolean @default(true)
-
-  // File Notifications (Email)
-  notifyOnFileUpload Boolean @default(true)
-  notifyOnFileDelete Boolean @default(false)
-
-  // User-Individual Reminder Settings (JSON)
-  // Structure: { rehearsal: {...}, performance: {...}, other: {...} }
-  reminderSettings  Json?
-
-  // Push Notification Settings
-  pushNewEvents         Boolean @default(true)
-  pushEventUpdates      Boolean @default(true)
-  pushEventCancellations Boolean @default(true)
-  pushNewFiles          Boolean @default(true)
-  pushFileDeleted       Boolean @default(false)
-
-  updatedAt DateTime @updatedAt
-}
-
-
-model Register {
-  id   Int    @id @default(autoincrement())
-  name String @unique
-
-  // Relations
-  users User[]
-  files File[]
-  fileAccess FileAccess[]
-  folderAccess FolderAccess[]
-  events Event[] // Implicit Many-to-Many for event visibility targets
-
-  @@index([name])
-}
-
-model Event {
-  id          Int             @id @default(autoincrement())
-  title       String
-  description String?         @db.Text
-  location    String?
-  category    EventCategory   @default(other)
-  visibility  EventVisibility @default(all)
-
-  // Date and Time
-  date      DateTime
-  startTime String // Format: "HH:mm"
-  endTime   String // Format: "HH:mm"
-
-  // Response deadline - hours before event start (e.g., 2 = 2 hours before)
-  responseDeadlineHours Int @default(48) // Default: 48h = 2 days before
-
-  // Recurrence
-  isRecurring    Boolean @default(false)
-  recurrenceRule String? // RRule string (e.g., "FREQ=WEEKLY;INTERVAL=2;BYDAY=MO")
-  excludedDates  Json? // JSON array of date strings to exclude
-
-  // Relations
-  attendances Attendance[]
-  files       File[]
-  sheetMusic  EventSheetMusic[]
-
-  // Timestamps
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  setlistEnabled Boolean @default(false) // Toggle for showing the setlist/schedule
-  
-  // Visibility Extensions
-  // Visibility Extensions
-  isPublic         Boolean @default(false) // Show on public website
-  targetRegisters  Register[] // Specific registers this event is visible to (if empty, visible to all members)
-  verifiedAttendances VerifiedAttendance[]
-  
-  // Workspace Tasks linked to this event
-  workspaceTasks   Task[]
-
-  @@index([date])
-  @@index([category])
-}
-
-model Attendance {
-  id      Int              @id @default(autoincrement())
-  status  AttendanceStatus @default(maybe)
-  comment String?          @db.Text
-
-  // Relations
-  eventId Int
-  event   Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
-  userId  Int
-  user    User  @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  // Timestamps
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  // Unique constraint: one attendance per user per event
-  @@unique([eventId, userId])
-  @@index([eventId])
-  @@index([userId])
-}
-
-model File {
-  id           Int            @id @default(autoincrement())
-  filename     String // Generated filename on disk
-  originalName String // Original uploaded filename
-  path         String // Full path to file
-  mimetype     String // MIME type (e.g., "application/pdf")
-  size         Int // File size in bytes
-  visibility   FileVisibility @default(all)
-  folder       String         @default("/") // Virtual folder path (Deprecating in favor of real Folder relation, but keeping for now)
-  
-  folderId     Int?
-  realFolder   Folder?        @relation(fields: [folderId], references: [id], onDelete: SetNull)
-
-  // Access Control
-  accessRules  FileAccess[]
-  shareTokens  FileShareToken[]
-
-  // Optional target associations (Deprecating these in favor of FileAccess but keeping for migration/compat)
-  targetRegisterId Int?
-  targetRegister   Register? @relation(fields: [targetRegisterId], references: [id], onDelete: SetNull)
-  eventId          Int?
-  event            Event?    @relation(fields: [eventId], references: [id], onDelete: SetNull)
-  
-  // Sheet Music Association (for Digital Folders)
-  sheetMusicId     Int?
-  sheetMusic       SheetMusic? @relation(fields: [sheetMusicId], references: [id], onDelete: SetNull)
-
-  // Timestamps
-  createdAt DateTime @default(now())
-
-  @@index([visibility])
-  @@index([targetRegisterId])
-  @@index([eventId])
-  @@index([folder])
-}
-
-model FileAccess {
-  id        Int              @id @default(autoincrement())
-  fileId    Int
-  file      File             @relation(fields: [fileId], references: [id], onDelete: Cascade)
-  
-  accessType AccessType      @default(ALLOW)
-  targetType AccessTargetType
-  
-  // Targets
-  userId    Int?
-  user      User?            @relation(fields: [userId], references: [id], onDelete: Cascade)
-  registerId Int?
-  register  Register?        @relation(fields: [registerId], references: [id], onDelete: Cascade)
-
-  createdAt DateTime @default(now())
-
-  @@index([fileId])
-  @@index([userId])
-  @@index([registerId])
-}
-
-model News {
-  id      Int    @id @default(autoincrement())
-  title   String
-  content String @db.Text
-
-  // Relations
-  authorId Int
-  author   User @relation(fields: [authorId], references: [id], onDelete: Cascade)
-
-  // Timestamps
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@index([authorId])
-  @@index([createdAt])
-}
-
-model Setting {
-  id    Int    @id @default(autoincrement())
-  key   String @unique
-  value String
-
-  @@index([key])
-}
-
-// ============================================
-// SHEET MUSIC MODELS
-// ============================================
-
 enum Difficulty {
   easy
   medium
   hard
-}
-
-model SheetMusic {
-  id        Int         @id @default(autoincrement())
-  title     String
-  composer  String?
-  arranger  String?
-  genre     String?
-  difficulty Difficulty?
-  publisher String?     // Verlag/Quelle
-  notes     String?     @db.Text // Bemerkungen/Notizen
-
-  // Relations
-  bookmarks   SheetMusicBookmark[]
-  events      EventSheetMusic[]
-  files       File[]               // PDF parts associated with this sheet music
-  folderItems MusicFolderItem[]    // In which folders is this piece?
-
-  // Timestamps
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@index([title])
-  @@index([genre])
-  @@index([difficulty])
-}
-
-model SheetMusicBookmark {
-  id           Int        @id @default(autoincrement())
-  userId       Int
-  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
-  sheetMusicId Int
-  sheetMusic   SheetMusic @relation(fields: [sheetMusicId], references: [id], onDelete: Cascade)
-
-  createdAt DateTime @default(now())
-
-  @@unique([userId, sheetMusicId])
-  @@index([userId])
-  @@index([sheetMusicId])
-}
-
-model EventSheetMusic {
-  id           Int             @id @default(autoincrement())
-  eventId      Int
-  event        Event           @relation(fields: [eventId], references: [id], onDelete: Cascade)
-  
-  // Type-specific fields
-  type         SetlistItemType @default(sheetMusic)
-  sheetMusicId Int?
-  sheetMusic   SheetMusic?     @relation(fields: [sheetMusicId], references: [id], onDelete: Cascade)
-  
-  // Custom item fields
-  customTitle       String? // For type=custom or pause
-  customDescription String? @db.Text // For type=custom
-  duration          Int? // Duration in minutes (for pauses)
-  
-  position     Int             @default(0) // Order in the setlist
-
-  createdAt DateTime @default(now())
-
-  @@unique([eventId, position])
-  @@index([eventId])
-  @@index([sheetMusicId])
 }
 
 enum SetlistItemType {
@@ -380,267 +534,14 @@ enum SetlistItemType {
   custom
 }
 
-// ============================================
-// WEB PUSH NOTIFICATIONS
-// ============================================
-
-model PushSubscription {
-  id        Int      @id @default(autoincrement())
-  userId    Int
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
-  // PushSubscription Object Fields
-  endpoint  String   @unique @db.VarChar(500)  // Changed from Text to VarChar for unique constraint
-  p256dh    String   @db.Text  // Public key for encryption
-  auth      String   @db.Text  // Auth secret for encryption
-  
-  // Device/Browser Info (optional, for management)
-  userAgent String?  @db.Text
-  
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  
-  @@index([userId])
-}
-
-// ============================================
-// FOLDER MANAGEMENT
-// ============================================
-
-model Folder {
-  id        Int      @id @default(autoincrement())
-  name      String
-  
-  // Hierarchy
-  parentId  Int?
-  parent    Folder?  @relation("FolderToFolder", fields: [parentId], references: [id], onDelete: Cascade)
-  children  Folder[] @relation("FolderToFolder")
-
-  // Content
-  files     File[]
-  
-  // Access Control
-  accessRules FolderAccess[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@unique([name, parentId]) // Prevent duplicate folder names in same parent
-  @@index([parentId])
-}
-
-
-model FolderAccess {
-  id        Int              @id @default(autoincrement())
-  folderId  Int
-  folder    Folder           @relation(fields: [folderId], references: [id], onDelete: Cascade)
-  
-  accessType AccessType      @default(ALLOW)
-  targetType AccessTargetType
-  
-  // Targets
-  userId    Int?
-  user      User?            @relation(fields: [userId], references: [id], onDelete: Cascade)
-  registerId Int?
-  register  Register?        @relation(fields: [registerId], references: [id], onDelete: Cascade)
-
-  createdAt DateTime @default(now())
-
-  @@index([folderId])
-  @@index([userId])
-  @@index([registerId])
-}
-
-// ============================================
-// VERIFIED ATTENDANCE
-// ============================================
-
 enum VerificationStatus {
   PRESENT
   EXCUSED
   UNEXCUSED
 }
 
-model VerifiedAttendance {
-  id        Int                @id @default(autoincrement())
-  eventId   Int
-  userId    Int
-  status    VerificationStatus
-  comment   String?            // Notiz vom Admin (z.B. "Zuspätgekommen")
-  updatedAt DateTime           @updatedAt
-  adminId   Int                // Wer hat die Kontrolle durchgeführt?
-
-  event     Event              @relation(fields: [eventId], references: [id], onDelete: Cascade)
-  user      User               @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([eventId, userId]) // Pro User/Event nur ein Eintrag
-  @@index([eventId])
-  @@index([userId])
-}
-
-// ============================================
-// MUSIC FOLDER SYSTEM (Digital Mappen)
-// ============================================
-
-model MusicFolder {
-  id          Int                 @id @default(autoincrement())
-  name        String              // z.B. "Frühlingskonzert 2026"
-  description String?
-  createdAt   DateTime            @default(now())
-  updatedAt   DateTime            @updatedAt
-  
-  items       MusicFolderItem[]
-}
-
-model MusicFolderItem {
-  id           Int        @id @default(autoincrement())
-  folderId     Int
-  sheetMusicId Int
-  position     Int        @default(0) // Für die Sortierung innerhalb der Mappe
-  
-  folder       MusicFolder @relation(fields: [folderId], references: [id], onDelete: Cascade)
-  sheetMusic   SheetMusic  @relation(fields: [sheetMusicId], references: [id], onDelete: Cascade)
-
-  @@unique([folderId, sheetMusicId])
-  @@index([folderId])
-  @@index([sheetMusicId])
-}
-
-// ============================================
-// ADMIN WORKSPACE (Tasks & Notes)
-// ============================================
-
 enum TaskPriority {
   low
   medium
   high
-}
-
-// Task Category (z.B. "Konzert-Vorbereitung", "Vereinsarbeit")
-model TaskCategory {
-  id        Int      @id @default(autoincrement())
-  name      String
-  color     String?  // Optional: Custom Farbe
-  position  Int      @default(0)
-  
-  tasks     Task[]
-  
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@index([position])
-}
-
-// Task mit Priorität, Subtasks, History
-model Task {
-  id           Int            @id @default(autoincrement())
-  title        String
-  description  String?        @db.Text
-  priority     TaskPriority   @default(medium)
-  dueDate      DateTime?
-  completed    Boolean        @default(false)
-  completedAt  DateTime?
-  archived     Boolean        @default(false)
-  position     Int            @default(0)
-  
-  // Relations
-  categoryId   Int
-  category     TaskCategory   @relation(fields: [categoryId], references: [id], onDelete: Cascade)
-  
-  // Subtasks (self-referencing)
-  parentId     Int?
-  parent       Task?          @relation("TaskSubtasks", fields: [parentId], references: [id], onDelete: Cascade)
-  subtasks     Task[]         @relation("TaskSubtasks")
-  
-  // Event-Verlinkung (optional)
-  eventId      Int?
-  event        Event?         @relation(fields: [eventId], references: [id], onDelete: SetNull)
-  
-  // Tracking
-  createdById   Int
-  createdBy     User           @relation("TaskCreator", fields: [createdById], references: [id])
-  completedById Int?
-  completedBy   User?          @relation("TaskCompleter", fields: [completedById], references: [id])
-  
-  history       TaskHistory[]
-  
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
-
-  @@index([categoryId])
-  @@index([parentId])
-  @@index([eventId])
-  @@index([completed])
-  @@index([archived])
-  @@index([position])
-}
-
-// Task History Log for tracking changes
-model TaskHistory {
-  id        Int      @id @default(autoincrement())
-  taskId    Int
-  task      Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
-  userId    Int
-  user      User     @relation(fields: [userId], references: [id])
-  action    String   // 'created', 'completed', 'uncompleted', 'edited', 'archived', 'deleted'
-  details   Json?    // Additional details (e.g., old/new values)
-  
-  createdAt DateTime @default(now())
-
-  @@index([taskId])
-  @@index([userId])
-  @@index([createdAt])
-}
-
-// Admin Notes (Tab-System)
-model AdminNote {
-  id           Int           @id @default(autoincrement())
-  title        String
-  content      String        @db.LongText
-  
-  // Owner (determines primary color)
-  ownerId      Int
-  owner        User          @relation("NoteOwner", fields: [ownerId], references: [id])
-  
-  pinned       Boolean       @default(false)
-  position     Int           @default(0)
-  
-  // Collaboration Stats
-  contributions NoteContribution[]
-  
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
-
-  @@index([ownerId])
-  @@index([pinned])
-  @@index([position])
-}
-
-// Contribution Tracking (for determining primary contributor color)
-model NoteContribution {
-  id          Int       @id @default(autoincrement())
-  noteId      Int
-  note        AdminNote @relation(fields: [noteId], references: [id], onDelete: Cascade)
-  userId      Int
-  user        User      @relation(fields: [userId], references: [id])
-  charCount   Int       @default(0)  // Number of characters contributed
-  
-  updatedAt   DateTime  @updatedAt
-  
-  @@unique([noteId, userId])
-  @@index([noteId])
-  @@index([userId])
-}
-
-
-model FileShareToken {
-  id        Int      @id @default(autoincrement())
-  token     String   @unique
-  fileId    Int
-  file      File     @relation(fields: [fileId], references: [id], onDelete: Cascade)
-  createdAt DateTime @default(now())
-  expiresAt DateTime
-  usageCount Int     @default(0)
-
-  @@index([token])
 }

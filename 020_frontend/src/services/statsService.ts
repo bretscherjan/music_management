@@ -1,4 +1,5 @@
 import api from '@/lib/api';
+import { pdfOptsToParams, DEFAULT_PDF_OPTIONS, type PdfOptions } from '@/utils/pdfTheme';
 
 export interface RepertoireStatItem {
     id: number;
@@ -23,9 +24,9 @@ export const statsService = {
         return response.data;
     },
 
-    exportRepertoirePdf: async (params?: RepertoireStatsParams) => {
+    exportRepertoirePdf: async (params?: RepertoireStatsParams, pdfOpts: PdfOptions = DEFAULT_PDF_OPTIONS) => {
         const response = await api.get('/stats/repertoire/export', {
-            params,
+            params: { ...params, ...pdfOptsToParams(pdfOpts) },
             responseType: 'blob'
         });
         return response.data;
@@ -36,9 +37,9 @@ export const statsService = {
         return response.data;
     },
 
-    exportAttendancePdf: async (params?: RepertoireStatsParams) => {
+    exportAttendancePdf: async (params?: RepertoireStatsParams, pdfOpts: PdfOptions = DEFAULT_PDF_OPTIONS) => {
         const response = await api.get('/stats/attendance/export', {
-            params,
+            params: { ...params, ...pdfOptsToParams(pdfOpts) },
             responseType: 'blob'
         });
         return response.data;

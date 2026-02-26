@@ -10,18 +10,50 @@ export function ContactPage() {
         subject: '',
         message: ''
     });
+    const [errors, setErrors] = useState<Record<string, string>>({});
+    const [rateLimitMessage, setRateLimitMessage] = useState<string | null>(null);
+
+    const safeTextRegex = /^[a-zA-Z0-9\säöüÄÖÜéàèÉÀÈ(),.!?;:\-_]*$/;
+
+    const validateField = (name: string, value: string) => {
+        if (name === 'email') return ''; // Email has its own validation in browser/backend
+        if (!safeTextRegex.test(value)) {
+            return 'Nur Buchstaben, Zahlen und (),.!?;:-_ erlaubt';
+        }
+        return '';
+    };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+
+        // Final validation before submit
+        const newErrors: Record<string, string> = {
+            name: validateField('name', formData.name),
+            subject: validateField('subject', formData.subject),
+            message: validateField('message', formData.message),
+        };
+
+        if (Object.values(newErrors).some(err => err !== '')) {
+            setErrors(newErrors);
+            return;
+        }
+
         setStatus('loading');
+        setRateLimitMessage(null);
 
         try {
             await api.post('/contact', formData);
             setStatus('success');
             setFormData({ name: '', email: '', subject: '', message: '' });
-        } catch (error) {
+            setErrors({});
+        } catch (error: any) {
             console.error('Error sending message:', error);
-            setStatus('error');
+            if (error.response?.status === 429) {
+                setRateLimitMessage(error.response.data.message || 'Zu viele Anfragen. Bitte versuche es später erneut.');
+                setStatus('idle');
+            } else {
+                setStatus('error');
+            }
         }
     };
     return (
@@ -126,10 +158,15 @@ export function ContactPage() {
                                             id="name"
                                             required
                                             value={formData.name}
-                                            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                                            className="w-full px-4 py-3 rounded-lg border border-[hsl(var(--border))] focus:ring-2 focus:ring-[hsl(var(--musig-primary))] focus:border-transparent outline-none transition-all"
+                                            onChange={(e) => {
+                                                const val = e.target.value;
+                                                setFormData({ ...formData, name: val });
+                                                setErrors({ ...errors, name: validateField('name', val) });
+                                            }}
+                                            className={`w-full px-4 py-3 rounded-lg border focus:ring-2 focus:ring-[hsl(var(--musig-primary))] focus:border-transparent outline-none transition-all ${errors.name ? 'border-red-500' : 'border-[hsl(var(--border))]'}`}
                                             placeholder="Ihr Name"
                                         />
+                                        {errors.name && <p className="text-red-500 text-xs mt-1">{errors.name}</p>}
                                     </div>
 
                                     <div>
@@ -163,8 +200,12 @@ export function ContactPage() {
                                                 id="subject"
                                                 required
                                                 value={formData.subject}
-                                                onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
-                                                className="w-full px-4 py-3 rounded-lg border border-[hsl(var(--border))] focus:ring-2 focus:ring-[hsl(var(--musig-primary))] focus:border-transparent outline-none transition-all"
+                                                onChange={(e) => {
+                                                    const val = e.target.value;
+                                                    setFormData({ ...formData, subject: val });
+                                                    setErrors({ ...errors, subject: validateField('subject', val) });
+                                                }}
+                                                className={`w-full px-4 py-3 rounded-lg border focus:ring-2 focus:ring-[hsl(var(--musig-primary))] focus:border-transparent outline-none transition-all ${errors.subject ? 'border-red-500' : 'border-[hsl(var(--border))]'}`}
                                                 placeholder="Worum geht es?"
                                                 list="subject-suggestions"
                                             />
@@ -174,8 +215,8 @@ export function ContactPage() {
                                                 <option value="Passivmitgliedschaft" />
                                                 <option value="Sonstiges" />
                                             </datalist>
-                                            {/* Fallback/Custom UI for browsers that don't style datalist well, or just rely on native datalist for simplicity and robustness first, as requested "options are ideas" */}
                                         </div>
+                                        {errors.subject && <p className="text-red-500 text-xs mt-1">{errors.subject}</p>}
                                         <p className="text-xs text-[hsl(var(--muted-foreground))] mt-1">
                                             Wählen Sie einen Vorschlag oder geben Sie einen eigenen Betreff ein.
                                         </p>
@@ -194,11 +235,22 @@ export function ContactPage() {
                                             required
                                             minLength={10}
                                             value={formData.message}
-                                            onChange={(e) => setFormData({ ...formData, message: e.target.value })}
-                                            className="w-full px-4 py-3 rounded-lg border border-[hsl(var(--border))] focus:ring-2 focus:ring-[hsl(var(--musig-primary))] focus:border-transparent outline-none transition-all resize-none"
+                                            onChange={(e) => {
+                                                const val = e.target.value;
+                                                setFormData({ ...formData, message: val });
+                                                setErrors({ ...errors, message: validateField('message', val) });
+                                            }}
+                                            className={`w-full px-4 py-3 rounded-lg border focus:ring-2 focus:ring-[hsl(var(--musig-primary))] focus:border-transparent outline-none transition-all resize-none ${errors.message ? 'border-red-500' : 'border-[hsl(var(--border))]'}`}
                                             placeholder="Ihre Nachricht an uns..."
                                         />
+                                        {errors.message && <p className="text-red-500 text-xs mt-1">{errors.message}</p>}
                                     </div>
+
+                                    {rateLimitMessage && (
+                                        <div className="p-4 bg-orange-500/10 border border-orange-500/20 rounded-lg text-orange-600 text-sm">
+                                            {rateLimitMessage}
+                                        </div>
+                                    )}
 
                                     {status === 'error' && (
                                         <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-lg text-red-500 text-sm">

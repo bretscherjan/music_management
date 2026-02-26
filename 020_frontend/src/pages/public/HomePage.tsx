@@ -5,16 +5,15 @@ import { formatTime } from '@/lib/utils';
 import { eventService } from '@/services/eventService';
 import type { Event } from '@/types';
 import { SponsorSlider } from '@/components/public/SponsorSlider';
+import { WerbungGrid } from '@/components/public/WerbungGrid';
 
 export function HomePage() {
-    // Fetch upcoming public events only (no auth token)
+    // Fetch upcoming public events
     const { data: events = [] } = useQuery({
         queryKey: ['publicEvents'],
         queryFn: () => eventService.getPublicEvents(),
     });
 
-    // Filter to only show future events, sorted by date
-    // Create 'today' at midnight to include events happening today
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
@@ -100,8 +99,10 @@ export function HomePage() {
                 </div>
             </section>
 
-            {/* Sponsor Slider */}
             <SponsorSlider />
+
+            {/* Werbung / Promotions Section */}
+            <WerbungGrid />
 
             {/* Call to Action */}
             <section className="py-16 md:py-24 bg-gradient-to-r from-[hsl(var(--musig-primary))]/5 to-[hsl(var(--musig-contrast))]/5">
@@ -114,33 +115,6 @@ export function HomePage() {
                             Wir sind immer auf der Suche nach neuen Musikerinnen und Musikern.
                             Egal ob alt oder jung, routiniert oder schon lange nicht mehr gespielt.
                         </p>
-                        <p className="text-lg md:text-xl text-[hsl(var(--muted-foreground))] mb-12 max-w-2xl mx-auto">
-                            Alle Modelle sind herzlich willkommen, egal wieviel Zeit du investieren möchtest.
-                        </p>
-
-                        {/* Mitmach-Optionen als Grid */}
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12 text-left">
-                            {[
-                                {
-                                    title: "Projekt",
-                                    desc: "Einzelne Auftritte, Flexibilität für Kurzentschlossene.",
-                                },
-                                {
-                                    title: "Regelmässig",
-                                    desc: "Mehrere Auftritte und regelmässige Proben als fester Bestandteil.",
-                                },
-                                {
-                                    title: "Vereinsmitglied",
-                                    desc: "Vollwertiges Mitglied im Verein mit allen Rechten und Pflichten.",
-                                }
-                            ].map((item, index) => (
-                                <div key={index} className="bg-white/50 backdrop-blur-sm p-6 rounded-xl border border-[hsl(var(--musig-primary))]/10 shadow-sm">
-                                    <h3 className="text-xl font-bold text-[hsl(var(--musig-primary))] mb-2">{item.title}</h3>
-                                    <p className="text-[hsl(var(--muted-foreground))] leading-snug">{item.desc}</p>
-                                </div>
-                            ))}
-                        </div>
-
                         <Link
                             to="/contact"
                             className="inline-flex items-center gap-2 px-10 py-4 bg-[hsl(var(--musig-primary))] text-white rounded-full hover:bg-[hsl(var(--musig-primary))]/90 transition-all font-semibold text-lg shadow-lg hover:shadow-xl hover:-translate-y-1"
@@ -155,11 +129,7 @@ export function HomePage() {
     );
 }
 
-interface EventCardProps {
-    event: Event;
-}
-
-function EventCard({ event }: EventCardProps) {
+function EventCard({ event }: { event: Event }) {
     const eventDate = new Date(event.date);
     const formattedDate = eventDate.toLocaleDateString('de-CH', {
         weekday: 'long',

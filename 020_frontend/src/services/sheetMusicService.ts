@@ -1,4 +1,5 @@
 import api from '@/lib/api';
+import { pdfOptsToParams, DEFAULT_PDF_OPTIONS, type PdfOptions } from '@/utils/pdfTheme';
 import type {
     SheetMusic,
     CreateSheetMusicDto,
@@ -47,9 +48,9 @@ export const sheetMusicService = {
         return response.data;
     },
 
-    async exportPdf(params?: SheetMusicQueryParams): Promise<Blob> {
+    async exportPdf(params?: SheetMusicQueryParams, pdfOpts: PdfOptions = DEFAULT_PDF_OPTIONS): Promise<Blob> {
         const response = await api.get('/sheet-music/export-pdf', {
-            params,
+            params: { ...params, ...pdfOptsToParams(pdfOpts) },
             responseType: 'blob',
         });
         return response.data;

@@ -9,6 +9,8 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip,
 import { Download, Calendar, Filter } from 'lucide-react';
 import { toast } from 'sonner';
 import { ZoomableTableWrapper } from '@/components/common/ZoomableTableWrapper';
+import { PdfExportDialog } from '@/components/ui/PdfExportDialog';
+import type { PdfOptions } from '@/utils/pdfTheme';
 
 export function StatisticsPage() {
     const [activeTab, setActiveTab] = useState<'repertoire' | 'attendance'>('repertoire');
@@ -50,11 +52,11 @@ export function StatisticsPage() {
         enabled: activeTab === 'attendance'
     });
 
-    const handleDownloadPdf = async () => {
+    const handleDownloadPdf = async (opts: PdfOptions) => {
         try {
             const blob = activeTab === 'repertoire'
-                ? await statsService.exportRepertoirePdf(getDateParams())
-                : await statsService.exportAttendancePdf(getDateParams());
+                ? await statsService.exportRepertoirePdf(getDateParams(), opts)
+                : await statsService.exportAttendancePdf(getDateParams(), opts);
 
             const url = window.URL.createObjectURL(blob);
             const link = document.createElement('a');
@@ -133,10 +135,16 @@ export function StatisticsPage() {
                         </Select>
                     )}
 
-                    <Button onClick={handleDownloadPdf} className="whitespace-nowrap">
-                        <Download className="mr-2 h-4 w-4" />
-                        Export PDF
-                    </Button>
+                    <PdfExportDialog
+                        trigger={
+                            <Button className="whitespace-nowrap">
+                                <Download className="mr-2 h-4 w-4" />
+                                Export PDF
+                            </Button>
+                        }
+                        title={activeTab === 'repertoire' ? 'Repertoire exportieren' : 'Anwesenheit exportieren'}
+                        onExport={handleDownloadPdf}
+                    />
                 </div>
             </div>
 

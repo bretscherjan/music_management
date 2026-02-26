@@ -2,6 +2,7 @@ const { PrismaClient } = require('@prisma/client');
 const { asyncHandler, AppError } = require('../middlewares/errorHandler.middleware');
 const PdfPrinter = require('pdfmake/js/Printer').default;
 const path = require('path');
+const { FONTS, STYLES, DEFAULT_STYLE, parseOpts, buildTitleBlock, buildHeaderFooter } = require('../utils/pdfStyles');
 
 const prisma = new PrismaClient();
 
@@ -752,6 +753,7 @@ const searchWorkspace = asyncHandler(async (req, res) => {
  */
 const exportPdf = asyncHandler(async (req, res) => {
     const { type = 'all', categoryId, includeArchived } = req.query;
+    const opts = parseOpts(req.query);
 
     // Fetch data based on type
     let tasks = [];
@@ -809,48 +811,14 @@ const exportPdf = asyncHandler(async (req, res) => {
     }
 
     // Build PDF
-    const fontPath = path.join(process.cwd(), 'src/fonts');
-    console.log('PDF Export: checking fonts in', fontPath);
-
-    // Validate fonts exist
-    const requiredFonts = ['Roboto-Regular.ttf', 'Roboto-Medium.ttf', 'Roboto-Italic.ttf', 'Roboto-MediumItalic.ttf'];
-    // Need to import 'fs' module for fs.existsSync
-    const fs = require('fs');
-    const missingFonts = requiredFonts.filter(f => !fs.existsSync(path.join(fontPath, f)));
-
-    if (missingFonts.length > 0) {
-        console.error('PDF Export Error: Missing fonts:', missingFonts);
-        // Fallback to standard fonts or throw clear error
-        // For now, let's try to proceed but log heavily, maybe fail gracefully
-        return res.status(500).json({ message: 'Server configuration error: Fonts missing', details: missingFonts });
-    }
-
-    const fonts = {
-        Roboto: {
-            normal: path.join(fontPath, 'Roboto-Regular.ttf'),
-            bold: path.join(fontPath, 'Roboto-Medium.ttf'),
-            italics: path.join(fontPath, 'Roboto-Italic.ttf'),
-            bolditalics: path.join(fontPath, 'Roboto-MediumItalic.ttf')
-        }
-    };
+    const fonts = FONTS;
 
     const printer = new PdfPrinter(fonts);
 
     const content = [];
 
     // Header
-    content.push({
-        text: 'Admin Workspace Export',
-        style: 'header',
-        alignment: 'center',
-        margin: [0, 0, 0, 10]
-    });
-
-    content.push({
-        text: new Date().toLocaleDateString('de-CH') + ' ' + new Date().toLocaleTimeString('de-CH'),
-        alignment: 'right',
-        margin: [0, 0, 0, 20]
-    });
+    content.push(...buildTitleBlock('Admin Workspace Export', null, opts));
 
     // Tasks Section
     if (tasks.length > 0) {
@@ -938,13 +906,9 @@ const exportPdf = asyncHandler(async (req, res) => {
     const docDefinition = {
         pageOrientation: 'portrait',
         content,
-        styles: {
-            header: { fontSize: 18, bold: true },
-            subheader: { fontSize: 14, bold: true },
-            noteTitle: { fontSize: 12, bold: true },
-            tableHeader: { bold: true, fontSize: 10, fillColor: '#eeeeee' }
-        },
-        defaultStyle: { fontSize: 10 }
+        ...buildHeaderFooter('Workspace Export', opts),
+        styles: STYLES,
+        defaultStyle: DEFAULT_STYLE
     };
 
     const pdfDoc = printer.createPdfKitDocument(docDefinition);

@@ -13,6 +13,8 @@ const sheetMusicRoutes = require('./sheetMusic.routes');
 const contactRoutes = require('./contact.routes');
 const pushRoutes = require('./push.routes');
 const adminRoutes = require('./admin.routes');
+const cmsRoutes = require('./cms.routes');
+const dbRoutes = require('./db.routes');
 
 // Mount routes
 router.use('/auth', authRoutes);
@@ -32,6 +34,8 @@ router.use('/stats', require('./stats.routes'));
 router.use('/music-folders', require('./musicFolder.routes'));
 router.use('/workspace', require('./workspace.routes'));
 router.use('/public', require('./public.routes'));
+router.use('/cms', cmsRoutes);
+router.use('/db', dbRoutes);
 // router.use('/onlyoffice', require('./onlyoffice.routes'));
 
 module.exports = router;

@@ -3,6 +3,7 @@ const { asyncHandler, AppError } = require('../middlewares/errorHandler.middlewa
 const PdfPrinter = require('pdfmake/js/Printer').default;
 const path = require('path');
 const fs = require('fs');
+const { FONTS, STYLES, DEFAULT_STYLE, TABLE_LAYOUT, parseOpts, buildTitleBlock, buildHeaderFooter } = require('../utils/pdfStyles');
 
 const prisma = new PrismaClient();
 
@@ -515,6 +516,7 @@ const exportCsv = asyncHandler(async (req, res) => {
  */
 const exportPdf = asyncHandler(async (req, res) => {
     const { search, genre, difficulty, bookmarkedBy } = req.query;
+    const opts = parseOpts(req.query);
 
     const whereClause = {};
 
@@ -548,38 +550,15 @@ const exportPdf = asyncHandler(async (req, res) => {
     });
 
     // Define fonts - we'll use the ones from pdfmake package
-    const fonts = {
-        Roboto: {
-            normal: path.join(__dirname, '../../node_modules/pdfmake/fonts/Roboto/Roboto-Regular.ttf'),
-            bold: path.join(__dirname, '../../node_modules/pdfmake/fonts/Roboto/Roboto-Medium.ttf'),
-            italics: path.join(__dirname, '../../node_modules/pdfmake/fonts/Roboto/Roboto-Italic.ttf'),
-            bolditalics: path.join(__dirname, '../../node_modules/pdfmake/fonts/Roboto/Roboto-MediumItalic.ttf')
-        }
-    };
+    const fonts = FONTS;
 
     const printer = new PdfPrinter(fonts);
 
     const docDefinition = {
         pageOrientation: 'landscape',
-        footer: function (currentPage, pageCount) {
-            return {
-                text: currentPage.toString() + ' / ' + pageCount,
-                alignment: 'center',
-                margin: [0, 10, 0, 0]
-            };
-        },
+        ...buildHeaderFooter('Noteninventar', opts),
         content: [
-            {
-                text: 'Noteninventar der Musig Elgg',
-                style: 'header',
-                alignment: 'center',
-                margin: [0, 0, 0, 10]
-            },
-            {
-                text: new Date().toLocaleDateString('de-CH'),
-                alignment: 'right',
-                margin: [0, 0, 0, 20]
-            },
+            ...buildTitleBlock('Noteninventar der Musig Elgg', null, opts),
             {
                 table: {
                     headerRows: 1,
@@ -607,21 +586,8 @@ const exportPdf = asyncHandler(async (req, res) => {
                 }
             }
         ],
-        styles: {
-            header: {
-                fontSize: 18,
-                bold: true
-            },
-            tableHeader: {
-                bold: true,
-                fontSize: 12,
-                color: 'black',
-                fillColor: '#eeeeee'
-            }
-        },
-        defaultStyle: {
-            fontSize: 10
-        }
+        styles: STYLES,
+        defaultStyle: DEFAULT_STYLE
     };
 
     const pdfDoc = await printer.createPdfKitDocument(docDefinition);

@@ -4,16 +4,15 @@ import { cmsService } from '@/services/cmsService';
 import type { GalleryImage } from '@/services/cmsService';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Plus, Trash2, Calendar } from 'lucide-react';
+import { Plus, Trash2, Pencil } from 'lucide-react';
 import { ConfirmDialog } from '@/components/common/ConfirmDialog';
 import { toast } from 'sonner';
 import { GalleryDialog } from '@/components/admin/cms/GalleryDialog';
-import { format } from 'date-fns';
 
 export function GalleryManager() {
     const queryClient = useQueryClient();
     const [isDialogOpen, setIsDialogOpen] = useState(false);
-    const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+    const [isDeleteDialogOpen, setIsDeleteDialogOpenCurrent] = useState(false);
     const [selectedImage, setSelectedImage] = useState<GalleryImage | null>(null);
 
     const { data: images = [], isLoading } = useQuery({
@@ -26,13 +25,18 @@ export function GalleryManager() {
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['gallery'] });
             toast.success('Bild erfolgreich gelöscht');
-            setIsDeleteDialogOpen(false);
+            setIsDeleteDialogOpenCurrent(false);
         }
     });
 
+    const handleEdit = (image: GalleryImage) => {
+        setSelectedImage(image);
+        setIsDialogOpen(true);
+    };
+
     const handleDelete = (image: GalleryImage) => {
         setSelectedImage(image);
-        setIsDeleteDialogOpen(true);
+        setIsDeleteDialogOpenCurrent(true);
     };
 
     return (
@@ -48,20 +52,32 @@ export function GalleryManager() {
             </CardHeader>
             <CardContent>
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                    {images.map((image) => (
+                    {[...images].sort((a, b) => a.position - b.position).map((image) => (
                         <div key={image.id} className="group relative border rounded-lg overflow-hidden bg-muted">
                             <img
                                 src={`/uploads/cms/gallery/${image.filename}`}
                                 alt={image.title || ''}
                                 className="w-full aspect-square object-cover transition-transform group-hover:scale-105"
                             />
+                            <div className="absolute top-2 left-2 flex gap-1">
+                                <span className="bg-black/50 backdrop-blur-md text-white text-[10px] px-1.5 py-0.5 rounded font-mono">
+                                    Pos: {image.position}
+                                </span>
+                                <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium backdrop-blur-md ${image.active ? 'bg-green-500/80 text-white' : 'bg-red-500/80 text-white'}`}>
+                                    {image.active ? 'Aktiv' : 'Inaktiv'}
+                                </span>
+                            </div>
                             <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-end p-3">
                                 <p className="text-white text-sm font-medium truncate">{image.title || 'Unbenannt'}</p>
-                                <div className="flex items-center justify-between mt-2">
-                                    <span className="text-white/70 text-xs flex items-center">
-                                        <Calendar className="h-3 w-3 mr-1" />
-                                        {format(new Date(image.createdAt), 'dd.MM.yyyy')}
-                                    </span>
+                                <div className="flex items-center justify-end gap-2 mt-2">
+                                    <Button
+                                        variant="secondary"
+                                        size="icon"
+                                        className="h-8 w-8"
+                                        onClick={() => handleEdit(image)}
+                                    >
+                                        <Pencil className="h-4 w-4" />
+                                    </Button>
                                     <Button
                                         variant="destructive"
                                         size="icon"
@@ -85,11 +101,12 @@ export function GalleryManager() {
             <GalleryDialog
                 open={isDialogOpen}
                 onOpenChange={setIsDialogOpen}
+                image={selectedImage}
             />
 
             <ConfirmDialog
                 open={isDeleteDialogOpen}
-                onOpenChange={setIsDeleteDialogOpen}
+                onOpenChange={setIsDeleteDialogOpenCurrent}
                 title="Bild löschen"
                 description={`Möchten Sie dieses Bild wirklich aus der Galerie löschen?`}
                 onConfirm={() => selectedImage && deleteMutation.mutate(selectedImage.id)}

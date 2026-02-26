@@ -39,7 +39,7 @@ export function SponsorSlider() {
                     {duplicatedSponsors.map((sponsor, idx) => (
                         <a
                             key={`${sponsor.id}-${idx}`}
-                            href={sponsor.websiteUrl}
+                            href={sponsor.websiteUrl || '#'}
                             target="_blank"
                             rel="noreferrer"
                             className="flex-shrink-0"

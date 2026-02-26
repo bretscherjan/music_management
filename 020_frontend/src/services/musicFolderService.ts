@@ -1,5 +1,6 @@
 
 import api from '@/lib/api';
+import { pdfOptsToParams, DEFAULT_PDF_OPTIONS, type PdfOptions } from '@/utils/pdfTheme';
 import type { SheetMusic } from '@/types/sheetMusic';
 
 export interface MusicFolder {
@@ -54,8 +55,9 @@ export const musicFolderService = {
     getPdfExportUrl: (id: number) => {
         return `${api.defaults.baseURL}/music-folders/${id}/export-pdf`;
     },
-    exportPdf: async (id: number) => {
+    exportPdf: async (id: number, pdfOpts: PdfOptions = DEFAULT_PDF_OPTIONS) => {
         const response = await api.get(`/music-folders/${id}/export-pdf`, {
+            params: pdfOptsToParams(pdfOpts),
             responseType: 'blob'
         });
         return response.data;

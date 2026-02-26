@@ -282,8 +282,6 @@ function NotificationSettingsCard() {
             // Log details if subscribed
             if (hasSubscription) {
                 try {
-                    const reg = await navigator.serviceWorker.getRegistration();
-                    const sub = await reg?.pushManager?.getSubscription();
 
                     // Sync with backend to ensure it exists there too
                     await pushNotificationService.syncSubscription();

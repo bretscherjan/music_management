@@ -1,0 +1,23 @@
+version: '3.8'
+
+services:
+  db:
+    image: mysql:8.0
+    container_name: musig_elgg_db
+    restart: unless-stopped
+    env_file: .env
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ../../musig-elgg_development.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - musig_elgg_network
+
+volumes:
+  mysql_data:
+    driver: local
+
+networks:
+  musig_elgg_network:
+    driver: bridge

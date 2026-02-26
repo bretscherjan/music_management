@@ -19,7 +19,7 @@ const getSponsors = asyncHandler(async (req, res) => {
 });
 
 const createSponsor = asyncHandler(async (req, res) => {
-    const { name, websiteUrl, active, position } = req.body;
+    const { name, description, websiteUrl, active, position } = req.body;
 
     if (!req.file) {
         throw new AppError('Logo ist erforderlich', 400);
@@ -28,6 +28,7 @@ const createSponsor = asyncHandler(async (req, res) => {
     const sponsor = await prisma.sponsor.create({
         data: {
             name,
+            description,
             logoUrl: `/uploads/cms/sponsors/${req.file.filename}`,
             websiteUrl,
             active: active === 'true' || active === true,
@@ -40,13 +41,14 @@ const createSponsor = asyncHandler(async (req, res) => {
 
 const updateSponsor = asyncHandler(async (req, res) => {
     const { id } = req.params;
-    const { name, websiteUrl, active, position } = req.body;
+    const { name, description, websiteUrl, active, position } = req.body;
 
     const existingSponsor = await prisma.sponsor.findUnique({ where: { id: parseInt(id) } });
     if (!existingSponsor) throw new AppError('Sponsor nicht gefunden', 404);
 
     const data = {
         name,
+        description,
         websiteUrl,
         active: active === 'true' || active === true,
         position: parseInt(position) || 0
@@ -83,81 +85,6 @@ const deleteSponsor = asyncHandler(async (req, res) => {
 
 /**
  * ============================================
- * CAROUSEL
- * ============================================
- */
-
-const getCarouselItems = asyncHandler(async (req, res) => {
-    const items = await prisma.carouselItem.findMany({
-        orderBy: { position: 'asc' }
-    });
-    res.json(items);
-});
-
-const createCarouselItem = asyncHandler(async (req, res) => {
-    const { title, description, link, active, position } = req.body;
-
-    if (!req.file) {
-        throw new AppError('Bild ist erforderlich', 400);
-    }
-
-    const item = await prisma.carouselItem.create({
-        data: {
-            imageUrl: `/uploads/cms/carousel/${req.file.filename}`,
-            title,
-            description,
-            link,
-            active: active === 'true' || active === true,
-            position: parseInt(position) || 0
-        }
-    });
-
-    res.status(201).json(item);
-});
-
-const updateCarouselItem = asyncHandler(async (req, res) => {
-    const { id } = req.params;
-    const { title, description, link, active, position } = req.body;
-
-    const existingItem = await prisma.carouselItem.findUnique({ where: { id: parseInt(id) } });
-    if (!existingItem) throw new AppError('Eintrag nicht gefunden', 404);
-
-    const data = {
-        title,
-        description,
-        link,
-        active: active === 'true' || active === true,
-        position: parseInt(position) || 0
-    };
-
-    if (req.file) {
-        const oldPath = path.join(process.cwd(), existingItem.imageUrl);
-        if (fs.existsSync(oldPath)) fs.unlinkSync(oldPath);
-        data.imageUrl = `/uploads/cms/carousel/${req.file.filename}`;
-    }
-
-    const item = await prisma.carouselItem.update({
-        where: { id: parseInt(id) },
-        data
-    });
-
-    res.json(item);
-});
-
-const deleteCarouselItem = asyncHandler(async (req, res) => {
-    const { id } = req.params;
-    const item = await prisma.carouselItem.findUnique({ where: { id: parseInt(id) } });
-    if (!item) throw new AppError('Eintrag nicht gefunden', 404);
-
-    const imagePath = path.join(process.cwd(), item.imageUrl);
-    if (fs.existsSync(imagePath)) fs.unlinkSync(imagePath);
-
-    await prisma.carouselItem.delete({ where: { id: parseInt(id) } });
-    res.json({ message: 'Eintrag gelöscht' });
-});
-
-/**
- * ============================================
  * GALLERY
  * ============================================
  */
@@ -189,6 +116,27 @@ const createGalleryImage = asyncHandler(async (req, res) => {
     res.status(201).json(image);
 });
 
+const updateGalleryImage = asyncHandler(async (req, res) => {
+    const { id } = req.params;
+    const { title, description, category, active, position } = req.body;
+
+    const existing = await prisma.galleryImage.findUnique({ where: { id: parseInt(id) } });
+    if (!existing) throw new AppError('Bild nicht gefunden', 404);
+
+    const image = await prisma.galleryImage.update({
+        where: { id: parseInt(id) },
+        data: {
+            title,
+            description,
+            category,
+            active: active === 'true' || active === true,
+            position: parseInt(position) || 0
+        }
+    });
+
+    res.json(image);
+});
+
 const deleteGalleryImage = asyncHandler(async (req, res) => {
     const { id } = req.params;
     const image = await prisma.galleryImage.findUnique({ where: { id: parseInt(id) } });
@@ -215,7 +163,7 @@ const getFlyers = asyncHandler(async (req, res) => {
 });
 
 const createFlyer = asyncHandler(async (req, res) => {
-    const { title, activeFrom, activeTo, active } = req.body;
+    const { title, description, activeFrom, activeTo, active, showOnHomePage, position } = req.body;
 
     if (!req.file) {
         throw new AppError('Flyer-Bild ist erforderlich', 400);
@@ -225,9 +173,12 @@ const createFlyer = asyncHandler(async (req, res) => {
         data: {
             filename: req.file.filename,
             title,
+            description,
             activeFrom: activeFrom ? new Date(activeFrom) : null,
             activeTo: activeTo ? new Date(activeTo) : null,
-            active: active === 'true' || active === true
+            active: active === 'true' || active === true,
+            showOnHomePage: showOnHomePage === 'true' || showOnHomePage === true,
+            position: parseInt(position) || 0
         }
     });
 
@@ -248,7 +199,6 @@ const deleteFlyer = asyncHandler(async (req, res) => {
 
 module.exports = {
     getSponsors, createSponsor, updateSponsor, deleteSponsor,
-    getCarouselItems, createCarouselItem, updateCarouselItem, deleteCarouselItem,
-    getGalleryImages, createGalleryImage, deleteGalleryImage,
+    getGalleryImages, createGalleryImage, updateGalleryImage, deleteGalleryImage,
     getFlyers, createFlyer, deleteFlyer
 };

@@ -6,6 +6,7 @@ const notificationService = require('../services/notification.service');
 const reminderQueueService = require('../services/reminder.queue.service');
 const PdfPrinter = require('pdfmake/js/Printer').default;
 const path = require('path');
+const { FONTS, STYLES, DEFAULT_STYLE, TABLE_LAYOUT, parseOpts, buildTitleBlock, buildHeaderFooter } = require('../utils/pdfStyles');
 
 
 const prisma = new PrismaClient();
@@ -1200,14 +1201,9 @@ const exportSetlistPdf = asyncHandler(async (req, res) => {
         throw new AppError('Event nicht gefunden', 404);
     }
 
-    const fonts = {
-        Roboto: {
-            normal: path.join(__dirname, '../../node_modules/pdfmake/fonts/Roboto/Roboto-Regular.ttf'),
-            bold: path.join(__dirname, '../../node_modules/pdfmake/fonts/Roboto/Roboto-Medium.ttf'),
-            italics: path.join(__dirname, '../../node_modules/pdfmake/fonts/Roboto/Roboto-Italic.ttf'),
-            bolditalics: path.join(__dirname, '../../node_modules/pdfmake/fonts/Roboto/Roboto-MediumItalic.ttf')
-        }
-    };
+    const opts = parseOpts(req.query);
+
+    const fonts = FONTS;
 
     const printer = new PdfPrinter(fonts);
 
@@ -1271,44 +1267,21 @@ const exportSetlistPdf = asyncHandler(async (req, res) => {
     const timeStr = event.startTime ? `${event.startTime} Uhr` : '';
 
     const docDefinition = {
+        ...buildHeaderFooter(event.title, opts),
         content: [
-            { text: event.title, style: 'header' },
-            { text: `${formattedDate} ${timeStr} | ${event.location || ''}`, style: 'subheader' },
-            { text: 'Ablauf / Programm', style: 'h3' },
+            ...buildTitleBlock(event.title, `${formattedDate} ${timeStr} | ${event.location || ''}`, opts),
+            { text: 'Ablauf / Programm', style: 'sectionHeader' },
             {
                 table: {
                     headerRows: 1,
                     widths: ['auto', '*', '*', 'auto'],
                     body: tableBody
                 },
-                layout: 'lightHorizontalLines'
+                layout: TABLE_LAYOUT
             }
         ],
-        styles: {
-            header: {
-                fontSize: 18,
-                bold: true,
-                margin: [0, 0, 0, 5]
-            },
-            subheader: {
-                fontSize: 12,
-                margin: [0, 0, 0, 20]
-            },
-            h3: {
-                fontSize: 14,
-                bold: true,
-                margin: [0, 0, 0, 10]
-            },
-            tableHeader: {
-                bold: true,
-                fontSize: 11,
-                color: 'black',
-                fillColor: '#f0f0f0'
-            }
-        },
-        defaultStyle: {
-            fontSize: 10
-        }
+        styles: STYLES,
+        defaultStyle: DEFAULT_STYLE
     };
 
     const pdfDoc = await printer.createPdfKitDocument(docDefinition);

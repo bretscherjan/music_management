@@ -11,6 +11,7 @@ import { Toaster } from 'sonner';
 import { HomePage } from '@/pages/public/HomePage';
 import { AboutPage } from '@/pages/public/AboutPage';
 import { ContactPage } from '@/pages/public/ContactPage';
+import { GalleryPage } from '@/pages/public/GalleryPage';
 import { LoginPage } from '@/pages/LoginPage';
 import { ForgotPasswordPage } from '@/pages/ForgotPasswordPage';
 import { ResetPasswordPage } from '@/pages/ResetPasswordPage';
@@ -32,6 +33,7 @@ import { MusicFolderPage } from '@/pages/secured/music-folder/MusicFolderPage';
 import { WorkspacePage } from '@/pages/admin/WorkspacePage';
 import { CmsManagementPage } from '@/pages/admin/CmsManagementPage';
 import { DatabasePreviewerPage } from './pages/admin/DatabasePreviewerPage';
+import { TableDetailPage } from './pages/admin/TableDetailPage';
 
 const queryClient = new QueryClient();
 
@@ -51,6 +53,7 @@ function App() {
               <Route path="/" element={<HomePage />} />
               <Route path="/about" element={<AboutPage />} />
               <Route path="/contact" element={<ContactPage />} />
+              <Route path="/gallery" element={<GalleryPage />} />
             </Route>
 
             <Route path="/login" element={<LoginPage />} />
@@ -77,6 +80,7 @@ function App() {
               <Route path="admin/workspace" element={<ProtectedRoute requireAdmin><WorkspacePage /></ProtectedRoute>} />
               <Route path="admin/cms" element={<ProtectedRoute requireAdmin><CmsManagementPage /></ProtectedRoute>} />
               <Route path="admin/db" element={<ProtectedRoute requireAdmin><DatabasePreviewerPage /></ProtectedRoute>} />
+              <Route path="admin/db/tables/:tableName" element={<ProtectedRoute requireAdmin><TableDetailPage /></ProtectedRoute>} />
             </Route>
 
             <Route path="*" element={<Navigate to="/" replace />} />

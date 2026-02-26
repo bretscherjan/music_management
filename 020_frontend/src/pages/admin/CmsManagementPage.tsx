@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { LayoutDashboard, Users, Image as ImageIcon, FileText } from 'lucide-react';
 import { SponsorManager } from '@/components/admin/cms/SponsorManager';
-import { CarouselManager } from '../../components/admin/cms/CarouselManager';
 import { GalleryManager } from '../../components/admin/cms/GalleryManager';
 import { FlyerManager } from '../../components/admin/cms/FlyerManager';
 
@@ -24,20 +23,13 @@ export function CmsManagementPage() {
             </div>
 
             <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-                <TabsList className="grid w-full grid-cols-2 md:grid-cols-4 gap-2 h-auto bg-transparent p-0">
+                <TabsList className="grid w-full grid-cols-2 md:grid-cols-3 gap-2 h-auto bg-transparent p-0">
                     <TabsTrigger
                         value="sponsors"
                         className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground border border-input h-10"
                     >
                         <Users className="h-4 w-4 mr-2" />
                         Sponsoren
-                    </TabsTrigger>
-                    <TabsTrigger
-                        value="carousel"
-                        className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground border border-input h-10"
-                    >
-                        <ImageIcon className="h-4 w-4 mr-2" />
-                        Karussell
                     </TabsTrigger>
                     <TabsTrigger
                         value="gallery"
@@ -57,9 +49,6 @@ export function CmsManagementPage() {
 
                 <TabsContent value="sponsors" className="border-none p-0 outline-none">
                     <SponsorManager />
-                </TabsContent>
-                <TabsContent value="carousel" className="border-none p-0 outline-none">
-                    <CarouselManager />
                 </TabsContent>
                 <TabsContent value="gallery" className="border-none p-0 outline-none">
                     <GalleryManager />

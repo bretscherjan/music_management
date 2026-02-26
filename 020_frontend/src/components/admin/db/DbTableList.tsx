@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { Link } from 'react-router-dom';
 import { dbService } from '@/services/dbService';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Search, RefreshCw, Eye } from 'lucide-react';
+import { Search, RefreshCw, Eye, ExternalLink } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { TableDataDialog } from '@/components/admin/db/TableDataDialog';
 
@@ -62,9 +63,16 @@ export function DbTableList() {
                                     <TableCell>{table.rowCount.toLocaleString()}</TableCell>
                                     <TableCell>{(table.dataSize / 1024 / 1024).toFixed(2)} MB</TableCell>
                                     <TableCell className="text-right">
-                                        <Button variant="ghost" size="sm" onClick={() => handleViewData(table.name)}>
-                                            <Eye className="h-4 w-4 mr-1" /> Anzeigen
-                                        </Button>
+                                        <div className="flex justify-end gap-2">
+                                            <Button variant="ghost" size="sm" onClick={() => handleViewData(table.name)} title="Schnellansicht">
+                                                <Eye className="h-4 w-4 mr-1" /> Anzeigen
+                                            </Button>
+                                            <Button variant="ghost" size="sm" asChild title="Vollbild öffnen">
+                                                <Link to={`/member/admin/db/tables/${table.name}`}>
+                                                    <ExternalLink className="h-4 w-4 mr-1" /> Vollbild
+                                                </Link>
+                                            </Button>
+                                        </div>
                                     </TableCell>
                                 </TableRow>
                             ))}

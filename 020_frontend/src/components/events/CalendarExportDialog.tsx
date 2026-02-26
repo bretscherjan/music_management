@@ -22,6 +22,8 @@ import { FileText } from 'lucide-react';
 import type { Event } from '@/types';
 import { getCategoryLabel } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
+import { PdfExportDialog } from '@/components/ui/PdfExportDialog';
+import { getAutoTableStyles, addJsPdfTitle, type PdfOptions } from '@/utils/pdfTheme';
 
 export function CalendarExportDialog({ events }: { events: Event[] }) {
     const { user } = useAuth();
@@ -65,7 +67,7 @@ export function CalendarExportDialog({ events }: { events: Event[] }) {
         setTimeout(() => setCopied(false), 2000);
     };
 
-    const handleDownloadPdf = () => {
+    const handleDownloadPdf = (opts: PdfOptions) => {
         const eventsToExport = events.filter(e => selectedIds.has(e.id));
 
         if (!eventsToExport.length) {
@@ -75,21 +77,14 @@ export function CalendarExportDialog({ events }: { events: Event[] }) {
 
         const doc = new jsPDF();
 
-        // Title
-        doc.setFontSize(20);
-        doc.text('Terminübersicht Musig Elgg', 14, 22);
-
-        doc.setFontSize(10);
-        doc.text(`Generiert am: ${new Date().toLocaleDateString('de-CH')}`, 14, 30);
-
-        // Sort by date
         const sortedEvents = [...eventsToExport].sort(
             (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
         );
 
-        // Table
+        const startY = addJsPdfTitle(doc, 'Terminübersicht', null, opts);
+
         autoTable(doc, {
-            startY: 35,
+            startY,
             head: [['Datum', 'Zeit', 'Titel', 'Ort', 'Kategorie']],
             body: sortedEvents.map(e => [
                 new Date(e.date).toLocaleDateString('de-CH', { weekday: 'short', day: '2-digit', month: '2-digit', year: 'numeric' }),
@@ -98,8 +93,19 @@ export function CalendarExportDialog({ events }: { events: Event[] }) {
                 e.location || '-',
                 getCategoryLabel(e.category)
             ]),
-            styles: { fontSize: 10 },
-            headStyles: { fillColor: [66, 66, 66] },
+            ...getAutoTableStyles(),
+            ...(opts.showPageNumbers && {
+                didDrawPage: (data: any) => {
+                    const pageCount = (doc as any).internal.getNumberOfPages();
+                    doc.setFontSize(8);
+                    doc.setTextColor(148, 163, 184);
+                    doc.text(
+                        `Seite ${data.pageNumber} von ${pageCount}`,
+                        doc.internal.pageSize.width / 2, doc.internal.pageSize.height - 8,
+                        { align: 'center' }
+                    );
+                }
+            }),
         });
 
         doc.save('musig_elgg_termine.pdf');
@@ -237,10 +243,17 @@ export function CalendarExportDialog({ events }: { events: Event[] }) {
                         </div>
 
                         <div className="grid grid-cols-2 gap-2 mt-2">
-                            <Button variant="outline" onClick={handleDownloadPdf} disabled={selectedIds.size === 0}>
-                                <FileText className="h-4 w-4 mr-2" />
-                                Als PDF
-                            </Button>
+                            <PdfExportDialog
+                                trigger={
+                                    <Button variant="outline" disabled={selectedIds.size === 0}>
+                                        <FileText className="h-4 w-4 mr-2" />
+                                        Als PDF
+                                    </Button>
+                                }
+                                title="Terminübersicht exportieren"
+                                description="Wähle die Elemente, die im PDF erscheinen sollen."
+                                onExport={handleDownloadPdf}
+                            />
                             <Button variant="outline" onClick={handleDownloadIcs} disabled={selectedIds.size === 0}>
                                 <Download className="h-4 w-4 mr-2" />
                                 Als .ics

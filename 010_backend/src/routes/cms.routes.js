@@ -30,7 +30,6 @@ const upload = multer({ storage });
  * Public Routes
  */
 router.get('/sponsors', cmsController.getSponsors);
-router.get('/carousel', cmsController.getCarouselItems);
 router.get('/gallery', cmsController.getGalleryImages);
 router.get('/flyers', cmsController.getFlyers);
 
@@ -44,13 +43,10 @@ router.post('/sponsors', upload.single('logo'), cmsController.createSponsor);
 router.put('/sponsors/:id', upload.single('logo'), cmsController.updateSponsor);
 router.delete('/sponsors/:id', cmsController.deleteSponsor);
 
-// Carousel
-router.post('/carousel', upload.single('image'), cmsController.createCarouselItem);
-router.put('/carousel/:id', upload.single('image'), cmsController.updateCarouselItem);
-router.delete('/carousel/:id', cmsController.deleteCarouselItem);
 
 // Gallery
 router.post('/gallery', upload.single('image'), cmsController.createGalleryImage);
+router.put('/gallery/:id', cmsController.updateGalleryImage);
 router.delete('/gallery/:id', cmsController.deleteGalleryImage);
 
 // Flyers

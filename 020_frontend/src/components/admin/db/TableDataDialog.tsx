@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { Link } from 'react-router-dom';
 import { dbService } from '@/services/dbService';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Loader2, ChevronRight, ChevronLeft } from 'lucide-react';
+import { Loader2, ChevronRight, ChevronLeft, ExternalLink } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
 
@@ -54,8 +55,13 @@ export function TableDataDialog({ open, onOpenChange, tableName }: TableDataDial
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent className="max-w-7xl h-[90vh] flex flex-col">
-                <DialogHeader>
+                <DialogHeader className="flex flex-row items-center justify-between space-y-0">
                     <DialogTitle>Daten: {tableName}</DialogTitle>
+                    <Button variant="outline" size="sm" asChild className="mr-6">
+                        <Link to={`/member/admin/db/tables/${tableName}`}>
+                            <ExternalLink className="h-4 w-4 mr-2" /> Detailansicht öffnen
+                        </Link>
+                    </Button>
                 </DialogHeader>
 
                 <div className="flex-1 overflow-auto border rounded-md">

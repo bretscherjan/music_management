@@ -3,21 +3,13 @@ import api from '@/lib/api';
 export interface Sponsor {
     id: number;
     name: string;
+    description?: string;
     logoUrl: string;
     websiteUrl?: string;
     active: boolean;
     position: number;
 }
 
-export interface CarouselItem {
-    id: number;
-    imageUrl: string;
-    title?: string;
-    description?: string;
-    link?: string;
-    active: boolean;
-    position: number;
-}
 
 export interface GalleryImage {
     id: number;
@@ -25,6 +17,7 @@ export interface GalleryImage {
     title?: string;
     description?: string;
     category?: string;
+    active: boolean;
     position: number;
     createdAt: string;
 }
@@ -33,9 +26,12 @@ export interface Flyer {
     id: number;
     filename: string;
     title: string;
+    description?: string;
     activeFrom?: string;
     activeTo?: string;
     active: boolean;
+    showOnHomePage: boolean;
+    position: number;
     createdAt: string;
 }
 
@@ -61,26 +57,6 @@ export const cmsService = {
         await api.delete(`/cms/sponsors/${id}`);
     },
 
-    // Carousel
-    getCarouselItems: async () => {
-        const response = await api.get<CarouselItem[]>('/cms/carousel');
-        return response.data;
-    },
-    createCarouselItem: async (formData: FormData) => {
-        const response = await api.post<CarouselItem>('/cms/carousel?type=carousel', formData, {
-            headers: { 'Content-Type': 'multipart/form-data' }
-        });
-        return response.data;
-    },
-    updateCarouselItem: async (id: number, formData: FormData) => {
-        const response = await api.put<CarouselItem>(`/cms/carousel/${id}?type=carousel`, formData, {
-            headers: { 'Content-Type': 'multipart/form-data' }
-        });
-        return response.data;
-    },
-    deleteCarouselItem: async (id: number) => {
-        await api.delete(`/cms/carousel/${id}`);
-    },
 
     // Gallery
     getGalleryImages: async () => {
@@ -91,6 +67,10 @@ export const cmsService = {
         const response = await api.post<GalleryImage>('/cms/gallery?type=gallery', formData, {
             headers: { 'Content-Type': 'multipart/form-data' }
         });
+        return response.data;
+    },
+    updateGalleryImage: async (id: number, data: Partial<Pick<GalleryImage, 'title' | 'description' | 'category' | 'active' | 'position'>>) => {
+        const response = await api.put<GalleryImage>(`/cms/gallery/${id}`, data);
         return response.data;
     },
     deleteGalleryImage: async (id: number) => {

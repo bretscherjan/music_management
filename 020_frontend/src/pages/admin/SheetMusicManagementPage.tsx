@@ -35,6 +35,8 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Folder, Plus, FileUp, FileDown, Search, Star, Edit2, Trash2 } from 'lucide-react';
+import { PdfExportDialog } from '@/components/ui/PdfExportDialog';
+import type { PdfOptions } from '@/utils/pdfTheme';
 import { toast } from 'sonner';
 import { musicFolderService } from '@/services/musicFolderService';
 import { ZoomableTableWrapper } from '@/components/common/ZoomableTableWrapper';
@@ -178,7 +180,7 @@ export function SheetMusicManagementPage() {
     });
 
     const exportPdfMutation = useMutation({
-        mutationFn: () => sheetMusicService.exportPdf(queryParams),
+        mutationFn: (opts: PdfOptions) => sheetMusicService.exportPdf(queryParams, opts),
         onSuccess: (blob) => {
             sheetMusicService.downloadBlob(blob, `noteninventar-${new Date().toISOString().split('T')[0]}.pdf`);
             toast.success('PDF erfolgreich exportiert');
@@ -412,10 +414,17 @@ export function SheetMusicManagementPage() {
                         <FileDown className="h-4 w-4 mr-2" />
                         Export
                     </Button>
-                    <Button variant="outline" onClick={() => exportPdfMutation.mutate()} disabled={exportPdfMutation.isPending}>
-                        <FileDown className="h-4 w-4 mr-2" />
-                        PDF
-                    </Button>
+                    <PdfExportDialog
+                        trigger={
+                            <Button variant="outline" disabled={exportPdfMutation.isPending}>
+                                <FileDown className="h-4 w-4 mr-2" />
+                                PDF
+                            </Button>
+                        }
+                        title="Notenbestand exportieren"
+                        onExport={(opts) => exportPdfMutation.mutate(opts)}
+                        isLoading={exportPdfMutation.isPending}
+                    />
                 </div>
             </div>
 

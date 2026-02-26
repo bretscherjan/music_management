@@ -63,6 +63,8 @@ import { FormattedInput } from '@/components/workspace/FormattedInput';
 import { MarkdownEditor, renderMarkdownPreview } from '@/components/workspace/MarkdownEditor';
 
 import type { Task, AdminNote, TaskPriority } from '@/types/workspace';
+import { PdfExportDialog } from '@/components/ui/PdfExportDialog';
+import type { PdfOptions } from '@/utils/pdfTheme';
 
 type TabType = 'tasks' | 'notes';
 
@@ -335,20 +337,14 @@ export function WorkspacePage() {
         });
     };
 
-    const handleExportPdf = async () => {
+    const handleExportPdf = async (opts: PdfOptions) => {
         try {
             const { generatePdf } = await import('@/utils/pdfGenerator');
-
-            // Collect data
-            // We use the data currently in the query cache or props
-            // Ideally we might want to fetch fresh data, but valid cache is fine
-
             generatePdf({
                 tasks: tasks || [],
                 notes: notes || [],
-                history: [] // History not currently available in frontend state, omitted for now
-            });
-
+                history: []
+            }, opts);
             toast.success('PDF Export gestartet');
         } catch (error) {
             console.error('Export failed:', error);
@@ -395,14 +391,15 @@ export function WorkspacePage() {
                             <Search className="h-4 w-4" />
                         </Button>
 
-                        <Button
-                            variant="outline"
-                            size="icon"
-                            onClick={handleExportPdf}
-                            title="PDF Export"
-                        >
-                            <Download className="h-4 w-4" />
-                        </Button>
+                        <PdfExportDialog
+                            trigger={
+                                <Button variant="outline" size="icon" title="PDF Export">
+                                    <Download className="h-4 w-4" />
+                                </Button>
+                            }
+                            title="Workspace exportieren"
+                            onExport={handleExportPdf}
+                        />
 
                         <Button
                             variant="outline"

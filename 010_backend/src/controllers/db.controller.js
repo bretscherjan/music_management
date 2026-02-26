@@ -3,6 +3,33 @@ const { asyncHandler, AppError } = require('../middlewares/errorHandler.middlewa
 
 const prisma = new PrismaClient();
 
+// Identifier regex: only a-z, A-Z, 0-9, underscore — no SQL metacharacters
+const SAFE_IDENTIFIER = /^[a-zA-Z_][a-zA-Z0-9_]*$/;
+
+/**
+ * Validate that a table/column name is a safe SQL identifier AND that the
+ * table actually exists in the current database (prevents SQL injection via
+ * $queryRawUnsafe where parameterisation is not possible for identifiers).
+ */
+async function assertValidTable(tableName) {
+    if (!SAFE_IDENTIFIER.test(tableName)) {
+        throw new AppError('Invalid table name', 400);
+    }
+    const rows = await prisma.$queryRaw`
+        SELECT COUNT(*) AS cnt FROM information_schema.tables
+        WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ${tableName}
+    `;
+    if (Number(rows[0].cnt) === 0) {
+        throw new AppError('Table not found', 404);
+    }
+}
+
+function assertValidColumn(colName) {
+    if (!SAFE_IDENTIFIER.test(colName)) {
+        throw new AppError(`Invalid column name: ${colName}`, 400);
+    }
+}
+
 /**
  * Get all tables and their metadata
  */
@@ -15,9 +42,30 @@ const getTables = asyncHandler(async (req, res) => {
             DATA_LENGTH as dataSize,
             CREATE_TIME as createdAt
         FROM information_schema.tables 
-        WHERE TABLE_SCHEMA = (SELECT DATABASE())
+        WHERE TABLE_SCHEMA = DATABASE()
     `;
+
     res.json(tables);
+});
+
+/**
+ * Get foreign key relations
+ */
+const getRelations = asyncHandler(async (req, res) => {
+    // MySQL specific query to get foreign key constraints
+    const relations = await prisma.$queryRaw`
+        SELECT 
+            TABLE_NAME as tableName, 
+            COLUMN_NAME as columnName, 
+            CONSTRAINT_NAME as constraintName, 
+            REFERENCED_TABLE_NAME as referencedTableName, 
+            REFERENCED_COLUMN_NAME as referencedColumnName
+        FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE
+        WHERE TABLE_SCHEMA = DATABASE()
+          AND REFERENCED_TABLE_SCHEMA = DATABASE()
+          AND REFERENCED_TABLE_NAME IS NOT NULL
+    `;
+    res.json(relations);
 });
 
 /**
@@ -25,10 +73,9 @@ const getTables = asyncHandler(async (req, res) => {
  */
 const getTableColumns = asyncHandler(async (req, res) => {
     const { tableName } = req.params;
+    await assertValidTable(tableName);
 
-    const columns = await prisma.$queryRawUnsafe(`
-        SHOW COLUMNS FROM ${tableName}
-    `);
+    const columns = await prisma.$queryRawUnsafe(`SHOW COLUMNS FROM \`${tableName}\``);
     res.json(columns);
 });
 
@@ -39,19 +86,21 @@ const getTableData = asyncHandler(async (req, res) => {
     const { tableName } = req.params;
     const { page = 1, limit = 50, sortBy, sortOrder = 'asc' } = req.query;
 
+    await assertValidTable(tableName);
+    if (sortBy) assertValidColumn(sortBy);
+
     const offset = (parseInt(page) - 1) * parseInt(limit);
-    let query = `SELECT * FROM ${tableName}`;
+    let query = `SELECT * FROM \`${tableName}\``;
 
     if (sortBy) {
-        query += ` ORDER BY ${sortBy} ${sortOrder === 'desc' ? 'DESC' : 'ASC'}`;
+        query += ` ORDER BY \`${sortBy}\` ${sortOrder === 'desc' ? 'DESC' : 'ASC'}`;
     }
 
     query += ` LIMIT ${parseInt(limit)} OFFSET ${offset}`;
 
     const data = await prisma.$queryRawUnsafe(query);
 
-    // Get total count
-    const totalCountResult = await prisma.$queryRawUnsafe(`SELECT COUNT(*) as count FROM ${tableName}`);
+    const totalCountResult = await prisma.$queryRawUnsafe(`SELECT COUNT(*) as count FROM \`${tableName}\``);
     const totalCount = Number(totalCountResult[0].count);
 
     res.json({
@@ -99,13 +148,16 @@ const updateRow = asyncHandler(async (req, res) => {
         throw new AppError('Missing update parameters', 400);
     }
 
-    // Dynamic update query
-    const updates = Object.keys(data).map(key => `${key} = ?`).join(', ');
+    await assertValidTable(tableName);
+    assertValidColumn(primaryKey);
+    Object.keys(data).forEach(assertValidColumn);
+
+    const updates = Object.keys(data).map(key => `\`${key}\` = ?`).join(', ');
     const values = [...Object.values(data), primaryKeyValue];
 
     try {
         await prisma.$executeRawUnsafe(
-            `UPDATE ${tableName} SET ${updates} WHERE ${primaryKey} = ?`,
+            `UPDATE \`${tableName}\` SET ${updates} WHERE \`${primaryKey}\` = ?`,
             ...values
         );
         res.json({ success: true, message: 'Row updated' });
@@ -116,6 +168,7 @@ const updateRow = asyncHandler(async (req, res) => {
 
 module.exports = {
     getTables,
+    getRelations,
     getTableColumns,
     getTableData,
     executeSql,

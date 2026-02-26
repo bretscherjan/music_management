@@ -18,6 +18,7 @@ interface SponsorDialogProps {
 export function SponsorDialog({ open, onOpenChange, sponsor }: SponsorDialogProps) {
     const queryClient = useQueryClient();
     const [name, setName] = useState('');
+    const [description, setDescription] = useState('');
     const [websiteUrl, setWebsiteUrl] = useState('');
     const [active, setActive] = useState(true);
     const [position, setPosition] = useState(0);
@@ -27,12 +28,14 @@ export function SponsorDialog({ open, onOpenChange, sponsor }: SponsorDialogProp
     useEffect(() => {
         if (sponsor) {
             setName(sponsor.name);
+            setDescription(sponsor.description || '');
             setWebsiteUrl(sponsor.websiteUrl || '');
             setActive(sponsor.active);
             setPosition(sponsor.position);
             setPreview(sponsor.logoUrl);
         } else {
             setName('');
+            setDescription('');
             setWebsiteUrl('');
             setActive(true);
             setPosition(0);
@@ -71,6 +74,7 @@ export function SponsorDialog({ open, onOpenChange, sponsor }: SponsorDialogProp
         e.preventDefault();
         const formData = new FormData();
         formData.append('name', name);
+        formData.append('description', description);
         formData.append('websiteUrl', websiteUrl);
         formData.append('active', String(active));
         formData.append('position', String(position));
@@ -91,6 +95,10 @@ export function SponsorDialog({ open, onOpenChange, sponsor }: SponsorDialogProp
                     <div className="space-y-2">
                         <Label htmlFor="name">Name</Label>
                         <Input id="name" value={name} onChange={(e) => setName(e.target.value)} required />
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="description">Beschreibung (optional)</Label>
+                        <Input id="description" value={description} onChange={(e) => setDescription(e.target.value)} placeholder="z.B. Hauptsponsor" />
                     </div>
                     <div className="space-y-2">
                         <Label htmlFor="website">Website URL (optional)</Label>

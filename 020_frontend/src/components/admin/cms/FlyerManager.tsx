@@ -5,16 +5,15 @@ import type { Flyer } from '@/services/cmsService';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Plus, Trash2, CheckCircle2, XCircle } from 'lucide-react';
+import { Plus, Trash2, CheckCircle2, XCircle, FileText } from 'lucide-react';
 import { ConfirmDialog } from '@/components/common/ConfirmDialog';
 import { toast } from 'sonner';
 import { FlyerDialog } from './FlyerDialog';
-import { format } from 'date-fns';
 
 export function FlyerManager() {
     const queryClient = useQueryClient();
     const [isDialogOpen, setIsDialogOpen] = useState(false);
-    const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+    const [isDeleteDialogOpen, setIsDeleteDialogOpenCurrent] = useState(false);
     const [selectedFlyer, setSelectedFlyer] = useState<Flyer | null>(null);
 
     const { data: flyers = [], isLoading } = useQuery({
@@ -26,25 +25,25 @@ export function FlyerManager() {
         mutationFn: cmsService.deleteFlyer,
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['flyers'] });
-            toast.success('Flyer erfolgreich gelöscht');
-            setIsDeleteDialogOpen(false);
+            toast.success('Eintrag erfolgreich gelöscht');
+            setIsDeleteDialogOpenCurrent(false);
         }
     });
 
     const handleDelete = (flyer: Flyer) => {
         setSelectedFlyer(flyer);
-        setIsDeleteDialogOpen(true);
+        setIsDeleteDialogOpenCurrent(true);
     };
 
     return (
         <Card>
             <CardHeader className="flex flex-row items-center justify-between">
                 <div>
-                    <CardTitle>Werbe-Flyer</CardTitle>
+                    <CardTitle>Aktuelles & Werbung</CardTitle>
                 </div>
                 <Button onClick={() => { setSelectedFlyer(null); setIsDialogOpen(true); }}>
                     <Plus className="mr-2 h-4 w-4" />
-                    Flyer hinzufügen
+                    Werbung hinzufügen
                 </Button>
             </CardHeader>
             <CardContent>
@@ -53,28 +52,40 @@ export function FlyerManager() {
                         <TableRow>
                             <TableHead>Vorschau</TableHead>
                             <TableHead>Titel</TableHead>
-                            <TableHead>Gültig von</TableHead>
-                            <TableHead>Gültig bis</TableHead>
+                            <TableHead>Typ</TableHead>
+                            <TableHead>Pos.</TableHead>
+                            <TableHead>Home</TableHead>
                             <TableHead>Status</TableHead>
                             <TableHead className="text-right">Aktionen</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {flyers.map((flyer) => (
+                        {[...flyers].sort((a, b) => a.position - b.position).map((flyer) => (
                             <TableRow key={flyer.id}>
                                 <TableCell>
-                                    <img
-                                        src={`/uploads/cms/flyers/${flyer.filename}`}
-                                        alt={flyer.title}
-                                        className="h-12 w-10 object-cover rounded shadow-sm"
-                                    />
+                                    {flyer.filename.toLowerCase().endsWith('.pdf') ? (
+                                        <div className="h-12 w-10 bg-muted rounded flex items-center justify-center border">
+                                            <FileText className="h-6 w-6 text-muted-foreground opacity-50" />
+                                        </div>
+                                    ) : (
+                                        <img
+                                            src={`/uploads/cms/flyers/${flyer.filename}`}
+                                            alt={flyer.title}
+                                            className="h-12 w-10 object-cover rounded shadow-sm"
+                                        />
+                                    )}
                                 </TableCell>
                                 <TableCell className="font-medium">{flyer.title}</TableCell>
-                                <TableCell>
-                                    {flyer.activeFrom ? format(new Date(flyer.activeFrom), 'dd.MM.yyyy') : '-'}
+                                <TableCell className="text-xs text-muted-foreground">
+                                    {flyer.filename.toLowerCase().endsWith('.pdf') ? 'PDF' : 'Bild'}
                                 </TableCell>
+                                <TableCell className="text-xs font-mono">{flyer.position}</TableCell>
                                 <TableCell>
-                                    {flyer.activeTo ? format(new Date(flyer.activeTo), 'dd.MM.yyyy') : '-'}
+                                    {flyer.showOnHomePage ? (
+                                        <CheckCircle2 className="h-4 w-4 text-green-600" />
+                                    ) : (
+                                        <XCircle className="h-4 w-4 text-muted-foreground opacity-30" />
+                                    )}
                                 </TableCell>
                                 <TableCell>
                                     {flyer.active ? (
@@ -96,8 +107,8 @@ export function FlyerManager() {
                         ))}
                         {flyers.length === 0 && !isLoading && (
                             <TableRow>
-                                <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
-                                    Keine Flyer gefunden.
+                                <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                                    Keine Werbung gefunden.
                                 </TableCell>
                             </TableRow>
                         )}
@@ -108,13 +119,14 @@ export function FlyerManager() {
             <FlyerDialog
                 open={isDialogOpen}
                 onOpenChange={setIsDialogOpen}
+                flyer={selectedFlyer}
             />
 
             <ConfirmDialog
                 open={isDeleteDialogOpen}
-                onOpenChange={setIsDeleteDialogOpen}
-                title="Flyer löschen"
-                description={`Möchten Sie den Flyer "${selectedFlyer?.title}" wirklich löschen?`}
+                onOpenChange={setIsDeleteDialogOpenCurrent}
+                title="Eintrag löschen"
+                description={`Möchten Sie die Werbung "${selectedFlyer?.title}" wirklich löschen?`}
                 onConfirm={() => selectedFlyer && deleteMutation.mutate(selectedFlyer.id)}
                 confirmText="Löschen"
                 variant="destructive"

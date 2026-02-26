@@ -26,9 +26,21 @@ export interface TableDataResponse {
     };
 }
 
+export interface DbRelation {
+    tableName: string;
+    columnName: string;
+    constraintName: string;
+    referencedTableName: string;
+    referencedColumnName: string;
+}
+
 export const dbService = {
     getTables: async () => {
         const response = await api.get<DbTable[]>('/db/tables');
+        return response.data;
+    },
+    getRelations: async () => {
+        const response = await api.get<DbRelation[]>('/db/relations');
         return response.data;
     },
     getTableColumns: async (tableName: string) => {

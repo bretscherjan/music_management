@@ -11,23 +11,30 @@ import { toast } from 'sonner';
 interface FlyerDialogProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
+    flyer?: any | null; // Keep it flexible for now
 }
 
 export function FlyerDialog({ open, onOpenChange }: FlyerDialogProps) {
     const queryClient = useQueryClient();
     const [title, setTitle] = useState('');
+    const [description, setDescription] = useState('');
     const [activeFrom, setActiveFrom] = useState('');
     const [activeTo, setActiveTo] = useState('');
     const [active, setActive] = useState(true);
+    const [showOnHomePage, setShowOnHomePage] = useState(false);
+    const [position, setPosition] = useState(0);
     const [file, setFile] = useState<File | null>(null);
     const [preview, setPreview] = useState<string | null>(null);
 
     useEffect(() => {
         if (!open) {
             setTitle('');
+            setDescription('');
             setActiveFrom('');
             setActiveTo('');
             setActive(true);
+            setShowOnHomePage(false);
+            setPosition(0);
             setFile(null);
             setPreview(null);
         }
@@ -37,7 +44,11 @@ export function FlyerDialog({ open, onOpenChange }: FlyerDialogProps) {
         if (e.target.files && e.target.files[0]) {
             const selectedFile = e.target.files[0];
             setFile(selectedFile);
-            setPreview(URL.createObjectURL(selectedFile));
+            if (selectedFile.type.startsWith('image/')) {
+                setPreview(URL.createObjectURL(selectedFile));
+            } else {
+                setPreview(null);
+            }
         }
     };
 
@@ -61,9 +72,12 @@ export function FlyerDialog({ open, onOpenChange }: FlyerDialogProps) {
 
         const formData = new FormData();
         formData.append('title', title);
+        formData.append('description', description);
         formData.append('activeFrom', activeFrom);
         formData.append('activeTo', activeTo);
         formData.append('active', String(active));
+        formData.append('showOnHomePage', String(showOnHomePage));
+        formData.append('position', String(position));
         formData.append('image', file);
 
         mutation.mutate(formData);
@@ -80,6 +94,10 @@ export function FlyerDialog({ open, onOpenChange }: FlyerDialogProps) {
                         <Label htmlFor="title">Titel</Label>
                         <Input id="title" value={title} onChange={(e) => setTitle(e.target.value)} required />
                     </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="description">Beschreibung / Text (optional)</Label>
+                        <Input id="description" value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Info zur Werbung..." />
+                    </div>
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
                             <Label htmlFor="from">Aktiv von (optional)</Label>
@@ -91,17 +109,35 @@ export function FlyerDialog({ open, onOpenChange }: FlyerDialogProps) {
                         </div>
                     </div>
                     <div className="space-y-2">
-                        <Label htmlFor="image">Flyer-Bild</Label>
-                        <Input id="image" type="file" onChange={handleFileChange} accept="image/*" required />
+                        <Label htmlFor="image">Datei (Bild oder PDF)</Label>
+                        <Input id="image" type="file" onChange={handleFileChange} accept="image/*,application/pdf" required />
                         {preview && (
                             <div className="mt-2 border rounded p-1 bg-muted max-h-40 overflow-hidden">
                                 <img src={preview} alt="Preview" className="h-full w-auto mx-auto object-contain" />
                             </div>
                         )}
+                        {file && file.type === 'application/pdf' && (
+                            <div className="mt-2 text-xs text-muted-foreground flex items-center gap-2">
+                                <span className="p-2 bg-muted rounded border w-full text-center">PDF: {file.name}</span>
+                            </div>
+                        )}
                     </div>
-                    <div className="flex items-center justify-between">
-                        <Label htmlFor="active">Aktiv</Label>
-                        <Switch id="active" checked={active} onCheckedChange={setActive} />
+                    <div className="space-y-4 pt-2">
+                        <div className="flex items-center justify-between">
+                            <Label htmlFor="active">Aktiv</Label>
+                            <Switch id="active" checked={active} onCheckedChange={setActive} />
+                        </div>
+                        <div className="flex items-center justify-between">
+                            <div className="space-y-0.5">
+                                <Label htmlFor="home">Auf Startseite anzeigen</Label>
+                                <p className="text-[10px] text-muted-foreground italic">Erscheint im Werbung-Grid auf Home</p>
+                            </div>
+                            <Switch id="home" checked={showOnHomePage} onCheckedChange={setShowOnHomePage} />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="position">Position (Sortierung)</Label>
+                            <Input id="position" type="number" value={position} onChange={(e) => setPosition(parseInt(e.target.value))} />
+                        </div>
                     </div>
                     <DialogFooter>
                         <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Abbrechen</Button>

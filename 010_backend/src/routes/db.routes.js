@@ -10,6 +10,7 @@ const dbController = require('../controllers/db.controller');
 router.use(authMiddleware, adminOnly);
 
 router.get('/tables', dbController.getTables);
+router.get('/relations', dbController.getRelations);
 router.get('/tables/:tableName/columns', dbController.getTableColumns);
 router.get('/tables/:tableName/data', dbController.getTableData);
 router.post('/execute-sql', dbController.executeSql);

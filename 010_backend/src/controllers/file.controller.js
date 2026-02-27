@@ -46,7 +46,7 @@ const upload = multer({
     storage,
     fileFilter,
     limits: {
-        fileSize: parseInt(process.env.MAX_FILE_SIZE) || 10 * 1024 * 1024, // 10MB default
+        fileSize: parseInt(process.env.MAX_FILE_SIZE) || 500 * 1024 * 1024, // 500MB default
     },
 });
 
@@ -797,6 +797,32 @@ async function getAllSubfolderIds(parentIds, tx) {
     return [...new Set(allIds)];
 }
 
+/**
+ * Move a file to a different folder (Admin)
+ * PATCH /files/:id/move
+ */
+const moveFile = asyncHandler(async (req, res) => {
+    const { id } = req.params;
+    const { folderId } = req.body;
+
+    const file = await prisma.file.findUnique({ where: { id: parseInt(id) } });
+    if (!file) throw new AppError('Datei nicht gefunden', 404);
+
+    let resolvedFolderId = null;
+    if (folderId !== null && folderId !== undefined) {
+        resolvedFolderId = parseInt(folderId);
+        const folder = await prisma.folder.findUnique({ where: { id: resolvedFolderId } });
+        if (!folder) throw new AppError('Zielordner nicht gefunden', 404);
+    }
+
+    const updated = await prisma.file.update({
+        where: { id: parseInt(id) },
+        data: { folderId: resolvedFolderId },
+    });
+
+    res.json({ message: 'Datei verschoben', file: updated });
+});
+
 module.exports = {
     upload,
     uploadFile,
@@ -810,4 +836,5 @@ module.exports = {
     deleteFolder,
     generateViewToken,
     bulkUpdateAccess,
+    moveFile,
 };

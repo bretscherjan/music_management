@@ -174,6 +174,7 @@ export function FileUploadDialog({ open, onOpenChange, currentFolderId, currentF
                             id="file"
                             type="file"
                             multiple
+                            accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv,image/*,audio/*,video/mp4,video/webm,video/ogg,video/quicktime,.zip,.rar"
                             onChange={handleFileChange}
                             disabled={isUploading}
                             className="cursor-pointer"

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+﻿import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
     MoreVertical,
@@ -15,7 +15,8 @@ import {
     CornerUpLeft,
     Eye,
     CheckSquare,
-    Square
+    Square,
+    FolderInput,
 } from 'lucide-react';
 import {
     DropdownMenu,
@@ -55,6 +56,8 @@ import { ManageAccessDialog } from '@/components/files/ManageAccessDialog';
 import { ManageFolderAccessDialog } from '@/components/files/ManageFolderAccessDialog';
 import { ManageBulkAccessDialog } from '@/components/files/ManageBulkAccessDialog';
 import { FilePreviewDialog } from '@/components/files/FilePreviewDialog';
+import { MoveItemDialog } from '@/components/files/MoveItemDialog';
+import { WrapInFolderDialog } from '@/components/files/WrapInFolderDialog';
 import { Checkbox } from '@/components/ui/checkbox';
 
 export function FileListPage() {
@@ -72,6 +75,10 @@ export function FileListPage() {
     const [deleteFileId, setDeleteFileId] = useState<number | null>(null);
     const [deleteFolderId, setDeleteFolderId] = useState<number | null>(null);
     const [previewFileId, setPreviewFileId] = useState<number | null>(null);
+
+    // Move state
+    const [moveItem, setMoveItem] = useState<{ id: number; type: 'file' | 'folder'; name: string } | null>(null);
+    const [isWrapInFolderOpen, setIsWrapInFolderOpen] = useState(false);
 
     // Bulk selection state
     const [selectedFileIds, setSelectedFileIds] = useState<number[]>([]);
@@ -339,6 +346,15 @@ export function FileListPage() {
                                                             <DropdownMenuItem
                                                                 onClick={(e) => {
                                                                     e.stopPropagation();
+                                                                    setMoveItem({ id: folder.id, type: 'folder', name: folder.name });
+                                                                }}
+                                                            >
+                                                                <FolderInput className="mr-2 h-4 w-4" />
+                                                                Verschieben
+                                                            </DropdownMenuItem>
+                                                            <DropdownMenuItem
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
                                                                     setManageAccessFolder(folder);
                                                                 }}
                                                             >
@@ -458,6 +474,15 @@ export function FileListPage() {
                                                         {isAdmin && (
                                                             <>
                                                                 <DropdownMenuSeparator />
+                                                                <DropdownMenuItem
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation();
+                                                                        setMoveItem({ id: file.id, type: 'file', name: file.originalName });
+                                                                    }}
+                                                                >
+                                                                    <FolderInput className="mr-2 h-4 w-4" />
+                                                                    Verschieben
+                                                                </DropdownMenuItem>
                                                                 <DropdownMenuItem onClick={(e) => {
                                                                     e.stopPropagation();
                                                                     setManageAccessFile(file);
@@ -519,6 +544,16 @@ export function FileListPage() {
                                 >
                                     <Shield className="h-4 w-4 mr-2" />
                                     Berechtigungen setzen
+                                </Button>
+
+                                <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => setIsWrapInFolderOpen(true)}
+                                    className="h-9"
+                                >
+                                    <FolderPlus className="h-4 w-4 mr-2" />
+                                    In Ordner einpacken
                                 </Button>
 
                                 <Button
@@ -647,6 +682,27 @@ export function FileListPage() {
                 files={files}
                 initialFileId={previewFileId}
             />
+            {/* Move Item Dialog */}
+            <MoveItemDialog
+                open={moveItem !== null}
+                onOpenChange={(open) => !open && setMoveItem(null)}
+                itemId={moveItem?.id ?? null}
+                itemType={moveItem?.type ?? 'file'}
+                itemName={moveItem?.name}
+                currentFolderId={currentFolderId}
+            />
+
+            {/* Wrap In Folder Dialog */}
+            <WrapInFolderDialog
+                open={isWrapInFolderOpen}
+                onOpenChange={setIsWrapInFolderOpen}
+                selectedFileIds={selectedFileIds}
+                selectedFolderIds={selectedFolderIds}
+                currentFolderId={currentFolderId}
+                currentFolderName={currentFolderName}
+                onDone={clearSelection}
+            />
+
         </div>
     );
 }

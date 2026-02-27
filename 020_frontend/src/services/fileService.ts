@@ -97,6 +97,19 @@ export const fileService = {
         await api.put(`/folders/${id}`, { accessRules });
     },
 
+    async moveFile(id: number, folderId: number | null): Promise<void> {
+        await api.patch(`/files/${id}/move`, { folderId });
+    },
+
+    async moveFolder(id: number, parentId: number | null): Promise<void> {
+        await api.put(`/folders/${id}`, { parentId });
+    },
+
+    async getAllFolders(): Promise<{ id: number; name: string; parentId: number | null }[]> {
+        const response = await api.get<{ folders: { id: number; name: string; parentId: number | null }[] }>('/folders');
+        return response.data.folders;
+    },
+
     async bulkUpdateAccess(data: {
         fileIds: number[];
         folderIds: number[];

@@ -9,7 +9,8 @@ import {
     X,
     Loader2,
     FileIcon,
-    AlertCircle
+    AlertCircle,
+    Music,
 } from 'lucide-react';
 import { Worker, Viewer } from '@react-pdf-viewer/core';
 import { defaultLayoutPlugin } from '@react-pdf-viewer/default-layout';
@@ -127,12 +128,17 @@ export function FilePreviewDialog({
         );
     };
 
+    const isAudioFile = (mimetype: string) => mimetype.startsWith('audio/');
+    const isVideoFile = (mimetype: string) => mimetype.startsWith('video/');
+
     const isPreviewable = (mimetype: string) => {
         return (
             mimetype.startsWith('image/') ||
             mimetype === 'application/pdf' ||
             mimetype === 'text/plain' ||
-            isOfficeFile(mimetype)
+            isOfficeFile(mimetype) ||
+            isAudioFile(mimetype) ||
+            isVideoFile(mimetype)
         );
     };
 
@@ -291,6 +297,35 @@ export function FilePreviewDialog({
                                     className="max-w-full max-h-full object-contain rounded-md shadow-2xl"
                                     style={{ filter: "drop-shadow(0 25px 50px -12px rgb(0 0 0 / 0.5))" }}
                                 />
+                            </div>
+                        ) : isAudioFile(currentFile.mimetype) && fileUrl ? (
+                            <div className="flex-1 w-full h-full flex flex-col items-center justify-center gap-6 p-8">
+                                <div className="p-6 rounded-full bg-white/10">
+                                    <Music className="w-16 h-16 text-blue-400" />
+                                </div>
+                                <span className="text-white text-sm font-medium max-w-md text-center truncate">
+                                    {currentFile.originalName}
+                                </span>
+                                <audio
+                                    controls
+                                    src={fileUrl}
+                                    className="w-full max-w-lg"
+                                    autoPlay={false}
+                                >
+                                    Dein Browser unterstützt das Audio-Element nicht.
+                                </audio>
+                            </div>
+                        ) : isVideoFile(currentFile.mimetype) && fileUrl ? (
+                            <div className="flex-1 w-full h-full flex items-center justify-center p-4">
+                                <video
+                                    controls
+                                    src={fileUrl}
+                                    className="max-w-full max-h-full rounded-md shadow-2xl"
+                                    autoPlay={false}
+                                    style={{ maxHeight: 'calc(100vh - 3.5rem)' }}
+                                >
+                                    Dein Browser unterstützt das Video-Element nicht.
+                                </video>
                             </div>
                         ) : currentFile.mimetype === 'application/pdf' && fileUrl ? (
                             <div className="flex-1 w-full h-full bg-zinc-100 overflow-auto">

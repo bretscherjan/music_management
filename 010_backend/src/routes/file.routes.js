@@ -88,4 +88,11 @@ router.post('/bulk-access', authMiddleware, adminOnly, fileController.bulkUpdate
  */
 router.post('/:id/view-token', authMiddleware, validate(getFileByIdSchema), fileController.generateViewToken);
 
+/**
+ * @route   PATCH /api/files/:id/move
+ * @desc    Move file to a different folder
+ * @access  Admin only
+ */
+router.patch('/:id/move', authMiddleware, adminOnly, validate(getFileByIdSchema), fileController.moveFile);
+
 module.exports = router;

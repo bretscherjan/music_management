@@ -416,6 +416,332 @@ Der Vorstand`,
     console.log(`  ✓ ${news.length} news articles created\n`);
 
     // ============================================
+    // 6. GALLERY IMAGES (Galerie)
+    // ============================================
+    console.log('📸 Creating gallery images...');
+    await prisma.galleryImage.deleteMany({});
+    const galleryImages = await Promise.all([
+        prisma.galleryImage.create({
+            data: {
+                filename: '1771967065109-689601002.png',
+                title: 'Konzert in der Kirche',
+                description: 'Ein wunderschöner Auftritt in der Kirche Elgg.',
+                category: 'Konzert',
+                active: true,
+                position: 1
+            }
+        }),
+        prisma.galleryImage.create({
+            data: {
+                filename: '1771969316035-923357339.jpg',
+                title: 'Probe im Freien',
+                description: 'Sommerprobe im Freien.',
+                category: 'Probe',
+                active: true,
+                position: 2
+            }
+        })
+    ]);
+    console.log(`  ✓ ${galleryImages.length} gallery images created\n`);
+
+    // ============================================
+    // 7. SPONSORS (Sponsoren)
+    // ============================================
+    console.log('🤝 Creating sponsors...');
+    await prisma.sponsor.deleteMany({});
+    const sponsors = await Promise.all([
+        prisma.sponsor.create({
+            data: {
+                name: 'Raiffeisenbank Elgg',
+                logoUrl: '1771969441754-252423599.jpg',
+                websiteUrl: 'https://www.raiffeisen.ch',
+                active: true,
+                position: 1,
+                description: 'Hauptsponsor'
+            }
+        }),
+        prisma.sponsor.create({
+            data: {
+                name: 'Metzgerei Meier',
+                logoUrl: '1771970523833-567319145.jpg',
+                websiteUrl: 'https://example.com',
+                active: true,
+                position: 2
+            }
+        }),
+        prisma.sponsor.create({
+            data: {
+                name: 'Bäckerei Hug',
+                logoUrl: '1771970532999-147509513.jpg',
+                websiteUrl: 'https://example.com',
+                active: true,
+                position: 3
+            }
+        })
+    ]);
+    console.log(`  ✓ ${sponsors.length} sponsors created\n`);
+
+    // ============================================
+    // 8. FLYERS (Flyer & Werbung)
+    // ============================================
+    console.log('📄 Creating flyers...');
+    await prisma.flyer.deleteMany({});
+    const flyers = await Promise.all([
+        prisma.flyer.create({
+            data: {
+                filename: '1771967765435-335777576.pdf',
+                title: 'Frühlingskonzert Flyer',
+                active: true,
+                position: 1,
+                showOnHomePage: true
+            }
+        }),
+        prisma.flyer.create({
+            data: {
+                filename: '1771967766712-258804634.pdf',
+                title: 'Weihnachtskonzert Flyer',
+                active: true,
+                position: 2,
+                showOnHomePage: false
+            }
+        }),
+        prisma.flyer.create({
+            data: {
+                filename: '1771967777714-191517848.pdf',
+                title: 'Jubiläum Flyer',
+                active: true,
+                position: 3,
+                showOnHomePage: false
+            }
+        }),
+        prisma.flyer.create({
+            data: {
+                filename: '1771967782473-586388218.pdf',
+                title: 'Mitgliederwerbung',
+                active: true,
+                position: 4,
+                showOnHomePage: false
+            }
+        }),
+        prisma.flyer.create({
+            data: {
+                filename: '1771967790700-422398543.pdf',
+                title: 'Konzertprogramm',
+                active: true,
+                position: 5,
+                showOnHomePage: false
+            }
+        }),
+        prisma.flyer.create({
+            data: {
+                filename: '1771967820207-978050471.pdf',
+                title: 'Sponsorenmappe',
+                active: true,
+                position: 6,
+                showOnHomePage: false
+            }
+        }),
+        prisma.flyer.create({
+            data: {
+                filename: '1771967828418-815901312.pdf',
+                title: 'Vereinsausflug',
+                active: true,
+                position: 7,
+                showOnHomePage: false
+            }
+        })
+    ]);
+    console.log(`  ✓ ${flyers.length} flyers created\n`);
+
+    // ============================================
+    // 9. FILES & FOLDERS (Interner Bereich)
+    // ============================================
+    console.log('📁 Creating folders and files...');
+    await prisma.fileAccess.deleteMany({});
+    await prisma.folderAccess.deleteMany({});
+    await prisma.fileShareToken.deleteMany({});
+    await prisma.file.deleteMany({});
+    await prisma.folder.deleteMany({});
+
+    const rootFolder = await prisma.folder.create({
+        data: {
+            name: 'Allgemeine Dokumente'
+        }
+    });
+
+    const sheetMusicFolder = await prisma.folder.create({
+        data: {
+            name: 'Noten'
+        }
+    });
+
+    const files = await Promise.all([
+        prisma.file.create({
+            data: {
+                filename: '1770313851451-154564275.pdf',
+                originalName: 'Statuten_2024.pdf',
+                path: '1770313851451-154564275.pdf',
+                mimetype: 'application/pdf',
+                size: 8985,
+                visibility: 'all',
+                folder: '/Allgemeine Dokumente',
+                folderId: rootFolder.id
+            }
+        }),
+        prisma.file.create({
+            data: {
+                filename: '1770314058484-693106929.pdf',
+                originalName: 'Jahresprogramm_2025.pdf',
+                path: '1770314058484-693106929.pdf',
+                mimetype: 'application/pdf',
+                size: 48694,
+                visibility: 'all',
+                folder: '/Allgemeine Dokumente',
+                folderId: rootFolder.id
+            }
+        }),
+        prisma.file.create({
+            data: {
+                filename: '1770314066106-238352975.docx',
+                originalName: 'Protokoll_GV_2024.docx',
+                path: '1770314066106-238352975.docx',
+                mimetype: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                size: 17435,
+                visibility: 'all',
+                folder: '/Allgemeine Dokumente',
+                folderId: rootFolder.id
+            }
+        }),
+        prisma.file.create({
+            data: {
+                filename: '1770314081329-105309764.pdf',
+                originalName: 'Ave_Verum_Corpus_Sopran.pdf',
+                path: '1770314081329-105309764.pdf',
+                mimetype: 'application/pdf',
+                size: 300655,
+                visibility: 'register',
+                targetRegisterId: registers.find(r => r.name === 'Sopran')?.id,
+                folder: '/Noten',
+                folderId: sheetMusicFolder.id
+            }
+        }),
+        prisma.file.create({
+            data: {
+                filename: '1770314157451-25151182.pdf',
+                originalName: 'Ave_Verum_Corpus_Alt.pdf',
+                path: '1770314157451-25151182.pdf',
+                mimetype: 'application/pdf',
+                size: 300655,
+                visibility: 'register',
+                targetRegisterId: registers.find(r => r.name === 'Alt')?.id,
+                folder: '/Noten',
+                folderId: sheetMusicFolder.id
+            }
+        }),
+        prisma.file.create({
+            data: {
+                filename: '1770316554216-419034800.docx',
+                originalName: 'Helferliste_Konzert.docx',
+                path: '1770316554216-419034800.docx',
+                mimetype: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                size: 17435,
+                visibility: 'admin',
+                folder: '/Allgemeine Dokumente',
+                folderId: rootFolder.id
+            }
+        }),
+        prisma.file.create({
+            data: {
+                filename: '1770407426553-488092474.xlsx',
+                originalName: 'Kostenabrechnung.xlsx',
+                path: '1770407426553-488092474.xlsx',
+                mimetype: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                size: 6529,
+                visibility: 'admin',
+                folder: '/Allgemeine Dokumente',
+                folderId: rootFolder.id
+            }
+        })
+    ]);
+    console.log(`  ✓ 2 folders and ${files.length} files created\n`);
+
+    // ============================================
+    // 10. SHEET MUSIC & TASKS
+    // ============================================
+    console.log('🎵 Creating sheet music...');
+    await prisma.sheetMusicBookmark.deleteMany({});
+    await prisma.eventSheetMusic.deleteMany({});
+    await prisma.musicFolderItem.deleteMany({});
+    await prisma.musicFolder.deleteMany({});
+    await prisma.sheetMusic.deleteMany({});
+
+    const sheetMusics = await Promise.all([
+        prisma.sheetMusic.create({
+            data: {
+                title: 'Ave Verum Corpus',
+                composer: 'W.A. Mozart',
+                genre: 'Klassik',
+                difficulty: 'medium'
+            }
+        }),
+        prisma.sheetMusic.create({
+            data: {
+                title: 'Hallelujah',
+                composer: 'Leonard Cohen',
+                arranger: 'Roger Emerson',
+                genre: 'Pop',
+                difficulty: 'easy'
+            }
+        })
+    ]);
+
+    // Link file to sheet music
+    await prisma.file.update({
+        where: { id: files[3].id },
+        data: { sheetMusicId: sheetMusics[0].id }
+    });
+    await prisma.file.update({
+        where: { id: files[4].id },
+        data: { sheetMusicId: sheetMusics[0].id }
+    });
+
+    console.log(`  ✓ ${sheetMusics.length} sheet music entries created\n`);
+
+    console.log('✅ Creating tasks...');
+    await prisma.taskHistory.deleteMany({});
+    await prisma.task.deleteMany({});
+    await prisma.taskCategory.deleteMany({});
+
+    const taskCategory = await prisma.taskCategory.create({
+        data: {
+            name: 'Konzertvorbereitung',
+            color: '#ff0000',
+            position: 1
+        }
+    });
+
+    const tasks = await Promise.all([
+        prisma.task.create({
+            data: {
+                title: 'Noten sortieren',
+                description: 'Alle Noten für das Weihnachtskonzert sortieren.',
+                priority: 'high',
+                categoryId: taskCategory.id,
+                createdById: adminUser.id,
+            }
+        }),
+        prisma.task.create({
+            data: {
+                title: 'Stühle aufstellen',
+                priority: 'medium',
+                categoryId: taskCategory.id,
+                createdById: adminUser.id,
+            }
+        })
+    ]);
+    console.log(`  ✓ ${tasks.length} tasks created\n`);
+
+    // ============================================
     // SUMMARY
     // ============================================
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');

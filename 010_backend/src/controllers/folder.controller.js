@@ -91,6 +91,18 @@ const checkFileAccess = (file, user) => {
 };
 
 /**
+ * Get all folders (flat list for folder picker)
+ * GET /folders
+ */
+const getAllFolders = asyncHandler(async (req, res) => {
+    const folders = await prisma.folder.findMany({
+        select: { id: true, name: true, parentId: true },
+        orderBy: [{ parentId: 'asc' }, { name: 'asc' }],
+    });
+    res.json({ folders });
+});
+
+/**
  * Create a new folder
  * POST /folders
  */
@@ -297,5 +309,6 @@ module.exports = {
     createFolder,
     getFolderContents,
     updateFolder,
-    deleteFolder
+    deleteFolder,
+    getAllFolders,
 };

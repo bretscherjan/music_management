@@ -70,17 +70,30 @@ const allowedMimeTypes = [
     'application/vnd.ms-powerpoint',
     'application/vnd.openxmlformats-officedocument.presentationml.presentation',
     'text/plain',
+    'text/csv',
     // Images
     'image/jpeg',
     'image/png',
     'image/gif',
     'image/webp',
     'image/svg+xml',
-    // Audio (for sheet music recordings)
+    'image/bmp',
+    'image/avif',
+    // Audio (preview: native <audio> tag)
     'audio/mpeg',
     'audio/mp3',
     'audio/wav',
     'audio/ogg',
+    'audio/aac',
+    'audio/flac',
+    'audio/mp4',       // M4A
+    'audio/x-m4a',
+    'audio/webm',
+    // Video (preview: native <video> tag)
+    'video/mp4',
+    'video/webm',
+    'video/ogg',
+    'video/quicktime', // MOV
     // Archives
     'application/zip',
     'application/x-rar-compressed',

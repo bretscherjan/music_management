@@ -32,8 +32,9 @@ import { StatisticsPage } from '@/pages/admin/StatisticsPage';
 import { MusicFolderPage } from '@/pages/secured/music-folder/MusicFolderPage';
 import { WorkspacePage } from '@/pages/admin/WorkspacePage';
 import { CmsManagementPage } from '@/pages/admin/CmsManagementPage';
-import { DatabasePreviewerPage } from './pages/admin/DatabasePreviewerPage';
-import { TableDetailPage } from './pages/admin/TableDetailPage';
+import { DatabasePreviewerPage } from '@/pages/admin/DatabasePreviewerPage';
+import { TableDetailPage } from '@/pages/admin/TableDetailPage';
+import { ProtokollPage } from '@/pages/admin/ProtokollPage';
 
 const queryClient = new QueryClient();
 
@@ -81,6 +82,7 @@ function App() {
               <Route path="admin/cms" element={<ProtectedRoute requireAdmin><CmsManagementPage /></ProtectedRoute>} />
               <Route path="admin/db" element={<ProtectedRoute requireAdmin><DatabasePreviewerPage /></ProtectedRoute>} />
               <Route path="admin/db/tables/:tableName" element={<ProtectedRoute requireAdmin><TableDetailPage /></ProtectedRoute>} />
+              <Route path="admin/protokoll" element={<ProtectedRoute requireAdmin><ProtokollPage /></ProtectedRoute>} />
             </Route>
 
             <Route path="*" element={<Navigate to="/" replace />} />

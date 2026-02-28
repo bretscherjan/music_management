@@ -12,6 +12,7 @@ import {
     ListTodo,
     FileText,
     Settings,
+    Mic,
 } from 'lucide-react';
 import {
     DndContext,
@@ -61,6 +62,7 @@ import { NoteCard } from '@/components/workspace/NoteCard';
 import { MentionInput, renderMentionsText } from '@/components/workspace/MentionInput';
 import { FormattedInput } from '@/components/workspace/FormattedInput';
 import { MarkdownEditor, renderMarkdownPreview } from '@/components/workspace/MarkdownEditor';
+import { MeetingRecorderDialog } from '@/components/workspace/MeetingRecorderDialog';
 
 import type { Task, AdminNote, TaskPriority } from '@/types/workspace';
 import { PdfExportDialog } from '@/components/ui/PdfExportDialog';
@@ -76,6 +78,7 @@ export function WorkspacePage() {
     const [isConnected, setIsConnected] = useState(false);
     const [showCategoryManager, setShowCategoryManager] = useState(false);
     const [showSearch, setShowSearch] = useState(false);
+    const [showRecorder, setShowRecorder] = useState(false);
     const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null);
     const [searchQuery, setSearchQuery] = useState('');
     const [debouncedSearch] = useDebounce(searchQuery, 300);
@@ -442,6 +445,19 @@ export function WorkspacePage() {
                             </span>
                         )}
                     </Button>
+
+                    {/* Recording button – visible only when on notes tab */}
+                    {activeTab === 'notes' && (
+                        <Button
+                            variant="outline"
+                            onClick={() => setShowRecorder(true)}
+                            className="gap-2 ml-auto"
+                            title="Sitzung aufnehmen & transkribieren"
+                        >
+                            <Mic className="h-4 w-4 text-red-500" />
+                            Aufnehmen
+                        </Button>
+                    )}
                 </div>
 
                 {/* TASKS TAB */}
@@ -631,6 +647,16 @@ export function WorkspacePage() {
                         />
                     )
                 }
+
+                {/* Meeting Recorder Dialog */}
+                <MeetingRecorderDialog
+                    open={showRecorder}
+                    onClose={() => setShowRecorder(false)}
+                    onSave={(title, content) => {
+                        createNoteMutation.mutate({ title, content });
+                        setActiveTab('notes');
+                    }}
+                />
 
                 {/* Search Dialog */}
                 <Dialog open={showSearch} onOpenChange={setShowSearch}>

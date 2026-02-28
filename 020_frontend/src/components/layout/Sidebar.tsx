@@ -9,7 +9,8 @@ import {
     Newspaper,
     Library,
     BarChart,
-    Folder
+    Folder,
+    ClipboardList
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -35,6 +36,7 @@ const adminNavItems: NavItem[] = [
     { label: 'Register', href: '/member/admin/registers', icon: <Music className="h-5 w-5" />, adminOnly: true },
     { label: 'News', href: '/member/admin/news', icon: <Newspaper className="h-5 w-5" />, adminOnly: true },
     { label: 'Statistiken', href: '/member/admin/statistics', icon: <BarChart className="h-5 w-5" />, adminOnly: true },
+    { label: 'Protokoll', href: '/member/admin/protokoll', icon: <ClipboardList className="h-5 w-5" />, adminOnly: true },
 ];
 
 export function Sidebar() {

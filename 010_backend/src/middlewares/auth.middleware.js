@@ -34,6 +34,7 @@ const authMiddleware = async (req, res, next) => {
                 lastName: true,
                 role: true,
                 status: true,
+                lastSeenAt: true,
                 registerId: true,
                 register: {
                     select: {
@@ -61,6 +62,13 @@ const authMiddleware = async (req, res, next) => {
 
         // Attach user to request
         req.user = user;
+
+        // Throttled lastSeenAt update (fire-and-forget, max once per 5 min)
+        const fiveMinAgo = new Date(Date.now() - 5 * 60 * 1000);
+        if (!user.lastSeenAt || user.lastSeenAt < fiveMinAgo) {
+            prisma.user.update({ where: { id: user.id }, data: { lastSeenAt: new Date() } }).catch(() => {});
+        }
+
         next();
     } catch (error) {
         if (error.name === 'JsonWebTokenError') {
@@ -103,12 +111,18 @@ const optionalAuth = async (req, res, next) => {
                 lastName: true,
                 role: true,
                 status: true,
+                lastSeenAt: true,
                 registerId: true
             }
         });
 
         if (user && user.status !== 'former') {
             req.user = user;
+            // Throttled lastSeenAt update (fire-and-forget)
+            const fiveMinAgo = new Date(Date.now() - 5 * 60 * 1000);
+            if (!user.lastSeenAt || user.lastSeenAt < fiveMinAgo) {
+                prisma.user.update({ where: { id: user.id }, data: { lastSeenAt: new Date() } }).catch(() => {});
+            }
         }
 
         next();

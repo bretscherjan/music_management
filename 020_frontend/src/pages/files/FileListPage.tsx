@@ -17,6 +17,7 @@ import {
     CheckSquare,
     Square,
     FolderInput,
+    Pencil,
 } from 'lucide-react';
 import {
     DropdownMenu,
@@ -58,6 +59,7 @@ import { ManageBulkAccessDialog } from '@/components/files/ManageBulkAccessDialo
 import { FilePreviewDialog } from '@/components/files/FilePreviewDialog';
 import { MoveItemDialog } from '@/components/files/MoveItemDialog';
 import { WrapInFolderDialog } from '@/components/files/WrapInFolderDialog';
+import { RenameFolderDialog } from '@/components/files/RenameFolderDialog';
 import { Checkbox } from '@/components/ui/checkbox';
 
 export function FileListPage() {
@@ -78,6 +80,7 @@ export function FileListPage() {
 
     // Move state
     const [moveItem, setMoveItem] = useState<{ id: number; type: 'file' | 'folder'; name: string } | null>(null);
+    const [renameFolder, setRenameFolder] = useState<{ id: number; name: string } | null>(null);
     const [isWrapInFolderOpen, setIsWrapInFolderOpen] = useState(false);
 
     // Bulk selection state
@@ -343,6 +346,15 @@ export function FileListPage() {
                                                         <DropdownMenuContent align="end">
                                                             <DropdownMenuLabel>Aktionen</DropdownMenuLabel>
                                                             <DropdownMenuSeparator />
+                                                            <DropdownMenuItem
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    setRenameFolder({ id: folder.id, name: folder.name });
+                                                                }}
+                                                            >
+                                                                <Pencil className="mr-2 h-4 w-4" />
+                                                                Umbenennen
+                                                            </DropdownMenuItem>
                                                             <DropdownMenuItem
                                                                 onClick={(e) => {
                                                                     e.stopPropagation();
@@ -702,6 +714,16 @@ export function FileListPage() {
                 currentFolderName={currentFolderName}
                 onDone={clearSelection}
             />
+
+            {/* Rename Folder Dialog */}
+            {renameFolder && (
+                <RenameFolderDialog
+                    open={renameFolder !== null}
+                    onOpenChange={(open) => !open && setRenameFolder(null)}
+                    folderId={renameFolder.id}
+                    currentName={renameFolder.name}
+                />
+            )}
 
         </div>
     );

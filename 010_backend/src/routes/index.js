@@ -38,7 +38,7 @@ router.use('/cms', cmsRoutes);
 router.use('/db', dbRoutes);
 router.use('/transcribe', require('./transcribe.routes'));
 router.use('/protokoll', require('./protokoll.routes'));
-router.use('/protokoll', require('./protokoll.routes'));
+router.use('/audit', require('./audit.routes'));
 // router.use('/onlyoffice', require('./onlyoffice.routes'));
 
 module.exports = router;

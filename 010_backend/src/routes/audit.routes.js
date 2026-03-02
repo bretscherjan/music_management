@@ -4,11 +4,19 @@ const auditController = require('../controllers/audit.controller');
 const { authMiddleware } = require('../middlewares/auth.middleware');
 const { adminOnly } = require('../middlewares/roleCheck.middleware');
 
-// All audit routes are protected and restricted to Admin
 router.use(authMiddleware);
 router.use(adminOnly);
 
-router.get('/', auditController.getAuditLogs);
+router.get('/',       auditController.getAuditLogs);
 router.get('/filters', auditController.getAuditFilters);
+
+// ── Analytics ──────────────────────────────────────────────────────────────
+router.get('/analytics/peak-times',           auditController.getPeakTimes);
+router.get('/analytics/feature-usage',        auditController.getFeatureUsage);
+router.get('/analytics/online-now',           auditController.getOnlineNow);
+router.get('/analytics/activity-by-register', auditController.getActivityByRegister);
+router.get('/analytics/top-users',            auditController.getTopUsers);
+router.get('/analytics/inactive-users',       auditController.getInactiveUsers);
+router.get('/analytics/newly-registered',     auditController.getNewlyRegisteredUsers);
 
 module.exports = router;

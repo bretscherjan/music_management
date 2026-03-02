@@ -3,6 +3,7 @@ const jwt = require('jsonwebtoken');
 const { PrismaClient } = require('@prisma/client');
 const { asyncHandler, AppError } = require('../middlewares/errorHandler.middleware');
 const { sendWelcomeEmail, sendPasswordResetEmail } = require('../services/email.service');
+const { logEvent } = require('../utils/auditLog.service');
 const crypto = require('crypto');
 
 const prisma = new PrismaClient();
@@ -126,6 +127,11 @@ const login = asyncHandler(async (req, res) => {
         process.env.JWT_SECRET,
         { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
     );
+
+    // Update lastLoginAt, lastSeenAt and log audit event (non-blocking)
+    const now = new Date();
+    prisma.user.update({ where: { id: user.id }, data: { lastLoginAt: now, lastSeenAt: now } }).catch(() => {});
+    logEvent({ action: 'LOGIN', entity: 'User', entityId: user.id, userId: user.id, req });
 
     // Remove password from response
     const { password: _, ...userWithoutPassword } = user;

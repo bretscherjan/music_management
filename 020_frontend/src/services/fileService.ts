@@ -105,6 +105,10 @@ export const fileService = {
         await api.put(`/folders/${id}`, { parentId });
     },
 
+    async renameFolder(id: number, name: string): Promise<void> {
+        await api.put(`/folders/${id}`, { name });
+    },
+
     async getAllFolders(): Promise<{ id: number; name: string; parentId: number | null }[]> {
         const response = await api.get<{ folders: { id: number; name: string; parentId: number | null }[] }>('/folders');
         return response.data.folders;

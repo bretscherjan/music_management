@@ -15,6 +15,8 @@ const {
     toggleBookmarkSchema,
 } = require('../validations/sheetMusic.validation');
 
+const { auditMiddleware } = require('../middlewares/auditLog.middleware');
+
 /**
  * @route   GET /api/sheet-music
  * @desc    Get all sheet music with search, filter, sort, pagination
@@ -48,7 +50,7 @@ router.get('/:id', authMiddleware, validate(getSheetMusicByIdSchema), sheetMusic
  * @desc    Stream Sheet Music PDF (Part/Score)
  * @access  Private (authenticated users)
  */
-router.get('/:id/view', authMiddleware, sheetMusicController.viewSheetMusicPdf);
+router.get('/:id/view', authMiddleware, auditMiddleware('SHEET_MUSIC_VIEW', 'SheetMusic', req => req.params.id), sheetMusicController.viewSheetMusicPdf);
 
 /**
  * @route   POST /api/sheet-music

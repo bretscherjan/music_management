@@ -14,10 +14,12 @@ const {
     exportFolderPdf
 } = require('../controllers/musicFolder.controller');
 
+const { auditMiddleware } = require('../middlewares/auditLog.middleware');
+
 // Public/Member Routes (Read-only + Export)
 router.get('/', authMiddleware, getAllMusicFolders);
-router.get('/:id', authMiddleware, getMusicFolderById);
-router.get('/:id/export-zip', authMiddleware, exportFolderZip);
+router.get('/:id', authMiddleware, auditMiddleware('MUSIC_FOLDER_OPEN', 'MusicFolder', req => req.params.id), getMusicFolderById);
+router.get('/:id/export-zip', authMiddleware, auditMiddleware('MUSIC_FOLDER_ZIP_DOWNLOAD', 'MusicFolder', req => req.params.id), exportFolderZip);
 router.get('/:id/export-pdf', authMiddleware, exportFolderPdf);
 
 // Admin Routes (Management)

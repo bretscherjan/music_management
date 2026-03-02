@@ -29,6 +29,7 @@ import { EventManagementPage } from '@/pages/admin/EventManagementPage';
 import { UserSettingsPage } from '@/pages/UserSettingsPage';
 import { SheetMusicManagementPage } from '@/pages/admin/SheetMusicManagementPage';
 import { StatisticsPage } from '@/pages/admin/StatisticsPage';
+import { EngagementPage } from '@/pages/admin/EngagementPage';
 import { MusicFolderPage } from '@/pages/secured/music-folder/MusicFolderPage';
 import { WorkspacePage } from '@/pages/admin/WorkspacePage';
 import { CmsManagementPage } from '@/pages/admin/CmsManagementPage';
@@ -78,6 +79,7 @@ function App() {
               <Route path="admin/events" element={<ProtectedRoute requireAdmin><EventManagementPage /></ProtectedRoute>} />
               <Route path="admin/sheet-music" element={<ProtectedRoute requireAdmin><SheetMusicManagementPage /></ProtectedRoute>} />
               <Route path="admin/statistics" element={<ProtectedRoute requireAdmin><StatisticsPage /></ProtectedRoute>} />
+              <Route path="admin/engagement" element={<ProtectedRoute requireAdmin><EngagementPage /></ProtectedRoute>} />
               <Route path="admin/workspace" element={<ProtectedRoute requireAdmin><WorkspacePage /></ProtectedRoute>} />
               <Route path="admin/cms" element={<ProtectedRoute requireAdmin><CmsManagementPage /></ProtectedRoute>} />
               <Route path="admin/db" element={<ProtectedRoute requireAdmin><DatabasePreviewerPage /></ProtectedRoute>} />

@@ -23,7 +23,7 @@ import fileService from '@/services/fileService';
 
 // PDF Worker - important to match the installed version
 // We use a CDN version to avoid complex build config changes for now
-const PDF_WORKER_URL = 'https://unpkg.com/pdfjs-dist@3.4.120/build/pdf.worker.min.js';
+const PDF_WORKER_URL = 'https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.worker.min.js';
 
 // OnlyOffice document server URL is now provided by the backend config
 

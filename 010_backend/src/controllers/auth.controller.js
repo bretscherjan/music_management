@@ -114,15 +114,40 @@ const login = asyncHandler(async (req, res) => {
 
         // Check if user is not former
         if (user.status === 'former') {
-            logger.warn({ ip: req.ip, action: 'LOGIN_BLOCKED', info: `Deactivated account: ${email}`, email });
+            logger.warn({ ip: req.ip, action: 'LOGIN_BLOCKED', info: `Account deactivated`, email: user.email });
             throw new AppError('Dieses Konto wurde deaktiviert', 403);
         }
 
-        // Verify password
-        const isPasswordValid = await bcrypt.compare(password, user.password);
+        // Verify password – check if hash exists first
+        if (!user.password) {
+            logger.error({
+                userId: user.id,
+                email: user.email,
+                action: 'LOGIN_ERROR',
+                info: 'Password hash missing from database (null)',
+            });
+            throw new AppError('Ungültige E-Mail oder Passwort', 401);
+        }
 
+        // Attempt bcrypt comparison (can throw if hash is corrupted)
+        let isPasswordValid;
+        try {
+            isPasswordValid = await bcrypt.compare(password, user.password);
+        } catch (bcryptErr) {
+            // Hash is malformed or corrupted
+            logger.error({
+                userId: user.id,
+                email: user.email,
+                action: 'BCRYPT_HASH_ERROR',
+                info: 'Password hash validation failed (corrupted/invalid format)',
+                error: bcryptErr
+            });
+            throw new AppError('Authentifizierung fehlgeschlagen. Bitte kontaktiere den Administrator.', 500);
+        }
+
+        // Password doesn't match
         if (!isPasswordValid) {
-            logger.warn({ ip: req.ip, action: 'LOGIN_FAILED', info: `Wrong password for '${email}'`, email });
+            logger.warn({ ip: req.ip, action: 'LOGIN_FAILED', info: 'Invalid credentials', email: user.email });
             throw new AppError('Ungültige E-Mail oder Passwort', 401);
         }
 
@@ -148,8 +173,10 @@ const login = asyncHandler(async (req, res) => {
             token,
         });
     } catch (err) {
-        // any unexpected error during login
-        logger.error({ ip: req.ip, email, action: 'LOGIN_ERROR', info: err.message, error: err });
+        // Only log unexpected errors (not AppError which are already logged above)
+        if (!(err instanceof AppError)) {
+            logger.error({ ip: req.ip, email, action: 'LOGIN_ERROR', info: err.message, error: err });
+        }
         throw err; // let asyncHandler / errorHandler deal with response
     }
 });

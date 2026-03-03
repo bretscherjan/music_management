@@ -90,18 +90,22 @@ const errorHandler = (err, req, res, next) => {
     }
 
     // Always log the error (includes 4xx) so we can inspect failed operations later.
-    // Prefer userId, fall back to ip and also capture an email from the request body if present.
-    {
-        const userId = req.user?.id ?? null;
-        const ip     = req.ip || req.connection?.remoteAddress || null;
-        const email  = req.body?.email || null;
-        logger.error({
-            ...(userId ? { userId } : { ip }),
-            ...(email ? { email } : {}),
-            action: statusCode >= 500 ? 'SERVER_ERROR' : 'REQUEST_ERROR',
-            info: `${req.method} ${req.originalUrl} – ${err.message?.slice(0, 120)}`,
-            error: err, // let logger buildEntry append message/stack
-        });
+    // BUT: Skip logging if this is an operational AppError that was already logged elsewhere
+    // (e.g., intentional 401/403 responses like LOGIN_FAILED, which log at source)
+    if (!err.isOperational || err.alreadyLogged) {
+        // Unexpected error (non-operational) or already-logged error – log it
+        if (!err.alreadyLogged) {
+            const userId = req.user?.id ?? null;
+            const ip     = req.ip || req.connection?.remoteAddress || null;
+            const email  = req.body?.email || null;
+            logger.error({
+                ...(userId ? { userId } : { ip }),
+                ...(email ? { email } : {}),
+                action: statusCode >= 500 ? 'SERVER_ERROR' : 'REQUEST_ERROR',
+                info: `${req.method} ${req.originalUrl} – ${err.message?.slice(0, 120)}`,
+                error: err,
+            });
+        }
     }
 
     // Send response

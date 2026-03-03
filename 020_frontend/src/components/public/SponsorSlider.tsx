@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { cmsService } from '@/services/cmsService';
 import { Loader2 } from 'lucide-react';
 import { getMediaUrl } from '@/lib/api';
+import { useEffect, useRef, useState } from 'react';
 
 export function SponsorSlider() {
     const { data: sponsors = [], isLoading } = useQuery({
@@ -11,6 +12,43 @@ export function SponsorSlider() {
             return all.filter(s => s.active);
         }
     });
+
+    const sliderRef = useRef<HTMLDivElement>(null);
+    const [animationDuration, setAnimationDuration] = useState<number>(40);
+
+    // Berechne die Animationsdauer basierend auf der Viewport-Breite
+    // Die Basis-Geschwindigkeit ist 40 Sekunden für Desktop (1920px)
+    useEffect(() => {
+        const calculateDuration = () => {
+            if (sliderRef.current) {
+
+                
+                
+                // Referenz: Bei 1920px breite (Desktop) soll es 40s sein
+                // Bei anderen Breiten proportional anpassen
+                const baseWidth = 1920;
+                const baseDuration = 40;
+                
+                // Berechne die Dauer proportional zur Breite
+                const windowWidth = window.innerWidth;
+                const ratio = windowWidth / baseWidth;
+                const newDuration = baseDuration / ratio;
+                
+                setAnimationDuration(newDuration);
+            }
+        };
+
+        // Einmalig beim Mount
+        const timer = setTimeout(calculateDuration, 100);
+        
+        // Rekalkuliere bei Fenster-Größenänderung
+        window.addEventListener('resize', calculateDuration);
+        
+        return () => {
+            clearTimeout(timer);
+            window.removeEventListener('resize', calculateDuration);
+        };
+    }, [sponsors.length]);
 
     if (isLoading) {
         return (
@@ -36,7 +74,19 @@ export function SponsorSlider() {
                 <div className="pointer-events-none absolute left-0 top-0 z-10 h-full w-24 bg-gradient-to-r from-[hsl(var(--background))] to-transparent" />
                 <div className="pointer-events-none absolute right-0 top-0 z-10 h-full w-24 bg-gradient-to-l from-[hsl(var(--background))] to-transparent" />
 
-                <div className="py-4 animate-marquee-sponsors whitespace-nowrap flex items-center gap-12 select-none">
+                <div 
+                    ref={sliderRef}
+                    className="py-4 whitespace-nowrap flex items-center gap-12 select-none"
+                    style={{
+                        animation: `marquee-sponsors ${animationDuration}s linear infinite`,
+                    } as React.CSSProperties}
+                    onMouseEnter={(e) => {
+                        (e.currentTarget as HTMLDivElement).style.animationPlayState = 'paused';
+                    }}
+                    onMouseLeave={(e) => {
+                        (e.currentTarget as HTMLDivElement).style.animationPlayState = 'running';
+                    }}
+                >
                     {duplicatedSponsors.map((sponsor, idx) => (
                         <a
                             key={`${sponsor.id}-${idx}`}
@@ -61,12 +111,6 @@ export function SponsorSlider() {
                 @keyframes marquee-sponsors {
                     0% { transform: translateX(0); }
                     100% { transform: translateX(-50%); }
-                }
-                .animate-marquee-sponsors {
-                    animation: marquee-sponsors 40s linear infinite;
-                }
-                .animate-marquee-sponsors:hover {
-                    animation-play-state: paused;
                 }
             `}</style>
         </section>

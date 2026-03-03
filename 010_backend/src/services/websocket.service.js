@@ -11,6 +11,11 @@ const prisma = new PrismaClient();
 
 let io = null;
 
+// In-memory presence tracking: { userId: { id, firstName, lastName, role, register, lastHeartbeat } }
+const onlineUsers = new Map();
+const HEARTBEAT_TIMEOUT = 2 * 60 * 1000; // 2 minutes
+const CLEANUP_INTERVAL = 30 * 1000; // Check every 30 seconds
+
 /**
  * Initialize Socket.io server
  * @param {http.Server} httpServer - The HTTP server instance
@@ -41,7 +46,9 @@ function initializeWebSocket(httpServer) {
                     id: true,
                     firstName: true,
                     lastName: true,
-                    role: true
+                    role: true,
+                    registerId: true,
+                    register: { select: { name: true } },
                 }
             });
 
@@ -49,10 +56,8 @@ function initializeWebSocket(httpServer) {
                 return next(new Error('User not found'));
             }
 
-            if (user.role !== 'admin') {
-                return next(new Error('Admin access required'));
-            }
-
+            // Allow all authenticated users (removed admin-only check)
+            // Users can join 'workspace' for collaborative editing, and heartbeat tracking
             socket.user = user;
             next();
         } catch (error) {
@@ -66,6 +71,44 @@ function initializeWebSocket(httpServer) {
 
         // Join the workspace room
         socket.join('workspace');
+
+        // ── Presence Tracking (for analytics dashboard) ──
+        // Add user to online list
+        onlineUsers.set(socket.user.id, {
+            id: socket.user.id,
+            firstName: socket.user.firstName,
+            lastName: socket.user.lastName,
+            role: socket.user.role,
+            register: socket.user.register?.name ?? null,
+            lastHeartbeat: Date.now(),
+            socketId: socket.id,
+        });
+
+        // Broadcast update to admin dashboard
+        socket.to('workspace').emit('online:joined', {
+            userId: socket.user.id,
+            firstName: socket.user.firstName,
+            lastName: socket.user.lastName,
+            role: socket.user.role,
+            register: socket.user.register?.name ?? null,
+        });
+
+        // Handle heartbeat from regular users (not just admin workspace)
+        socket.on('user:heartbeat', (data) => {
+            if (onlineUsers.has(socket.user.id)) {
+                onlineUsers.get(socket.user.id).lastHeartbeat = Date.now();
+            } else {
+                onlineUsers.set(socket.user.id, {
+                    id: socket.user.id,
+                    firstName: socket.user.firstName,
+                    lastName: socket.user.lastName,
+                    role: socket.user.role,
+                    register: socket.user.register?.name ?? null,
+                    lastHeartbeat: Date.now(),
+                    socketId: socket.id,
+                });
+            }
+        });
 
         // Notify others about new user
         socket.to('workspace').emit('user:joined', {
@@ -111,11 +154,31 @@ function initializeWebSocket(httpServer) {
         // Handle disconnection
         socket.on('disconnect', () => {
             console.log(`🔌 Admin disconnected from workspace: ${socket.user.firstName} ${socket.user.lastName}`);
+            onlineUsers.delete(socket.user.id);
             socket.to('workspace').emit('user:left', {
+                userId: socket.user.id
+            });
+            socket.to('workspace').emit('online:left', {
                 userId: socket.user.id
             });
         });
     });
+
+    // ── Cleanup inactive users every 30 seconds ──
+    const cleanupInterval = setInterval(() => {
+        const now = Date.now();
+        for (const [userId, userInfo] of onlineUsers.entries()) {
+            if (now - userInfo.lastHeartbeat > HEARTBEAT_TIMEOUT) {
+                console.log(`⏰ User ${userId} timed out (inactive for 2+ min)`);
+                onlineUsers.delete(userId);
+                io.to('workspace').emit('online:left', { userId });
+                // Also notify via socket if it's still connected
+                if (io.sockets.sockets.get(userInfo.socketId)) {
+                    io.sockets.sockets.get(userInfo.socketId).leave('workspace');
+                }
+            }
+        }
+    }, CLEANUP_INTERVAL);
 
     console.log('✅ WebSocket server initialized');
 
@@ -131,6 +194,21 @@ function getIO() {
 }
 
 /**
+ * Get list of currently online users
+ * @returns {Array}
+ */
+function getOnlineUsersList() {
+    return Array.from(onlineUsers.values()).map(u => ({
+        id: u.id,
+        firstName: u.firstName,
+        lastName: u.lastName,
+        role: u.role,
+        register: u.register,
+        lastSeen: new Date(u.lastHeartbeat),
+    }));
+}
+
+/**
  * Middleware to attach io to request
  */
 function attachIO(req, res, next) {
@@ -141,5 +219,6 @@ function attachIO(req, res, next) {
 module.exports = {
     initializeWebSocket,
     getIO,
+    getOnlineUsersList,
     attachIO
 };

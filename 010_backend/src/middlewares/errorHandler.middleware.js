@@ -52,7 +52,8 @@ const errorHandler = (err, req, res, next) => {
                 if (err.code.startsWith('P')) {
                     statusCode = 400;
                     message = 'Database operation failed';
-                    error = process.env.NODE_ENV === 'development' ? err.message : undefined;
+                    // always include error message to help troubleshoot production issues
+                    error = err.message;
                 }
         }
     }

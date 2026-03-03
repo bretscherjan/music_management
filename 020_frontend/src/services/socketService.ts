@@ -8,6 +8,7 @@ class SocketService {
     private listeners: Map<string, Set<SocketEventCallback<unknown>>> = new Map();
     private reconnectAttempts = 0;
     private maxReconnectAttempts = 5;
+    private heartbeatInterval: number | null = null;
 
     /**
      * Connect to the WebSocket server
@@ -32,6 +33,7 @@ class SocketService {
 
             this.socket.on('connect', () => {
                 this.reconnectAttempts = 0;
+                this.startHeartbeat();
                 resolve();
             });
 
@@ -44,7 +46,7 @@ class SocketService {
             });
 
             this.socket.on('disconnect', () => {
-                // disconnected
+                this.stopHeartbeat();
             });
 
             // Set up event forwarding
@@ -56,11 +58,34 @@ class SocketService {
      * Disconnect from the WebSocket server
      */
     disconnect(): void {
+        this.stopHeartbeat();
         if (this.socket) {
             this.socket.disconnect();
             this.socket = null;
         }
         this.listeners.clear();
+    }
+
+    /**
+     * Start sending heartbeat every 60 seconds
+     */
+    private startHeartbeat(): void {
+        if (this.heartbeatInterval !== null) return;
+        this.heartbeatInterval = window.setInterval(() => {
+            if (this.socket?.connected) {
+                this.socket.emit('user:heartbeat', { timestamp: Date.now() });
+            }
+        }, 60_000) as unknown as number; // 60 seconds
+    }
+
+    /**
+     * Stop sending heartbeat
+     */
+    private stopHeartbeat(): void {
+        if (this.heartbeatInterval !== null) {
+            window.clearInterval(this.heartbeatInterval);
+            this.heartbeatInterval = null;
+        }
     }
 
     /**
@@ -111,6 +136,10 @@ class SocketService {
         // User events
         this.socket.on('user:joined', (data) => this.emit('user:joined', data));
         this.socket.on('user:left', (data) => this.emit('user:left', data));
+
+        // Online presence events (real-time analytics)
+        this.socket.on('online:joined', (data) => this.emit('online:joined', data));
+        this.socket.on('online:left', (data) => this.emit('online:left', data));
 
         // Cursor events
         this.socket.on('cursor:update', (data) => this.emit('cursor:update', data));
@@ -195,5 +224,7 @@ export type NoteSyncedEvent = { userId: number; noteId: number; content: string 
 
 export type UserJoinedEvent = SocketUser;
 export type UserLeftEvent = { userId: number };
+export type OnlineJoinedEvent = { userId: number; firstName: string; lastName: string; role: string; register: string | null };
+export type OnlineLeftEvent = { userId: number };
 export type CursorUpdateEvent = CursorPosition;
 export type TypingEvent = { userId: number; firstName: string; noteId: number };

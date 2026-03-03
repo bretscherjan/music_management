@@ -1,5 +1,6 @@
 const prisma = require('../utils/prisma');
 const { asyncHandler } = require('../middlewares/errorHandler.middleware');
+const { getOnlineUsersList } = require('../services/websocket.service');
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Helpers
@@ -21,7 +22,7 @@ function roleFilter(role) {
 // Action taxonomy for interaction-type filter
 // ─────────────────────────────────────────────────────────────────────────────
 
-const INTERACTION_ACTIONS = `('FILE_DOWNLOAD','FILE_PREVIEW','ATTENDANCE_UPDATE','MUSIC_FOLDER_OPEN','MUSIC_FOLDER_ZIP_DOWNLOAD','SHEET_MUSIC_VIEW')`;
+const INTERACTION_ACTIONS = `('FILE_DOWNLOAD','FILE_PREVIEW','FILE_ACCESS','ATTENDANCE_UPDATE','MUSIC_FOLDER_OPEN','MUSIC_FOLDER_ZIP_DOWNLOAD','SHEET_MUSIC_VIEW')`;
 const VISIT_ACTIONS       = `('EVENT_VIEW','LOGIN')`;
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -127,7 +128,20 @@ const getOnlineNow = asyncHandler(async (req, res) => {
     const minutes = Math.max(1, Math.min(60, parseInt(req.query.minutes) || 15));
     const since   = new Date(Date.now() - minutes * 60 * 1000);
 
-    // Primary: users with lastSeenAt set (updated by auth middleware on every request)
+    // ── Primary: WebSocket heartbeat (Real-time, most accurate) ──
+    const wsOnlineUsers = getOnlineUsersList();
+    
+    // If WebSocket has connected users, use those (they're actively sending heartbeats)
+    if (wsOnlineUsers.length > 0) {
+        return res.json({
+            minutes,
+            count: wsOnlineUsers.length,
+            users: wsOnlineUsers.sort((a, b) => b.lastSeen.getTime() - a.lastSeen.getTime()),
+            source: 'websocket' // For debugging
+        });
+    }
+
+    // ── Fallback: lastSeenAt from database (for users without WebSocket) ──
     const [usersFromLastSeen, auditRows] = await Promise.all([
         prisma.user.findMany({
             where: { lastSeenAt: { gte: since } },
@@ -163,7 +177,12 @@ const getOnlineNow = asyncHandler(async (req, res) => {
             })),
     ].sort((a, b) => new Date(b.lastSeen).getTime() - new Date(a.lastSeen).getTime());
 
-    res.json({ minutes, count: allUsers.length, users: allUsers });
+    res.json({
+        minutes,
+        count: allUsers.length,
+        users: allUsers,
+        source: 'database' // For debugging
+    });
 });
 
 /** GET /api/audit/analytics/activity-by-register?days=30 */
@@ -215,8 +234,8 @@ const getTopUsers = asyncHandler(async (req, res) => {
         SELECT u.id, u.firstName, u.lastName, u.role,
                r.name AS registerName,
                COUNT(*)                              AS total,
-               SUM(al.action = 'LOGIN')              AS logins,
-               SUM(al.action = 'FILE_DOWNLOAD')        AS fileDownloads,
+               SUM(al.action = 'LOGIN')                                          AS logins,
+               SUM(al.action IN ('FILE_DOWNLOAD', 'FILE_ACCESS'))                 AS fileDownloads,
                SUM(al.action = 'ATTENDANCE_UPDATE')   AS attendanceUpdates
         FROM AuditLog al
         JOIN User u ON al.userId = u.id

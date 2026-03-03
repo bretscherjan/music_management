@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import type { JSX } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import {
@@ -17,6 +17,8 @@ import { Badge } from '@/components/ui/badge';
 import {
     engagementService, type AnalyticsParams, type InactiveUser, type TopUser,
 } from '@/services/engagementService';
+import socketService from '@/services/socketService';
+import type { OnlineJoinedEvent, OnlineLeftEvent } from '@/services/socketService';
 
 // ── Constants ──────────────────────────────────────────────────────────────────
 
@@ -81,16 +83,72 @@ export function EngagementPage() {
     const [newRegDays, setNewRegDays] = useState('30');
     const [topAction,  setTopAction]  = useState('all');
 
+    // ── Real-time online users (via WebSocket) ──────────────────────────────
+    const [onlineUsers, setOnlineUsers] = useState<Array<{
+        id: number; firstName: string; lastName: string
+        role: string; register: string | null; lastSeen: Date
+    }>>([]);
+    const [loadingOnline, setLoadingOnline] = useState(true);
+
     const params: AnalyticsParams = { days: Number(days), role };
 
     // ── Queries ─────────────────────────────────────────────────────────────
     const { data: peakData,     isLoading: loadingPeak }     = useQuery({ queryKey: ['eng-peak',    days, role], queryFn: () => engagementService.getPeakTimes(params) });
     const { data: featureData,  isLoading: loadingFeature }  = useQuery({ queryKey: ['eng-feature', days, role, featureType], queryFn: () => engagementService.getFeatureUsage({ ...params, type: featureType }) });
-    const { data: onlineData,   isLoading: loadingOnline }   = useQuery({ queryKey: ['eng-online'],  queryFn: () => engagementService.getOnlineNow(15), refetchInterval: 30_000 });
     const { data: regData,      isLoading: loadingReg }      = useQuery({ queryKey: ['eng-reg',     days], queryFn: () => engagementService.getActivityByRegister({ days: Number(days) }) });
     const { data: topData,      isLoading: loadingTop }      = useQuery({ queryKey: ['eng-top',     days, role, topAction], queryFn: () => engagementService.getTopUsers({ ...params, action: topAction === 'all' ? undefined : topAction, limit: 15 }) });
     const { data: inactiveData, isLoading: loadingInactive } = useQuery({ queryKey: ['eng-inactive', inactDays, inactRole], queryFn: () => engagementService.getInactiveUsers({ days: Number(inactDays), role: inactRole }) });
     const { data: newRegData,   isLoading: loadingNewReg }   = useQuery({ queryKey: ['eng-newreg',   newRegDays], queryFn: () => engagementService.getNewlyRegisteredUsers({ days: Number(newRegDays) }) });
+
+    // ── Initialize online data from API fallback & set up WebSocket listeners ──
+    useEffect(() => {
+        // Subscribe synchronously so cleanup always runs
+        const unsubJoined = socketService.on<OnlineJoinedEvent>('online:joined', (user) => {
+            setOnlineUsers(prev => {
+                if (prev.some(u => u.id === user.userId)) return prev;
+                return [
+                    ...prev,
+                    {
+                        id: user.userId,
+                        firstName: user.firstName,
+                        lastName: user.lastName,
+                        role: user.role,
+                        register: user.register,
+                        lastSeen: new Date(),
+                    }
+                ];
+            });
+        });
+
+        const unsubLeft = socketService.on<OnlineLeftEvent>('online:left', (data) => {
+            setOnlineUsers(prev => prev.filter(u => u.id !== data.userId));
+        });
+
+        const initializeOnlineTracking = async () => {
+            try {
+                const token = localStorage.getItem('accessToken');
+                if (token && !socketService.isConnected()) {
+                    await socketService.connect(token);
+                }
+                const initialData = await engagementService.getOnlineNow(15);
+                setOnlineUsers(initialData.users.map(u => ({
+                    ...u,
+                    lastSeen: new Date(u.lastSeen),
+                })));
+                setLoadingOnline(false);
+            } catch (error) {
+                console.error('Failed to initialize online tracking:', error);
+                setLoadingOnline(false);
+            }
+        };
+
+        initializeOnlineTracking();
+
+        return () => {
+            unsubJoined();
+            unsubLeft();
+        };
+    }, []);
 
     // ── Derived: feature chart data ─────────────────────────────────────────
     const featureItems = useMemo(() =>
@@ -190,11 +248,11 @@ export function EngagementPage() {
                 <div className="flex items-center gap-2">
                     <Wifi className="h-5 w-5 text-green-500" />
                     <h2 className="text-xl font-semibold">Online jetzt</h2>
-                    <span className="text-xs text-slate-400">(Letzte Aktivität ≤ 15 min, Refresh alle 30 s)</span>
+                    <span className="text-xs text-slate-400">(Live Updates via WebSocket, Auto-Logout nach 2 Min Inaktivität)</span>
                     {!loadingOnline && (
                         <span className="ml-2 inline-flex items-center gap-1 text-sm font-semibold text-green-700 bg-green-100 rounded-full px-2 py-0.5">
                             <span className="h-2 w-2 rounded-full bg-green-500 animate-pulse" />
-                            {onlineData?.count ?? 0} online
+                            {onlineUsers.length} online
                         </span>
                     )}
                 </div>
@@ -203,11 +261,11 @@ export function EngagementPage() {
                     <CardContent className="pt-4">
                         {loadingOnline ? (
                             <div className="text-slate-400 text-sm">Laden…</div>
-                        ) : (onlineData?.users.length ?? 0) === 0 ? (
+                        ) : onlineUsers.length === 0 ? (
                             <div className="text-slate-400 text-sm py-2">Gerade niemand aktiv.</div>
                         ) : (
                             <div className="flex flex-wrap gap-2">
-                                {onlineData?.users.map(u => (
+                                {onlineUsers.map(u => (
                                     <div key={u.id}
                                         className="flex items-center gap-2 px-3 py-2 rounded-lg border border-green-200 bg-green-50 text-sm">
                                         <span className="h-2 w-2 rounded-full bg-green-500 animate-pulse shrink-0" />
@@ -215,7 +273,7 @@ export function EngagementPage() {
                                         {u.register && <span className="text-slate-400 text-xs">· {u.register}</span>}
                                         <RoleBadge role={u.role} />
                                         <span className="text-slate-400 text-xs">
-                                            {formatDistanceToNow(new Date(u.lastSeen), { addSuffix: true, locale: de })}
+                                            {formatDistanceToNow(u.lastSeen, { addSuffix: true, locale: de })}
                                         </span>
                                     </div>
                                 ))}

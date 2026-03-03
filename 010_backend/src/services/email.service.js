@@ -1,4 +1,5 @@
 const nodemailer = require('nodemailer');
+const logger = require('../utils/logger');
 
 /**
  * Email Service
@@ -67,6 +68,7 @@ const sendEmail = async ({ to, subject, text, html }) => {
     return { success: true, messageId: info.messageId };
   } catch (error) {
     console.error('Email error:', error);
+    logger.error({ source: 'Email', action: 'MAIL_SEND_FAILED', info: `To: ${to} – ${error.message}` });
     throw error;
   }
 };

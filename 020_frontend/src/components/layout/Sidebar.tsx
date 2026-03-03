@@ -4,7 +4,6 @@ import {
     Calendar,
     Users,
     FileText,
-    Home,
     Music,
     Newspaper,
     Library,
@@ -12,6 +11,7 @@ import {
     Folder,
     ClipboardList,
     Activity,
+    ScrollText,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -23,7 +23,6 @@ interface NavItem {
 }
 
 const mainNavItems: NavItem[] = [
-    { label: 'Dashboard', href: '/member', icon: <Home className="h-5 w-5" /> },
     { label: 'Termine', href: '/member/events', icon: <Calendar className="h-5 w-5" /> },
     { label: 'Dateien', href: '/member/files', icon: <FileText className="h-5 w-5" /> },
     { label: 'Mappen', href: '/member/music-folders', icon: <Folder className="h-5 w-5" /> },
@@ -39,6 +38,7 @@ const adminNavItems: NavItem[] = [
     { label: 'Statistiken', href: '/member/admin/statistics', icon: <BarChart className="h-5 w-5" />, adminOnly: true },
     { label: 'Engagement', href: '/member/admin/engagement', icon: <Activity className="h-5 w-5" />, adminOnly: true },
     { label: 'Protokoll', href: '/member/admin/protokoll', icon: <ClipboardList className="h-5 w-5" />, adminOnly: true },
+    { label: 'Logs',      href: '/member/admin/logs',      icon: <ScrollText    className="h-5 w-5" />, adminOnly: true },
 ];
 
 export function Sidebar() {

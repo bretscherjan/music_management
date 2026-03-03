@@ -2,6 +2,8 @@
  * Global Error Handler Middleware
  * Catches all errors and returns consistent JSON responses
  */
+const logger = require('../utils/logger');
+
 const errorHandler = (err, req, res, next) => {
     // Log error in development
     if (process.env.NODE_ENV === 'development') {
@@ -54,6 +56,11 @@ const errorHandler = (err, req, res, next) => {
                     message = 'Database operation failed';
                     // always include error message to help troubleshoot production issues
                     error = err.message;
+                    logger.error({
+                        source: 'Database',
+                        action: 'DB_ERROR',
+                        info: `${err.code} – ${err.message?.slice(0, 120)}`,
+                    });
                 }
         }
     }
@@ -80,6 +87,21 @@ const errorHandler = (err, req, res, next) => {
     if (err.name === 'TokenExpiredError') {
         statusCode = 401;
         message = 'Token expired';
+    }
+
+    // Always log the error (includes 4xx) so we can inspect failed operations later.
+    // Prefer userId, fall back to ip and also capture an email from the request body if present.
+    {
+        const userId = req.user?.id ?? null;
+        const ip     = req.ip || req.connection?.remoteAddress || null;
+        const email  = req.body?.email || null;
+        logger.error({
+            ...(userId ? { userId } : { ip }),
+            ...(email ? { email } : {}),
+            action: statusCode >= 500 ? 'SERVER_ERROR' : 'REQUEST_ERROR',
+            info: `${req.method} ${req.originalUrl} – ${err.message?.slice(0, 120)}`,
+            error: err, // let logger buildEntry append message/stack
+        });
     }
 
     // Send response

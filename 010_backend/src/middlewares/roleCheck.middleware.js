@@ -1,3 +1,5 @@
+const logger = require('../utils/logger');
+
 /**
  * Role Check Middleware Factory
  * Creates middleware that checks if user has one of the allowed roles
@@ -24,6 +26,11 @@ const roleCheck = (...allowedRoles) => {
 
         // Check if user's role is in the allowed roles
         if (!allowedRoles.includes(req.user.role)) {
+            logger.warn({
+                userId: req.user.id,
+                action: 'ACCESS_DENIED',
+                info: `${req.method} ${req.originalUrl} – needs [${allowedRoles.join('|')}], has '${req.user.role}'`,
+            });
             return res.status(403).json({
                 message: 'Access denied',
                 error: `Required role: ${allowedRoles.join(' or ')}. Your role: ${req.user.role}`

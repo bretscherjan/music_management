@@ -17,7 +17,6 @@ import { ForgotPasswordPage } from '@/pages/ForgotPasswordPage';
 import { ResetPasswordPage } from '@/pages/ResetPasswordPage';
 
 // Member/Admin Pages
-import { Dashboard } from '@/pages/Dashboard';
 import { EventListPage } from '@/pages/events/EventListPage';
 import { EventDetailPage } from '@/pages/events/EventDetailPage';
 import { UserManagementPage } from '@/pages/admin/UserManagementPage';
@@ -36,6 +35,7 @@ import { CmsManagementPage } from '@/pages/admin/CmsManagementPage';
 import { DatabasePreviewerPage } from '@/pages/admin/DatabasePreviewerPage';
 import { TableDetailPage } from '@/pages/admin/TableDetailPage';
 import { ProtokollPage } from '@/pages/admin/ProtokollPage';
+import { LogsPage } from '@/pages/admin/LogsPage';
 
 const queryClient = new QueryClient();
 
@@ -63,7 +63,6 @@ function App() {
             <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
 
             <Route path="/member" element={<ProtectedRoute><MainLayout /></ProtectedRoute>}>
-              <Route index element={<Dashboard />} />
               <Route path="events" element={<EventListPage />} />
               <Route path="events/:id" element={<EventDetailPage />} />
               <Route path="files" element={<FileListPage />} />
@@ -85,6 +84,7 @@ function App() {
               <Route path="admin/db" element={<ProtectedRoute requireAdmin><DatabasePreviewerPage /></ProtectedRoute>} />
               <Route path="admin/db/tables/:tableName" element={<ProtectedRoute requireAdmin><TableDetailPage /></ProtectedRoute>} />
               <Route path="admin/protokoll" element={<ProtectedRoute requireAdmin><ProtokollPage /></ProtectedRoute>} />
+              <Route path="admin/logs"      element={<ProtectedRoute requireAdmin><LogsPage /></ProtectedRoute>} />
             </Route>
 
             <Route path="*" element={<Navigate to="/" replace />} />

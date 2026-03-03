@@ -4,6 +4,7 @@ const { PrismaClient } = require('@prisma/client');
 const { asyncHandler, AppError } = require('../middlewares/errorHandler.middleware');
 const { sendWelcomeEmail, sendPasswordResetEmail } = require('../services/email.service');
 const { logEvent } = require('../utils/auditLog.service');
+const logger = require('../utils/logger');
 const crypto = require('crypto');
 
 const prisma = new PrismaClient();
@@ -92,55 +93,65 @@ const register = asyncHandler(async (req, res) => {
 const login = asyncHandler(async (req, res) => {
     const { email, password } = req.body;
 
-    // Find user by email
-    const user = await prisma.user.findUnique({
-        where: { email: email.toLowerCase() },
-        include: {
-            register: {
-                select: {
-                    id: true,
-                    name: true,
+    try {
+        // Find user by email
+        const user = await prisma.user.findUnique({
+            where: { email: email.toLowerCase() },
+            include: {
+                register: {
+                    select: {
+                        id: true,
+                        name: true,
+                    },
                 },
             },
-        },
-    });
+        });
 
-    if (!user) {
-        throw new AppError('Ungültige E-Mail oder Passwort', 401);
+        if (!user) {
+            logger.warn({ ip: req.ip, action: 'LOGIN_FAILED', info: `User '${email}' not found`, email });
+            throw new AppError('Ungültige E-Mail oder Passwort', 401);
+        }
+
+        // Check if user is not former
+        if (user.status === 'former') {
+            logger.warn({ ip: req.ip, action: 'LOGIN_BLOCKED', info: `Deactivated account: ${email}`, email });
+            throw new AppError('Dieses Konto wurde deaktiviert', 403);
+        }
+
+        // Verify password
+        const isPasswordValid = await bcrypt.compare(password, user.password);
+
+        if (!isPasswordValid) {
+            logger.warn({ ip: req.ip, action: 'LOGIN_FAILED', info: `Wrong password for '${email}'`, email });
+            throw new AppError('Ungültige E-Mail oder Passwort', 401);
+        }
+
+        // Generate JWT
+        const token = jwt.sign(
+            { userId: user.id },
+            process.env.JWT_SECRET,
+            { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
+        );
+
+        // Update lastLoginAt, lastSeenAt and log audit event (non-blocking)
+        const now = new Date();
+        prisma.user.update({ where: { id: user.id }, data: { lastLoginAt: now, lastSeenAt: now } }).catch(() => {});
+        logEvent({ action: 'LOGIN', entity: 'User', entityId: user.id, userId: user.id, req });
+        logger.info({ userId: user.id, email: user.email, action: 'LOGIN', info: `${user.firstName} ${user.lastName} (${req.get('User-Agent')?.slice(0, 60) ?? '–'})` });
+
+        // Remove password from response
+        const { password: _, ...userWithoutPassword } = user;
+
+        res.json({
+            message: 'Login erfolgreich',
+            user: userWithoutPassword,
+            token,
+        });
+    } catch (err) {
+        // any unexpected error during login
+        logger.error({ ip: req.ip, email, action: 'LOGIN_ERROR', info: err.message, error: err });
+        throw err; // let asyncHandler / errorHandler deal with response
     }
-
-    // Check if user is not former
-    if (user.status === 'former') {
-        throw new AppError('Dieses Konto wurde deaktiviert', 403);
-    }
-
-    // Verify password
-    const isPasswordValid = await bcrypt.compare(password, user.password);
-
-    if (!isPasswordValid) {
-        throw new AppError('Ungültige E-Mail oder Passwort', 401);
-    }
-
-    // Generate JWT
-    const token = jwt.sign(
-        { userId: user.id },
-        process.env.JWT_SECRET,
-        { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
-    );
-
-    // Update lastLoginAt, lastSeenAt and log audit event (non-blocking)
-    const now = new Date();
-    prisma.user.update({ where: { id: user.id }, data: { lastLoginAt: now, lastSeenAt: now } }).catch(() => {});
-    logEvent({ action: 'LOGIN', entity: 'User', entityId: user.id, userId: user.id, req });
-
-    // Remove password from response
-    const { password: _, ...userWithoutPassword } = user;
-
-    res.json({
-        message: 'Login erfolgreich',
-        user: userWithoutPassword,
-        token,
-    });
 });
 
 /**

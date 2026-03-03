@@ -141,6 +141,9 @@ class SocketService {
         this.socket.on('online:joined', (data) => this.emit('online:joined', data));
         this.socket.on('online:left', (data) => this.emit('online:left', data));
 
+        // System log live-feed (admin dashboard)
+        this.socket.on('log:entry', (data) => this.emit('log:entry', data));
+
         // Cursor events
         this.socket.on('cursor:update', (data) => this.emit('cursor:update', data));
 

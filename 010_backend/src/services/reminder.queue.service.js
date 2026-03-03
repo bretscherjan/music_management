@@ -2,6 +2,7 @@ const { Queue, Worker } = require('bullmq');
 const Redis = require('ioredis');
 const notificationService = require('./notification.service');
 const { DateTime } = require('luxon');
+const logger = require('../utils/logger');
 
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
@@ -43,6 +44,7 @@ const initializeReminderQueue = () => {
 
     worker.on('failed', (job, err) => {
         console.error(`Reminder job ${job.id} has failed with ${err.message}`);
+        logger.error({ source: 'BullMQ', action: 'REMINDER_JOB_FAILED', info: `Job ${job.id} – ${err.message}` });
     });
 };
 

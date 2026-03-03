@@ -5,7 +5,6 @@ import {
     Calendar,
     Users,
     FileText,
-    Home,
     LogOut,
     Menu,
     X,
@@ -15,7 +14,9 @@ import {
     Library,
     BarChart,
     Folder,
-    Shield
+    Shield,
+    ClipboardList,
+    Activity,
 } from 'lucide-react';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
@@ -29,7 +30,6 @@ interface NavItem {
 }
 
 const mainNavItems: NavItem[] = [
-    { label: 'Dashboard', href: '/member', icon: <Home className="h-5 w-5" /> },
     { label: 'Termine', href: '/member/events', icon: <Calendar className="h-5 w-5" /> },
     { label: 'Dateien', href: '/member/files', icon: <FileText className="h-5 w-5" /> },
     { label: 'Mappen', href: '/member/music-folders', icon: <Folder className="h-5 w-5" /> },
@@ -43,6 +43,8 @@ const adminNavItems: NavItem[] = [
     { label: 'Register', href: '/member/admin/registers', icon: <Music className="h-5 w-5" />, adminOnly: true },
     { label: 'News', href: '/member/admin/news', icon: <Newspaper className="h-5 w-5" />, adminOnly: true },
     { label: 'Statistiken', href: '/member/admin/statistics', icon: <BarChart className="h-5 w-5" />, adminOnly: true },
+    { label: 'Engagement', href: '/member/admin/engagement', icon: <Activity className="h-5 w-5" />, adminOnly: true },
+    { label: 'Protokoll', href: '/member/admin/protokoll', icon: <ClipboardList className="h-5 w-5" />, adminOnly: true },
 ];
 
 export function Header() {

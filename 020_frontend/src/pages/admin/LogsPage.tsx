@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { AlertTriangle, Info, XCircle, Activity, RefreshCw, Wifi, WifiOff, Calendar } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -46,6 +46,7 @@ export function LogsPage() {
     const [zoom,        setZoom]        = useState(100); // percent
 
     const isToday = selectedDate === todayISO();
+    const isLiveRef = useRef(isToday);
 
     // ── Live buffer (today / no date filter) ──────────────────────────────
     const { data: initialData, isLoading: isLoadingBuffer, refetch } = useQuery({
@@ -90,19 +91,23 @@ export function LogsPage() {
 
     // ── WebSocket live feed (only for today) ──────────────────────────────
     useEffect(() => {
+        isLiveRef.current = isToday;
+    }, [isToday]);
+
+    useEffect(() => {
         const token = localStorage.getItem('accessToken');
         if (token && !socketService.isConnected()) {
             socketService.connect(token).catch(() => {});
         }
 
         const unsub = socketService.on<LogEntry>('log:entry', (entry) => {
-            if (!isLiveRef.current || !isToday) return;
+            if (!isLiveRef.current) return;
             setLiveEntries(prev => [entry, ...prev].slice(0, 200));
             setLiveCount(c => c + 1);
         });
 
         return () => unsub();
-    }, [isToday]);
+    }, []);
 
     // ── Auto-refresh stats every 30 s ─────────────────────────────────────
     useEffect(() => {

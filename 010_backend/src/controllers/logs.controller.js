@@ -2,6 +2,32 @@ const path = require('path');
 const fs   = require('fs');
 const { asyncHandler } = require('../middlewares/errorHandler.middleware');
 const logger = require('../utils/logger');
+const prisma = require('../utils/prisma');
+
+/**
+ * Fills in missing email fields for log entries that have a userId.
+ * Performs a single batch DB lookup for all affected userIds.
+ */
+async function enrichEmailsFromDb(entries) {
+    const missingIds = [...new Set(
+        entries
+            .filter(e => e.userId != null && !e.email)
+            .map(e => e.userId)
+    )];
+    if (missingIds.length === 0) return entries;
+
+    const users = await prisma.user.findMany({
+        where: { id: { in: missingIds } },
+        select: { id: true, email: true },
+    });
+    const emailMap = Object.fromEntries(users.map(u => [u.id, u.email]));
+
+    return entries.map(e =>
+        (e.userId != null && !e.email && emailMap[e.userId])
+            ? { ...e, email: emailMap[e.userId] }
+            : e
+    );
+}
 
 const LOG_DIR = path.join(process.cwd(), 'logs');
 
@@ -13,7 +39,8 @@ const LOG_DIR = path.join(process.cwd(), 'logs');
 const getLogs = asyncHandler(async (req, res) => {
     const limit = Math.min(200, parseInt(req.query.limit) || 50);
     const level = req.query.level?.toUpperCase() || null;
-    const entries = logger.getBuffer(limit, level);
+    const raw = logger.getBuffer(limit, level);
+    const entries = await enrichEmailsFromDb(raw);
     res.json({ count: entries.length, entries });
 });
 
@@ -53,6 +80,7 @@ const getLogsByDate = asyncHandler(async (req, res) => {
 
     if (level) entries = entries.filter(e => e.level === level);
     entries = entries.slice(0, limit);
+    entries = await enrichEmailsFromDb(entries);
 
     res.json({ count: entries.length, entries });
 });

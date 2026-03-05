@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from 'react';
 import { authService } from '@/services/authService';
+import socketService from '@/services/socketService';
 import type { User, LoginDto } from '@/types';
 
 interface AuthContextType {
@@ -26,6 +27,13 @@ export function AuthProvider({ children }: AuthProviderProps) {
             if (authService.isAuthenticated()) {
                 const userData = await authService.getMe();
                 setUser(userData);
+                // Ensure WebSocket is connected for presence tracking
+                const token = authService.getToken();
+                if (token && !socketService.isConnected()) {
+                    socketService.connect(token).catch(err =>
+                        console.warn('WebSocket connection failed:', err)
+                    );
+                }
             } else {
                 setUser(null);
             }
@@ -49,9 +57,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
         const response = await authService.login(credentials);
         authService.setToken(response.token);
         setUser(response.user);
+        // Connect WebSocket for presence tracking
+        socketService.connect(response.token).catch(err =>
+            console.warn('WebSocket connection failed:', err)
+        );
     };
 
     const logout = () => {
+        socketService.disconnect();
         authService.logout();
         setUser(null);
     };

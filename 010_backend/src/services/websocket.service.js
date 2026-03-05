@@ -84,7 +84,18 @@ function initializeWebSocket(httpServer) {
             socketId: socket.id,
         });
 
-        // Broadcast update to admin dashboard
+        // Send the current online list to the newly connected socket
+        const currentOnlineList = Array.from(onlineUsers.values()).map(u => ({
+            userId: u.id,
+            firstName: u.firstName,
+            lastName: u.lastName,
+            role: u.role,
+            register: u.register,
+            lastSeen: new Date(u.lastHeartbeat).toISOString(),
+        }));
+        socket.emit('online:list', { users: currentOnlineList });
+
+        // Broadcast update to all others in the workspace
         socket.to('workspace').emit('online:joined', {
             userId: socket.user.id,
             firstName: socket.user.firstName,
@@ -95,6 +106,7 @@ function initializeWebSocket(httpServer) {
 
         // Handle heartbeat from regular users (not just admin workspace)
         socket.on('user:heartbeat', (data) => {
+            const wasOffline = !onlineUsers.has(socket.user.id);
             if (onlineUsers.has(socket.user.id)) {
                 onlineUsers.get(socket.user.id).lastHeartbeat = Date.now();
             } else {
@@ -108,6 +120,37 @@ function initializeWebSocket(httpServer) {
                     socketId: socket.id,
                 });
             }
+            // If user was away (removed from map), broadcast re-join to others
+            if (wasOffline) {
+                socket.to('workspace').emit('online:joined', {
+                    userId: socket.user.id,
+                    firstName: socket.user.firstName,
+                    lastName: socket.user.lastName,
+                    role: socket.user.role,
+                    register: socket.user.register?.name ?? null,
+                });
+            }
+        });
+
+        // Handle user going away (tab hidden / window minimized)
+        socket.on('user:away', () => {
+            if (onlineUsers.has(socket.user.id)) {
+                onlineUsers.delete(socket.user.id);
+                socket.to('workspace').emit('online:left', { userId: socket.user.id });
+            }
+        });
+
+        // Handle request for current online list (e.g., when analytics page opens)
+        socket.on('get:online-list', () => {
+            const list = Array.from(onlineUsers.values()).map(u => ({
+                userId: u.id,
+                firstName: u.firstName,
+                lastName: u.lastName,
+                role: u.role,
+                register: u.register,
+                lastSeen: new Date(u.lastHeartbeat).toISOString(),
+            }));
+            socket.emit('online:list', { users: list });
         });
 
         // Notify others about new user

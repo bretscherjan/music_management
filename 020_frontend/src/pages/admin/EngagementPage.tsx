@@ -1,24 +1,47 @@
 import { useState, useMemo, useEffect } from 'react';
-import type { JSX } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import {
     BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RTooltip,
     ResponsiveContainer, Cell, Legend,
 } from 'recharts';
 import {
-    Activity, Zap, UserX, Clock, AlertTriangle, Users, Wifi,
-    ChevronUp, ChevronDown, ChevronsUpDown, Shield, User as UserIcon,
+    Zap, Clock, Users, Wifi,
+    ChevronUp, ChevronDown, ChevronsUpDown, Shield, User as UserIcon, Activity,
 } from 'lucide-react';
 import { formatDistanceToNow, format } from 'date-fns';
 import { de } from 'date-fns/locale';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import {
-    engagementService, type AnalyticsParams, type InactiveUser, type TopUser,
+    engagementService, type AnalyticsParams,
 } from '@/services/engagementService';
 import socketService from '@/services/socketService';
-import type { OnlineJoinedEvent, OnlineLeftEvent } from '@/services/socketService';
+import type { OnlineJoinedEvent, OnlineLeftEvent, OnlineListEvent } from '@/services/socketService';
+
+// ── Combined User Type for merged table ────────────────────────────────────────
+type CombinedUser = {
+    id: number;
+    firstName: string;
+    lastName: string;
+    email?: string;
+    role: string;
+    register?: string | null;
+    category: 'top' | 'newly-registered' | 'inactive';
+    // Top user fields
+    total?: number;
+    logins?: number;
+    fileDownloads?: number;
+    attendanceUpdates?: number;
+    // Newly registered fields
+    createdAt?: string;
+    daysSinceCreation?: number;
+    isActive?: boolean;
+    // Inactive user fields
+    lastSeenAt?: string | null;
+    daysInactive?: number | null;
+};
 
 // ── Constants ──────────────────────────────────────────────────────────────────
 
@@ -62,15 +85,6 @@ function RoleBadge({ role }: { role: string }) {
         : <Badge variant="outline" className="gap-1 text-slate-600"><UserIcon className="h-3 w-3" />Mitglied</Badge>;
 }
 
-type SortDir = 'asc' | 'desc';
-function useSortState<T>(init: keyof T) {
-    const [col, setCol] = useState<keyof T>(init);
-    const [dir, setDir] = useState<SortDir>('desc');
-    const toggle = (c: keyof T) => { if (c === col) setDir(d => d === 'asc' ? 'desc' : 'asc'); else { setCol(c); setDir('desc'); } };
-    const icon = (c: keyof T) => c !== col ? <ChevronsUpDown className="h-3 w-3 opacity-40" /> : dir === 'desc' ? <ChevronDown className="h-3 w-3" /> : <ChevronUp className="h-3 w-3" />;
-    return { col, dir, toggle, icon };
-}
-
 // ── Page ───────────────────────────────────────────────────────────────────────
 
 export function EngagementPage() {
@@ -78,10 +92,12 @@ export function EngagementPage() {
     const [days,       setDays]       = useState('30');
     const [role,       setRole]       = useState<'all' | 'member' | 'admin'>('all');
     const [featureType, setFeatureType] = useState<'all' | 'interaction' | 'visit'>('all');
-    const [inactDays,  setInactDays]  = useState('30');
-    const [inactRole,  setInactRole]  = useState<'all' | 'member' | 'admin'>('all');
+    
+    // ── Combined users table filters ────────────────────────────────────────
+    const [userCategory, setUserCategory] = useState<'all' | 'top' | 'newly-registered' | 'inactive'>('all');
+    const [inactDays, setInactDays] = useState('30');
     const [newRegDays, setNewRegDays] = useState('30');
-    const [topAction,  setTopAction]  = useState('all');
+    const [topAction, setTopAction] = useState('all');
 
     // ── Real-time online users (via WebSocket) ──────────────────────────────
     const [onlineUsers, setOnlineUsers] = useState<Array<{
@@ -89,6 +105,8 @@ export function EngagementPage() {
         role: string; register: string | null; lastSeen: Date
     }>>([]);
     const [loadingOnline, setLoadingOnline] = useState(true);
+    // Tracks last-seen time for users who recently went offline (keyed by userId)
+    const [recentlyOffline, setRecentlyOffline] = useState<Record<number, Date>>({});
 
     const params: AnalyticsParams = { days: Number(days), role };
 
@@ -96,14 +114,16 @@ export function EngagementPage() {
     const { data: peakData,     isLoading: loadingPeak }     = useQuery({ queryKey: ['eng-peak',    days, role], queryFn: () => engagementService.getPeakTimes(params) });
     const { data: featureData,  isLoading: loadingFeature }  = useQuery({ queryKey: ['eng-feature', days, role, featureType], queryFn: () => engagementService.getFeatureUsage({ ...params, type: featureType }) });
     const { data: regData,      isLoading: loadingReg }      = useQuery({ queryKey: ['eng-reg',     days], queryFn: () => engagementService.getActivityByRegister({ days: Number(days) }) });
-    const { data: topData,      isLoading: loadingTop }      = useQuery({ queryKey: ['eng-top',     days, role, topAction], queryFn: () => engagementService.getTopUsers({ ...params, action: topAction === 'all' ? undefined : topAction, limit: 15 }) });
-    const { data: inactiveData, isLoading: loadingInactive } = useQuery({ queryKey: ['eng-inactive', inactDays, inactRole], queryFn: () => engagementService.getInactiveUsers({ days: Number(inactDays), role: inactRole }) });
+    const { data: topData,      isLoading: loadingTop }      = useQuery({ queryKey: ['eng-top',     days, role, topAction], queryFn: () => engagementService.getTopUsers({ ...params, action: topAction === 'all' ? undefined : topAction, limit: 100 }) });
+    const { data: inactiveData, isLoading: loadingInactive } = useQuery({ queryKey: ['eng-inactive', inactDays], queryFn: () => engagementService.getInactiveUsers({ days: Number(inactDays), role: 'all' }) });
     const { data: newRegData,   isLoading: loadingNewReg }   = useQuery({ queryKey: ['eng-newreg',   newRegDays], queryFn: () => engagementService.getNewlyRegisteredUsers({ days: Number(newRegDays) }) });
 
     // ── Initialize online data from API fallback & set up WebSocket listeners ──
     useEffect(() => {
         // Subscribe synchronously so cleanup always runs
         const unsubJoined = socketService.on<OnlineJoinedEvent>('online:joined', (user) => {
+            // Remove from recently-offline when user comes back
+            setRecentlyOffline(prev => { const next = { ...prev }; delete next[user.userId]; return next; });
             setOnlineUsers(prev => {
                 if (prev.some(u => u.id === user.userId)) return prev;
                 return [
@@ -121,21 +141,45 @@ export function EngagementPage() {
         });
 
         const unsubLeft = socketService.on<OnlineLeftEvent>('online:left', (data) => {
+            // Record the moment they went offline as their last-seen time
+            setRecentlyOffline(prev => ({ ...prev, [data.userId]: new Date() }));
             setOnlineUsers(prev => prev.filter(u => u.id !== data.userId));
+        });
+
+        // online:list replaces the full list (initial load or on-demand refresh)
+        const unsubList = socketService.on<OnlineListEvent>('online:list', (data) => {
+            setOnlineUsers(data.users.map(u => ({
+                id: u.userId,
+                firstName: u.firstName,
+                lastName: u.lastName,
+                role: u.role,
+                register: u.register,
+                lastSeen: new Date(u.lastSeen),
+            })));
+            setLoadingOnline(false);
         });
 
         const initializeOnlineTracking = async () => {
             try {
-                const token = localStorage.getItem('accessToken');
-                if (token && !socketService.isConnected()) {
-                    await socketService.connect(token);
+                if (socketService.isConnected()) {
+                    // Socket already connected via AuthContext – just request the current list
+                    socketService.requestOnlineList();
+                } else {
+                    // Fallback: connect first (e.g., during dev hot-reload) then request list
+                    const token = localStorage.getItem('accessToken');
+                    if (token) {
+                        await socketService.connect(token);
+                        socketService.requestOnlineList();
+                    } else {
+                        // Last resort: fetch from REST API
+                        const initialData = await engagementService.getOnlineNow(15);
+                        setOnlineUsers(initialData.users.map(u => ({
+                            ...u,
+                            lastSeen: new Date(u.lastSeen),
+                        })));
+                        setLoadingOnline(false);
+                    }
                 }
-                const initialData = await engagementService.getOnlineNow(15);
-                setOnlineUsers(initialData.users.map(u => ({
-                    ...u,
-                    lastSeen: new Date(u.lastSeen),
-                })));
-                setLoadingOnline(false);
             } catch (error) {
                 console.error('Failed to initialize online tracking:', error);
                 setLoadingOnline(false);
@@ -147,6 +191,7 @@ export function EngagementPage() {
         return () => {
             unsubJoined();
             unsubLeft();
+            unsubList();
         };
     }, []);
 
@@ -162,49 +207,116 @@ export function EngagementPage() {
         return [...actions];
     }, [regData]);
 
-    // ── Inactive table sort ─────────────────────────────────────────────────
-    const inactSort = useSortState<InactiveUser>('daysInactive');
-    const inactiveUsers = useMemo(() => {
-        const arr = [...(inactiveData?.users ?? [])];
-        arr.sort((a, b) => {
-            const av = a[inactSort.col];
-            const bv = b[inactSort.col];
+    const maxPeakHour    = Math.max(...(peakData?.hours.map(h => h.count)    ?? [0]));
+    const maxPeakWeekday = Math.max(...(peakData?.weekdays.map(d => d.count) ?? [0]));
 
+    // ── Merged Users (combine top, new, inactive) ──────────────────────────
+    const combinedUsers: CombinedUser[] = useMemo(() => {
+        const merged: CombinedUser[] = [];
+
+        // Add top users
+        (topData ?? []).forEach(u => {
+            merged.push({
+                id: u.id,
+                firstName: u.firstName,
+                lastName: u.lastName,
+                role: u.role,
+                register: u.register,
+                category: 'top',
+                total: u.total,
+                logins: u.logins,
+                fileDownloads: u.fileDownloads,
+                attendanceUpdates: u.attendanceUpdates,
+            });
+        });
+
+        // Add newly registered users
+        (newRegData?.users ?? []).forEach(u => {
+            if (!merged.find(m => m.id === u.id)) {
+                merged.push({
+                    id: u.id,
+                    firstName: u.firstName,
+                    lastName: u.lastName,
+                    email: u.email,
+                    role: u.role,
+                    register: u.register?.name,
+                    category: 'newly-registered',
+                    createdAt: u.createdAt,
+                    daysSinceCreation: u.daysSinceCreation,
+                    isActive: u.isActive,
+                });
+            }
+        });
+
+        // Add inactive users
+        (inactiveData?.users ?? []).forEach(u => {
+            if (!merged.find(m => m.id === u.id)) {
+                merged.push({
+                    id: u.id,
+                    firstName: u.firstName,
+                    lastName: u.lastName,
+                    email: u.email,
+                    role: u.role,
+                    register: u.register?.name,
+                    category: 'inactive',
+                    lastSeenAt: u.lastSeenAt,
+                    daysInactive: u.daysInactive,
+                });
+            }
+        });
+
+        return merged;
+    }, [topData, newRegData, inactiveData]);
+
+    // ── Combined Users Sort State ──────────────────────────────────────────
+    type CombinedUserSortCol = 'lastName' | 'firstName' | 'email' | 'register' | 'createdAt' | 'daysSinceCreation' | 'lastSeenAt' | 'daysInactive' | 'total' | 'logins' | 'fileDownloads' | 'attendanceUpdates';
+    
+    const [combinedSortCol, setCombinedSortCol] = useState<CombinedUserSortCol>('lastName');
+    const [combinedSortDir, setCombinedSortDir] = useState<'asc' | 'desc'>('asc');
+    
+    const toggleCombinedSort = (col: CombinedUserSortCol) => {
+        if (col === combinedSortCol) {
+            setCombinedSortDir(d => d === 'asc' ? 'desc' : 'asc');
+        } else {
+            setCombinedSortCol(col);
+            setCombinedSortDir('desc');
+        }
+    };
+    
+    const getCombinedSortIcon = (col: CombinedUserSortCol) => 
+        col !== combinedSortCol ? <ChevronsUpDown className="h-3 w-3 opacity-40" /> : combinedSortDir === 'desc' ? <ChevronDown className="h-3 w-3" /> : <ChevronUp className="h-3 w-3" />;
+
+    const sortedCombinedUsers = useMemo(() => {
+        const arr = [...combinedUsers];
+        if (userCategory !== 'all') {
+            arr.splice(0, arr.length, ...(arr.filter(u => u.category === userCategory)));
+        }
+        arr.sort((a, b) => {
+            const av = a[combinedSortCol];
+            const bv = b[combinedSortCol];
             let cmp: number;
-            if (inactSort.col === 'lastSeenAt') {
-                // null (never seen) sorts as most inactive (oldest)
+
+            if (combinedSortCol === 'lastSeenAt') {
+                const at = (av as string | null) ? new Date(av as string).getTime() : 0;
+                const bt = (bv as string | null) ? new Date(bv as string).getTime() : 0;
+                cmp = at - bt;
+            } else if (['daysInactive', 'daysSinceCreation', 'total', 'logins', 'fileDownloads', 'attendanceUpdates'].includes(combinedSortCol)) {
+                const an = av === null || av === undefined ? -Infinity : Number(av);
+                const bn = bv === null || bv === undefined ? -Infinity : Number(bv);
+                cmp = an - bn;
+            } else if (combinedSortCol === 'createdAt') {
                 const at = av ? new Date(av as string).getTime() : 0;
                 const bt = bv ? new Date(bv as string).getTime() : 0;
                 cmp = at - bt;
-            } else if (inactSort.col === 'daysInactive') {
-                // null (never logged in) = most inactive → treat as Infinity
-                const an = av === null ? Infinity : Number(av);
-                const bn = bv === null ? Infinity : Number(bv);
-                cmp = an - bn;
             } else {
                 const as_ = (av ?? '') as string;
                 const bs_ = (bv ?? '') as string;
                 cmp = typeof av === 'string' ? as_.localeCompare(bs_) : Number(av ?? 0) - Number(bv ?? 0);
             }
-            return inactSort.dir === 'asc' ? cmp : -cmp;
+            return combinedSortDir === 'asc' ? cmp : -cmp;
         });
         return arr;
-    }, [inactiveData, inactSort.col, inactSort.dir]);
-
-    // ── Top-users sort ──────────────────────────────────────────────────────
-    const topSort = useSortState<TopUser>('total');
-    const topUsers = useMemo(() => {
-        const arr = [...(topData ?? [])];
-        arr.sort((a, b) => {
-            const av = a[topSort.col] as number ?? 0;
-            const bv = b[topSort.col] as number ?? 0;
-            return topSort.dir === 'asc' ? av - bv : bv - av;
-        });
-        return arr;
-    }, [topData, topSort.col, topSort.dir]);
-
-    const maxPeakHour    = Math.max(...(peakData?.hours.map(h => h.count)    ?? [0]));
-    const maxPeakWeekday = Math.max(...(peakData?.weekdays.map(d => d.count) ?? [0]));
+    }, [combinedUsers, userCategory, combinedSortCol, combinedSortDir]);
 
     // ── Render ──────────────────────────────────────────────────────────────
     return (
@@ -248,7 +360,7 @@ export function EngagementPage() {
                 <div className="flex items-center gap-2">
                     <Wifi className="h-5 w-5 text-green-500" />
                     <h2 className="text-xl font-semibold">Online jetzt</h2>
-                    <span className="text-xs text-slate-400">(Live Updates via WebSocket, Auto-Logout nach 2 Min Inaktivität)</span>
+                    <span className="text-xs text-slate-400">(Live via WebSocket – verschwindet bei Tab-Wechsel / Fenster minimieren)</span>
                     {!loadingOnline && (
                         <span className="ml-2 inline-flex items-center gap-1 text-sm font-semibold text-green-700 bg-green-100 rounded-full px-2 py-0.5">
                             <span className="h-2 w-2 rounded-full bg-green-500 animate-pulse" />
@@ -264,20 +376,35 @@ export function EngagementPage() {
                         ) : onlineUsers.length === 0 ? (
                             <div className="text-slate-400 text-sm py-2">Gerade niemand aktiv.</div>
                         ) : (
-                            <div className="flex flex-wrap gap-2">
-                                {onlineUsers.map(u => (
-                                    <div key={u.id}
-                                        className="flex items-center gap-2 px-3 py-2 rounded-lg border border-green-200 bg-green-50 text-sm">
-                                        <span className="h-2 w-2 rounded-full bg-green-500 animate-pulse shrink-0" />
-                                        <span className="font-medium">{u.lastName} {u.firstName}</span>
-                                        {u.register && <span className="text-slate-400 text-xs">· {u.register}</span>}
-                                        <RoleBadge role={u.role} />
-                                        <span className="text-slate-400 text-xs">
-                                            {formatDistanceToNow(u.lastSeen, { addSuffix: true, locale: de })}
-                                        </span>
-                                    </div>
-                                ))}
-                            </div>
+                            <Table>
+                                <TableHeader>
+                                    <TableRow>
+                                        <TableHead className="w-[110px]">Status</TableHead>
+                                        <TableHead>Name</TableHead>
+                                        <TableHead>Register</TableHead>
+                                        <TableHead>Rolle</TableHead>
+                                        <TableHead className="text-right">Zuletzt online</TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {onlineUsers.map(u => (
+                                        <TableRow key={u.id}>
+                                            <TableCell>
+                                                <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-green-700 bg-green-100 rounded-full px-2 py-0.5">
+                                                    <span className="h-1.5 w-1.5 rounded-full bg-green-500 animate-pulse" />
+                                                    Aktiv
+                                                </span>
+                                            </TableCell>
+                                            <TableCell className="font-medium">{u.lastName} {u.firstName}</TableCell>
+                                            <TableCell className="text-slate-500 text-sm">{u.register ?? '—'}</TableCell>
+                                            <TableCell><RoleBadge role={u.role} /></TableCell>
+                                            <TableCell className="text-right text-slate-500 text-sm">
+                                                {formatDistanceToNow(u.lastSeen, { addSuffix: true, locale: de })}
+                                            </TableCell>
+                                        </TableRow>
+                                    ))}
+                                </TableBody>
+                            </Table>
                         )}
                     </CardContent>
                 </Card>
@@ -406,214 +533,182 @@ export function EngagementPage() {
                 </Card>
             </section>
 
-            {/* ── Top Mitglieder ────────────────────────────────────── */}
-            <section className="space-y-3">
-                <div className="flex items-center gap-3 flex-wrap">
-                    <Activity className="h-5 w-5 text-slate-500" />
-                    <h2 className="text-xl font-semibold">Top Mitglieder</h2>
-                    <Select value={topAction} onValueChange={setTopAction}>
-                        <SelectTrigger className="w-[200px]"><SelectValue /></SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="all">Alle Aktionen</SelectItem>
-                            <SelectItem value="LOGIN">Logins</SelectItem>
-                            <SelectItem value="FILE_DOWNLOAD">Datei-Downloads</SelectItem>
-                            <SelectItem value="FILE_PREVIEW">Datei-Vorschauen</SelectItem>
-                            <SelectItem value="ATTENDANCE_UPDATE">Termin-Zusagen</SelectItem>
-                            <SelectItem value="MUSIC_FOLDER_OPEN">Mappen geöffnet</SelectItem>
-                            <SelectItem value="SHEET_MUSIC_VIEW">Noten angeschaut</SelectItem>
-                        </SelectContent>
-                    </Select>
-                </div>
-                <Card>
-                    <CardContent className="p-0">
-                        {loadingTop ? (
-                            <div className="p-8 text-center text-slate-400">Laden…</div>
-                        ) : topUsers.length === 0 ? (
-                            <div className="p-8 text-center text-slate-400">Keine Daten im gewählten Zeitraum.</div>
-                        ) : (
-                            <div className="overflow-x-auto">
-                                <table className="w-full text-sm">
-                                    <thead className="bg-slate-50 border-b text-slate-500">
-                                        <tr>
-                                            <th className="h-10 px-4 text-left">#</th>
-                                            <SortTh label="Name"          col="lastName"         sort={topSort} />
-                                            <th className="h-10 px-4 text-left">Register</th>
-                                            <th className="h-10 px-4 text-left">Rolle</th>
-                                            <SortTh label="Gesamt"        col="total"            sort={topSort} right />
-                                            <SortTh label="Logins"        col="logins"           sort={topSort} right />
-                                            <SortTh label="Downloads"     col="fileDownloads"    sort={topSort} right />
-                                            <SortTh label="Zusagen"       col="attendanceUpdates" sort={topSort} right />
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {topUsers.map((u, i) => (
-                                            <tr key={u.id} className={`border-b transition-colors ${i % 2 === 0 ? 'bg-white' : 'bg-slate-50'} hover:bg-blue-50`}>
-                                                <td className="px-4 py-2.5 text-slate-400 font-mono text-xs">{i + 1}</td>
-                                                <td className="px-4 py-2.5 font-medium">{u.lastName} {u.firstName}</td>
-                                                <td className="px-4 py-2.5 text-slate-500">{u.register ?? '–'}</td>
-                                                <td className="px-4 py-2.5"><RoleBadge role={u.role} /></td>
-                                                <td className="px-4 py-2.5 text-right font-bold">{u.total}</td>
-                                                <td className="px-4 py-2.5 text-right text-blue-600">{u.logins}</td>
-                                                <td className="px-4 py-2.5 text-right text-emerald-600">{u.fileDownloads}</td>
-                                                <td className="px-4 py-2.5 text-right text-amber-600">{u.attendanceUpdates}</td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            </div>
-                        )}
-                    </CardContent>
-                </Card>
-            </section>
-
-            {/* ── Neu registrierte Mitglieder ───────────────────────── */}
+            {/* ── Mitglieder-Übersicht (kombiniert) ───────────────────────────────── */}
             <section className="space-y-3">
                 <div className="flex items-center gap-3 flex-wrap">
                     <Users className="h-5 w-5 text-slate-500" />
-                    <h2 className="text-xl font-semibold">Neu registrierte Mitglieder</h2>
-                    <Select value={newRegDays} onValueChange={setNewRegDays}>
-                        <SelectTrigger className="w-[165px]"><SelectValue /></SelectTrigger>
+                    <h2 className="text-xl font-semibold">Mitglieder-Übersicht</h2>
+                    <Select value={userCategory} onValueChange={v => setUserCategory(v as any)}>
+                        <SelectTrigger className="w-[200px]"><SelectValue /></SelectTrigger>
                         <SelectContent>
-                            <SelectItem value="7">Letzte 7 Tage</SelectItem>
-                            <SelectItem value="30">Letzte 30 Tage</SelectItem>
-                            <SelectItem value="90">Letzte 90 Tage</SelectItem>
+                            <SelectItem value="all">Alle Kategorien</SelectItem>
+                            <SelectItem value="top">Top Mitglieder</SelectItem>
+                            <SelectItem value="newly-registered">Neu registriert</SelectItem>
+                            <SelectItem value="inactive">Inaktiv</SelectItem>
                         </SelectContent>
                     </Select>
-                    {!loadingNewReg && (newRegData?.count ?? 0) > 0 && (
-                        <span className="inline-flex items-center gap-1 text-sm font-semibold text-blue-700 bg-blue-100 rounded-full px-2 py-0.5">
-                            <Users className="h-3.5 w-3.5" />
-                            {newRegData?.count} neu
-                        </span>
+
+                    {userCategory === 'newly-registered' && (
+                        <Select value={newRegDays} onValueChange={setNewRegDays}>
+                            <SelectTrigger className="w-[165px]"><SelectValue /></SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="7">Letzte 7 Tage</SelectItem>
+                                <SelectItem value="30">Letzte 30 Tage</SelectItem>
+                                <SelectItem value="90">Letzte 90 Tage</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    )}
+
+                    {userCategory === 'inactive' && (
+                        <Select value={inactDays} onValueChange={setInactDays}>
+                            <SelectTrigger className="w-[165px]"><SelectValue /></SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="14">Seit 14 Tagen</SelectItem>
+                                <SelectItem value="30">Seit 30 Tagen</SelectItem>
+                                <SelectItem value="60">Seit 60 Tagen</SelectItem>
+                                <SelectItem value="90">Seit 90 Tagen</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    )}
+
+                    {userCategory === 'top' && (
+                        <Select value={topAction} onValueChange={setTopAction}>
+                            <SelectTrigger className="w-[200px]"><SelectValue /></SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="all">Alle Aktionen</SelectItem>
+                                <SelectItem value="LOGIN">Logins</SelectItem>
+                                <SelectItem value="FILE_DOWNLOAD">Datei-Downloads</SelectItem>
+                                <SelectItem value="FILE_PREVIEW">Datei-Vorschauen</SelectItem>
+                                <SelectItem value="ATTENDANCE_UPDATE">Termin-Zusagen</SelectItem>
+                                <SelectItem value="MUSIC_FOLDER_OPEN">Mappen geöffnet</SelectItem>
+                                <SelectItem value="SHEET_MUSIC_VIEW">Noten angeschaut</SelectItem>
+                            </SelectContent>
+                        </Select>
                     )}
                 </div>
 
                 <Card>
                     <CardContent className="p-0">
-                        {loadingNewReg ? (
+                        {loadingTop || loadingNewReg || loadingInactive ? (
                             <div className="p-8 text-center text-slate-400">Laden…</div>
-                        ) : (newRegData?.users ?? []).length === 0 ? (
+                        ) : sortedCombinedUsers.length === 0 ? (
                             <div className="p-8 text-center text-slate-400">
-                                Keine neuen Mitglieder in den letzten {newRegDays} Tagen.
+                                Keine Mitglieder in dieser Kategorie.
                             </div>
                         ) : (
                             <div className="overflow-x-auto">
                                 <table className="w-full text-sm">
-                                    <thead className="bg-slate-50 border-b text-slate-500">
+                                    <thead className="bg-slate-50 border-b text-slate-500 sticky top-0">
                                         <tr>
-                                            <th className="h-10 px-4 text-left">Name</th>
+                                            <th className="h-10 px-4 text-left">Kategorie</th>
+                                            <th className="h-10 px-4 font-medium cursor-pointer select-none hover:text-slate-800 whitespace-nowrap" onClick={() => toggleCombinedSort('lastName')}>
+                                                <span className="inline-flex items-center gap-1">Name {getCombinedSortIcon('lastName')}</span>
+                                            </th>
                                             <th className="h-10 px-4 text-left">E-Mail</th>
                                             <th className="h-10 px-4 text-left">Register</th>
                                             <th className="h-10 px-4 text-left">Rolle</th>
-                                            <th className="h-10 px-4 text-left">Registriert</th>
-                                            <th className="h-10 px-4 text-left">Tage</th>
+                                            <th className="h-10 px-4 font-medium cursor-pointer select-none hover:text-slate-800 whitespace-nowrap" onClick={() => toggleCombinedSort('createdAt')}>
+                                                <span className="inline-flex items-center gap-1">Registriert {getCombinedSortIcon('createdAt')}</span>
+                                            </th>
+                                            <th className="h-10 px-4 text-right font-medium cursor-pointer select-none hover:text-slate-800 whitespace-nowrap" onClick={() => toggleCombinedSort('daysSinceCreation')}>
+                                                <span className="inline-flex items-center gap-1 flex-row-reverse">Tage neu {getCombinedSortIcon('daysSinceCreation')}</span>
+                                            </th>
                                             <th className="h-10 px-4 text-left">Status</th>
+                                            <th className="h-10 px-4 font-medium cursor-pointer select-none hover:text-slate-800 whitespace-nowrap" onClick={() => toggleCombinedSort('lastSeenAt')}>
+                                                <span className="inline-flex items-center gap-1">Zuletzt aktiv {getCombinedSortIcon('lastSeenAt')}</span>
+                                            </th>
+                                            <th className="h-10 px-4 text-right font-medium cursor-pointer select-none hover:text-slate-800 whitespace-nowrap" onClick={() => toggleCombinedSort('daysInactive')}>
+                                                <span className="inline-flex items-center gap-1 flex-row-reverse">Tage inaktiv {getCombinedSortIcon('daysInactive')}</span>
+                                            </th>
+                                            <th className="h-10 px-4 text-right font-medium cursor-pointer select-none hover:text-slate-800 whitespace-nowrap" onClick={() => toggleCombinedSort('total')}>
+                                                <span className="inline-flex items-center gap-1 flex-row-reverse">Gesamt Aktionen {getCombinedSortIcon('total')}</span>
+                                            </th>
+                                            <th className="h-10 px-4 text-right font-medium cursor-pointer select-none hover:text-slate-800 whitespace-nowrap" onClick={() => toggleCombinedSort('logins')}>
+                                                <span className="inline-flex items-center gap-1 flex-row-reverse">Logins {getCombinedSortIcon('logins')}</span>
+                                            </th>
+                                            <th className="h-10 px-4 text-right font-medium cursor-pointer select-none hover:text-slate-800 whitespace-nowrap" onClick={() => toggleCombinedSort('fileDownloads')}>
+                                                <span className="inline-flex items-center gap-1 flex-row-reverse">Downloads {getCombinedSortIcon('fileDownloads')}</span>
+                                            </th>
+                                            <th className="h-10 px-4 text-right font-medium cursor-pointer select-none hover:text-slate-800 whitespace-nowrap" onClick={() => toggleCombinedSort('attendanceUpdates')}>
+                                                <span className="inline-flex items-center gap-1 flex-row-reverse">Zusagen {getCombinedSortIcon('attendanceUpdates')}</span>
+                                            </th>
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        {newRegData?.users.map((u, i) => (
-                                            <tr key={u.id}
-                                                className={`border-b transition-colors ${i % 2 === 0 ? 'bg-white' : 'bg-slate-50'} hover:bg-blue-50`}>
+                                        {sortedCombinedUsers.map((u, i) => (
+                                            <tr key={`${u.id}-${u.category}`} className={`border-b transition-colors ${i % 2 === 0 ? 'bg-white' : 'bg-slate-50'} hover:bg-blue-50`}>
+                                                <td className="px-4 py-2.5">
+                                                    <Badge variant={u.category === 'top' ? 'default' : u.category === 'newly-registered' ? 'secondary' : 'outline'}>
+                                                        {u.category === 'top' ? '⭐ Top' : u.category === 'newly-registered' ? '🆕 Neu' : '⏸️ Inaktiv'}
+                                                    </Badge>
+                                                </td>
                                                 <td className="px-4 py-2.5 font-medium">{u.lastName} {u.firstName}</td>
-                                                <td className="px-4 py-2.5 text-slate-500 text-xs">{u.email}</td>
-                                                <td className="px-4 py-2.5 text-slate-500">{u.register?.name ?? '–'}</td>
+                                                <td className="px-4 py-2.5 text-slate-500 text-xs">{u.email ?? '–'}</td>
+                                                <td className="px-4 py-2.5 text-slate-500">{u.register ?? '–'}</td>
                                                 <td className="px-4 py-2.5"><RoleBadge role={u.role} /></td>
                                                 <td className="px-4 py-2.5 text-xs">
-                                                    {format(new Date(u.createdAt), 'dd.MM.yyyy HH:mm', { locale: de })}
+                                                    {u.createdAt ? format(new Date(u.createdAt), 'dd.MM.yyyy HH:mm', { locale: de }) : '–'}
                                                 </td>
-                                                <td className="px-4 py-2.5 text-center text-xs font-mono">{u.daysSinceCreation}</td>
+                                                <td className="px-4 py-2.5 text-right text-xs font-mono">{u.daysSinceCreation ?? '–'}</td>
                                                 <td className="px-4 py-2.5">
-                                                    {u.isActive
-                                                        ? <span className="inline-flex items-center gap-1 text-xs font-semibold text-green-700 bg-green-100 rounded-full px-2 py-0.5">
-                                                            <span className="h-1.5 w-1.5 rounded-full bg-green-500" /> Aktiv
-                                                        </span>
-                                                        : <span className="inline-flex items-center gap-1 text-xs font-semibold text-slate-600 bg-slate-100 rounded-full px-2 py-0.5">
-                                                            <span className="h-1.5 w-1.5 rounded-full bg-slate-400" /> Inaktiv
-                                                        </span>}
+                                                    {(() => {
+                                                        const onlineEntry = onlineUsers.find(ou => ou.id === u.id);
+                                                        if (onlineEntry) {
+                                                            return (
+                                                                <span className="inline-flex items-center gap-1 text-xs font-semibold text-green-700 bg-green-100 rounded-full px-2 py-0.5">
+                                                                    <span className="h-1.5 w-1.5 rounded-full bg-green-500 animate-pulse" /> Online
+                                                                </span>
+                                                            );
+                                                        }
+                                                        if (u.isActive !== undefined) {
+                                                            return u.isActive
+                                                                ? <span className="inline-flex items-center gap-1 text-xs font-semibold text-green-700 bg-green-100 rounded-full px-2 py-0.5">
+                                                                    <span className="h-1.5 w-1.5 rounded-full bg-green-500" /> Aktiv
+                                                                </span>
+                                                                : <span className="inline-flex items-center gap-1 text-xs font-semibold text-slate-600 bg-slate-100 rounded-full px-2 py-0.5">
+                                                                    <span className="h-1.5 w-1.5 rounded-full bg-slate-400" /> Inaktiv
+                                                                </span>;
+                                                        }
+                                                        return '–';
+                                                    })()}
                                                 </td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            </div>
-                        )}
-                    </CardContent>
-                </Card>
-            </section>
-
-            {/* ── Inaktive Mitglieder ───────────────────────────────── */}
-            <section className="space-y-3">
-                <div className="flex items-center gap-3 flex-wrap">
-                    <UserX className="h-5 w-5 text-slate-500" />
-                    <h2 className="text-xl font-semibold">Inaktive Mitglieder</h2>
-                    <Select value={inactDays} onValueChange={setInactDays}>
-                        <SelectTrigger className="w-[165px]"><SelectValue /></SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="14">Seit 14 Tagen</SelectItem>
-                            <SelectItem value="30">Seit 30 Tagen</SelectItem>
-                            <SelectItem value="60">Seit 60 Tagen</SelectItem>
-                            <SelectItem value="90">Seit 90 Tagen</SelectItem>
-                        </SelectContent>
-                    </Select>
-                    <Select value={inactRole} onValueChange={v => setInactRole(v as any)}>
-                        <SelectTrigger className="w-[150px]"><SelectValue /></SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="all">Alle Rollen</SelectItem>
-                            <SelectItem value="member">Nur Mitglieder</SelectItem>
-                            <SelectItem value="admin">Nur Admins</SelectItem>
-                        </SelectContent>
-                    </Select>
-                    {!loadingInactive && (inactiveData?.users.length ?? 0) > 0 && (
-                        <span className="inline-flex items-center gap-1 text-sm font-semibold text-amber-700 bg-amber-100 rounded-full px-2 py-0.5">
-                            <AlertTriangle className="h-3.5 w-3.5" />
-                            {inactiveData?.users.length} inaktiv
-                        </span>
-                    )}
-                </div>
-
-                <Card>
-                    <CardContent className="p-0">
-                        {loadingInactive ? (
-                            <div className="p-8 text-center text-slate-400">Laden…</div>
-                        ) : inactiveUsers.length === 0 ? (
-                            <div className="p-8 text-center text-slate-400">
-                                🎉 Alle aktiven Mitglieder haben sich in den letzten {inactDays} Tagen eingeloggt.
-                            </div>
-                        ) : (
-                            <div className="overflow-x-auto">
-                                <table className="w-full text-sm">
-                                    <thead className="bg-slate-50 border-b text-slate-500">
-                                        <tr>
-                                            <SortTh label="Name"           col="lastName"      sort={inactSort} />
-                                            <th className="h-10 px-4 text-left">E-Mail</th>
-                                            <th className="h-10 px-4 text-left">Register</th>
-                                            <th className="h-10 px-4 text-left">Rolle</th>
-                                            <SortTh label="Zuletzt aktiv"  col="lastSeenAt"    sort={inactSort} />
-                                            <SortTh label="Tage inaktiv"   col="daysInactive"  sort={inactSort} right />
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {inactiveUsers.map((u, i) => (
-                                            <tr key={u.id}
-                                                className={`border-b transition-colors ${i % 2 === 0 ? 'bg-white' : 'bg-slate-50'} hover:bg-amber-50`}>
-                                                <td className="px-4 py-2.5 font-medium">{u.lastName} {u.firstName}</td>
-                                                <td className="px-4 py-2.5 text-slate-500 text-xs">{u.email}</td>
-                                                <td className="px-4 py-2.5 text-slate-500">{u.register?.name ?? '–'}</td>
-                                                <td className="px-4 py-2.5"><RoleBadge role={u.role} /></td>
                                                 <td className="px-4 py-2.5">
-                                                    {u.lastSeenAt ? (
-                                                        <div className="flex flex-col">
-                                                            <span className="text-amber-600 text-xs">
-                                                                {format(new Date(u.lastSeenAt), 'dd.MM.yyyy HH:mm', { locale: de })}
-                                                            </span>
-                                                            <span className="text-slate-400 text-xs">
-                                                                {formatDistanceToNow(new Date(u.lastSeenAt), { addSuffix: true, locale: de })}
-                                                            </span>
-                                                        </div>
-                                                    ) : <span className="text-red-500 font-medium text-xs">Noch nie eingeloggt</span>}
+                                                    {(() => {
+                                                        const onlineEntry = onlineUsers.find(ou => ou.id === u.id);
+                                                        if (onlineEntry) {
+                                                            return (
+                                                                <div className="flex flex-col">
+                                                                    <span className="text-green-600 text-xs font-medium">Gerade aktiv</span>
+                                                                    <span className="text-slate-400 text-xs">
+                                                                        {formatDistanceToNow(onlineEntry.lastSeen, { addSuffix: true, locale: de })}
+                                                                    </span>
+                                                                </div>
+                                                            );
+                                                        }
+                                                        const recentTs = recentlyOffline[u.id];
+                                                        const lastSeenDate = recentTs ?? (u.lastSeenAt ? new Date(u.lastSeenAt) : null);
+                                                        if (lastSeenDate) {
+                                                            return (
+                                                                <div className="flex flex-col">
+                                                                    <span className="text-amber-600 text-xs">
+                                                                        {format(lastSeenDate, 'dd.MM.yyyy HH:mm', { locale: de })}
+                                                                    </span>
+                                                                    <span className="text-slate-400 text-xs">
+                                                                        {formatDistanceToNow(lastSeenDate, { addSuffix: true, locale: de })}
+                                                                    </span>
+                                                                </div>
+                                                            );
+                                                        }
+                                                        return u.category === 'inactive' ? <span className="text-red-500 font-medium text-xs">Noch nie</span> : '–';
+                                                    })()}
                                                 </td>
                                                 <td className="px-4 py-2.5 text-right">
-                                                    <InactiveBadge days={u.daysInactive} />
+                                                    {u.daysInactive !== undefined ? <InactiveBadge days={u.daysInactive} /> : '–'}
                                                 </td>
+                                                <td className="px-4 py-2.5 text-right font-bold">{u.total ?? '–'}</td>
+                                                <td className="px-4 py-2.5 text-right text-blue-600">{u.logins ?? '–'}</td>
+                                                <td className="px-4 py-2.5 text-right text-emerald-600">{u.fileDownloads ?? '–'}</td>
+                                                <td className="px-4 py-2.5 text-right text-amber-600">{u.attendanceUpdates ?? '–'}</td>
                                             </tr>
                                         ))}
                                     </tbody>
@@ -640,20 +735,4 @@ function InactiveBadge({ days }: { days: number | null }) {
     if (days === null) return <span className="text-xs font-bold text-red-600 bg-red-100 rounded-full px-2 py-0.5">Nie</span>;
     const cls = days > 60 ? 'text-red-600 bg-red-100' : days > 30 ? 'text-orange-600 bg-orange-100' : 'text-amber-600 bg-amber-100';
     return <span className={`text-xs font-bold rounded-full px-2 py-0.5 ${cls}`}>{days} T</span>;
-}
-
-function SortTh<T>({ label, col, sort, right }: {
-    label: string; col: keyof T; right?: boolean
-    sort: { col: keyof T; toggle: (c: keyof T) => void; icon: (c: keyof T) => JSX.Element }
-}) {
-    return (
-        <th
-            className={`h-10 px-4 font-medium cursor-pointer select-none hover:text-slate-800 whitespace-nowrap ${right ? 'text-right' : 'text-left'}`}
-            onClick={() => sort.toggle(col)}
-        >
-            <span className={`inline-flex items-center gap-1 ${right ? 'flex-row-reverse' : ''}`}>
-                {label} {sort.icon(col)}
-            </span>
-        </th>
-    );
 }

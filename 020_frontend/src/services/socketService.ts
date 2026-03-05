@@ -9,6 +9,21 @@ class SocketService {
     private reconnectAttempts = 0;
     private maxReconnectAttempts = 5;
     private heartbeatInterval: number | null = null;
+    private readonly handleVisibilityChange = () => {
+        if (document.visibilityState === 'hidden') {
+            // Tab went to background / window minimized → stop heartbeat and signal away
+            this.stopHeartbeat();
+            if (this.socket?.connected) {
+                this.socket.emit('user:away');
+            }
+        } else if (document.visibilityState === 'visible') {
+            // Tab became active again → signal back online immediately
+            if (this.socket?.connected) {
+                this.socket.emit('user:heartbeat', { timestamp: Date.now() });
+            }
+            this.startHeartbeat();
+        }
+    };
 
     /**
      * Connect to the WebSocket server
@@ -34,6 +49,7 @@ class SocketService {
             this.socket.on('connect', () => {
                 this.reconnectAttempts = 0;
                 this.startHeartbeat();
+                document.addEventListener('visibilitychange', this.handleVisibilityChange);
                 resolve();
             });
 
@@ -59,6 +75,7 @@ class SocketService {
      */
     disconnect(): void {
         this.stopHeartbeat();
+        document.removeEventListener('visibilitychange', this.handleVisibilityChange);
         if (this.socket) {
             this.socket.disconnect();
             this.socket = null;
@@ -75,7 +92,7 @@ class SocketService {
             if (this.socket?.connected) {
                 this.socket.emit('user:heartbeat', { timestamp: Date.now() });
             }
-        }, 60_000) as unknown as number; // 60 seconds
+        }, 30_000) as unknown as number; // 30 seconds
     }
 
     /**
@@ -140,6 +157,7 @@ class SocketService {
         // Online presence events (real-time analytics)
         this.socket.on('online:joined', (data) => this.emit('online:joined', data));
         this.socket.on('online:left', (data) => this.emit('online:left', data));
+        this.socket.on('online:list', (data) => this.emit('online:list', data));
 
         // System log live-feed (admin dashboard)
         this.socket.on('log:entry', (data) => this.emit('log:entry', data));
@@ -175,6 +193,15 @@ class SocketService {
         return () => {
             this.listeners.get(event)?.delete(callback as SocketEventCallback<unknown>);
         };
+    }
+
+    /**
+     * Request the current online users list from the server
+     */
+    requestOnlineList(): void {
+        if (this.socket?.connected) {
+            this.socket.emit('get:online-list');
+        }
     }
 
     /**
@@ -229,5 +256,6 @@ export type UserJoinedEvent = SocketUser;
 export type UserLeftEvent = { userId: number };
 export type OnlineJoinedEvent = { userId: number; firstName: string; lastName: string; role: string; register: string | null };
 export type OnlineLeftEvent = { userId: number };
+export type OnlineListEvent = { users: Array<{ userId: number; firstName: string; lastName: string; role: string; register: string | null; lastSeen: string }> };
 export type CursorUpdateEvent = CursorPosition;
 export type TypingEvent = { userId: number; firstName: string; noteId: number };

@@ -63,6 +63,7 @@ function App() {
             <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
 
             <Route path="/member" element={<ProtectedRoute><MainLayout /></ProtectedRoute>}>
+              <Route index element={<EventListPage />} />
               <Route path="events" element={<EventListPage />} />
               <Route path="events/:id" element={<EventDetailPage />} />
               <Route path="files" element={<FileListPage />} />

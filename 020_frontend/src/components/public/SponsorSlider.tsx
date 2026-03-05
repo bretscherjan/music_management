@@ -2,9 +2,12 @@ import { useQuery } from '@tanstack/react-query';
 import { cmsService } from '@/services/cmsService';
 import { Loader2 } from 'lucide-react';
 import { getMediaUrl } from '@/lib/api';
-import { useEffect, useRef, useState } from 'react';
+import { useRef, useEffect, useState } from 'react';
 
 export function SponsorSlider() {
+    const containerRef = useRef<HTMLDivElement>(null);
+    const [duration, setDuration] = useState(20);
+
     const { data: sponsors = [], isLoading } = useQuery({
         queryKey: ['sponsors', 'active'],
         queryFn: async () => {
@@ -13,42 +16,15 @@ export function SponsorSlider() {
         }
     });
 
-    const sliderRef = useRef<HTMLDivElement>(null);
-    const [animationDuration, setAnimationDuration] = useState<number>(40);
-
-    // Berechne die Animationsdauer basierend auf der Viewport-Breite
-    // Die Basis-Geschwindigkeit ist 40 Sekunden für Desktop (1920px)
     useEffect(() => {
-        const calculateDuration = () => {
-            if (sliderRef.current) {
-
-                
-                
-                // Referenz: Bei 1920px breite (Desktop) soll es 40s sein
-                // Bei anderen Breiten proportional anpassen
-                const baseWidth = 1920;
-                const baseDuration = 40;
-                
-                // Berechne die Dauer proportional zur Breite
-                const windowWidth = window.innerWidth;
-                const ratio = windowWidth / baseWidth;
-                const newDuration = baseDuration / ratio;
-                
-                setAnimationDuration(newDuration);
-            }
-        };
-
-        // Einmalig beim Mount
-        const timer = setTimeout(calculateDuration, 100);
-        
-        // Rekalkuliere bei Fenster-Größenänderung
-        window.addEventListener('resize', calculateDuration);
-        
-        return () => {
-            clearTimeout(timer);
-            window.removeEventListener('resize', calculateDuration);
-        };
-    }, [sponsors.length]);
+        if (containerRef.current && sponsors.length > 0) {
+            const contentWidth = containerRef.current.scrollWidth;
+            const pixelsPerSecond = 18; // <--- HIER GESCHWINDIGKEIT ANPASSEN
+            
+            const calculatedDuration = (contentWidth / 2) / pixelsPerSecond;
+            setDuration(calculatedDuration);
+        }
+    }, [sponsors]);
 
     if (isLoading) {
         return (
@@ -60,8 +36,8 @@ export function SponsorSlider() {
 
     if (sponsors.length === 0) return null;
 
-    // Multiple copies for a very long track to ensure seamless looping
-    const duplicatedSponsors = [...sponsors, ...sponsors, ...sponsors, ...sponsors, ...sponsors, ...sponsors];
+    // Für einen nahtlosen Loop bei -50% Animation reicht eine einfache Verdopplung aus.
+    const duplicatedSponsors = [...sponsors, ...sponsors, ...sponsors, ...sponsors];
 
     return (
         <section className="py-12 bg-muted/30 overflow-hidden">
@@ -74,11 +50,11 @@ export function SponsorSlider() {
                 <div className="pointer-events-none absolute left-0 top-0 z-10 h-full w-24 bg-gradient-to-r from-[hsl(var(--background))] to-transparent" />
                 <div className="pointer-events-none absolute right-0 top-0 z-10 h-full w-24 bg-gradient-to-l from-[hsl(var(--background))] to-transparent" />
 
-                <div 
-                    ref={sliderRef}
-                    className="py-4 whitespace-nowrap flex items-center gap-12 select-none"
+                <div
+                    ref={containerRef}
+                    className="py-4 whitespace-nowrap flex items-center gap-12 select-none w-max"
                     style={{
-                        animation: `marquee-sponsors ${animationDuration}s linear infinite`,
+                        animation: `marquee-sponsors ${duration}s linear infinite`,
                     } as React.CSSProperties}
                     onMouseEnter={(e) => {
                         (e.currentTarget as HTMLDivElement).style.animationPlayState = 'paused';
@@ -110,7 +86,7 @@ export function SponsorSlider() {
             <style>{`
                 @keyframes marquee-sponsors {
                     0% { transform: translateX(0); }
-                    100% { transform: translateX(-50%); }
+                    100% { transform: translateX(-25%); }
                 }
             `}</style>
         </section>

@@ -1,17 +1,15 @@
-services:
-  ollama:
-    container_name: ollama
+ollama:
     image: ollama/ollama:latest
+    container_name: ollama
     restart: unless-stopped
-
-    volumes:
-      - ./models:/root/.ollama
-
     ports:
-      - "11434:11434" # Host port 11434 → Container port 11434
-
-    environment:
-      # Limit memory usage (~8 GB recommended for 8B models)
-      OLLAMA_MAX_LOADED_MODELS: "1"
-    # Pull the model on first start
-    # Run manually: docker exec ollama ollama pull llama3.1:8b
+      - "11434:11434"
+    volumes:
+      - ./ollama_data:/root/.ollama
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]

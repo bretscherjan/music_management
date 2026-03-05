@@ -49,6 +49,15 @@ export interface NewlyRegisteredUser {
 }
 export interface NewlyRegisteredResponse { days: number; count: number; users: NewlyRegisteredUser[] }
 
+// ── All Users with Engagement ────────────────────────────────────────────────
+export interface AllUsersEngagementUser {
+    id: number; firstName: string; lastName: string; email: string
+    role: string; register: string | null
+    total: number; logins: number; fileDownloads: number; attendanceUpdates: number
+    lastSeenAt: string | null; daysSinceLastSeen: number | null; createdAt: string
+}
+export interface AllUsersEngagementResponse { days: number; users: AllUsersEngagementUser[] }
+
 // ── Service ───────────────────────────────────────────────────────────────────
 
 export const engagementService = {
@@ -72,4 +81,7 @@ export const engagementService = {
 
     getNewlyRegisteredUsers: async (p?: AnalyticsParams): Promise<NewlyRegisteredResponse> =>
         (await api.get('/audit/analytics/newly-registered', { params: p })).data,
+
+    getAllUsersWithEngagement: async (p?: AnalyticsParams): Promise<AllUsersEngagementResponse> =>
+        (await api.get('/audit/analytics/all-users-engagement', { params: p })).data,
 };

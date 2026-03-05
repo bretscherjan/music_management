@@ -23,7 +23,7 @@ function roleFilter(role) {
 // ─────────────────────────────────────────────────────────────────────────────
 
 const INTERACTION_ACTIONS = `('FILE_DOWNLOAD','FILE_PREVIEW','FILE_ACCESS','ATTENDANCE_UPDATE','MUSIC_FOLDER_OPEN','MUSIC_FOLDER_ZIP_DOWNLOAD','SHEET_MUSIC_VIEW')`;
-const VISIT_ACTIONS       = `('EVENT_VIEW','LOGIN')`;
+const VISIT_ACTIONS = `('EVENT_VIEW','LOGIN')`;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Existing log endpoints
@@ -35,11 +35,11 @@ const getAuditLogs = asyncHandler(async (req, res) => {
     const take = parseInt(limit);
     const where = {};
     if (startDate) where.createdAt = { ...where.createdAt, gte: new Date(startDate) };
-    if (endDate)   where.createdAt = { ...where.createdAt, lte: new Date(endDate) };
-    if (action)    where.action = action;
-    if (entity)    where.entity = entity;
-    if (userId)    where.userId = parseInt(userId);
-    if (search)    where.OR = [{ entityId: { contains: search } }];
+    if (endDate) where.createdAt = { ...where.createdAt, lte: new Date(endDate) };
+    if (action) where.action = action;
+    if (entity) where.entity = entity;
+    if (userId) where.userId = parseInt(userId);
+    if (search) where.OR = [{ entityId: { contains: search } }];
 
     const [logs, total] = await Promise.all([
         prisma.auditLog.findMany({
@@ -86,7 +86,7 @@ const getPeakTimes = asyncHandler(async (req, res) => {
     ]);
 
     const DAY_NAMES = ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa'];
-    const hours    = Array.from({ length: 24 }, (_, h) => {
+    const hours = Array.from({ length: 24 }, (_, h) => {
         const f = byHour.find(r => Number(r.hour) === h);
         return { hour: h, count: f ? toNum(f.count) : 0 };
     });
@@ -99,19 +99,19 @@ const getPeakTimes = asyncHandler(async (req, res) => {
 
 /** GET /api/audit/analytics/feature-usage?days=30&role=all|member|admin&registerId=1&type=all|interaction|visit */
 const getFeatureUsage = asyncHandler(async (req, res) => {
-    const days       = Math.max(1, parseInt(req.query.days) || 30);
-    const since      = sinceDate(days);
+    const days = Math.max(1, parseInt(req.query.days) || 30);
+    const since = sinceDate(days);
     const registerId = req.query.registerId ? parseInt(req.query.registerId) : null;
-    const type       = req.query.type || 'all'; // 'all' | 'interaction' | 'visit'
-    const needsJoin  = (req.query.role && req.query.role !== 'all') || registerId;
+    const type = req.query.type || 'all'; // 'all' | 'interaction' | 'visit'
+    const needsJoin = (req.query.role && req.query.role !== 'all') || registerId;
     const { joinClause, whereClause } = roleFilter(req.query.role);
-    const userJoin   = needsJoin && !joinClause ? 'JOIN User u ON al.userId = u.id' : joinClause;
-    const regWhere   = registerId ? `AND u.registerId = ${registerId}` : '';
-    const typeWhere  = type === 'interaction'
+    const userJoin = needsJoin && !joinClause ? 'JOIN User u ON al.userId = u.id' : joinClause;
+    const regWhere = registerId ? `AND u.registerId = ${registerId}` : '';
+    const typeWhere = type === 'interaction'
         ? `AND al.action IN ${INTERACTION_ACTIONS}`
         : type === 'visit'
-        ? `AND al.action IN ${VISIT_ACTIONS}`
-        : '';
+            ? `AND al.action IN ${VISIT_ACTIONS}`
+            : '';
 
     const rows = await prisma.$queryRawUnsafe(`
         SELECT al.action, al.entity, COUNT(*) AS count
@@ -126,11 +126,11 @@ const getFeatureUsage = asyncHandler(async (req, res) => {
 /** GET /api/audit/analytics/online-now?minutes=15 */
 const getOnlineNow = asyncHandler(async (req, res) => {
     const minutes = Math.max(1, Math.min(60, parseInt(req.query.minutes) || 15));
-    const since   = new Date(Date.now() - minutes * 60 * 1000);
+    const since = new Date(Date.now() - minutes * 60 * 1000);
 
     // ── Primary: WebSocket heartbeat (Real-time, most accurate) ──
     const wsOnlineUsers = getOnlineUsersList();
-    
+
     // If WebSocket has connected users, use those (they're actively sending heartbeats)
     if (wsOnlineUsers.length > 0) {
         return res.json({
@@ -187,7 +187,7 @@ const getOnlineNow = asyncHandler(async (req, res) => {
 
 /** GET /api/audit/analytics/activity-by-register?days=30 */
 const getActivityByRegister = asyncHandler(async (req, res) => {
-    const days  = Math.max(1, parseInt(req.query.days) || 30);
+    const days = Math.max(1, parseInt(req.query.days) || 30);
     const since = sinceDate(days);
 
     const rows = await prisma.$queryRaw`
@@ -209,7 +209,7 @@ const getActivityByRegister = asyncHandler(async (req, res) => {
     for (const r of rows) {
         if (!map.has(r.register)) map.set(r.register, { register: r.register, _total: 0 });
         map.get(r.register)[r.action] = toNum(r.count);
-        map.get(r.register)._total   += toNum(r.count);
+        map.get(r.register)._total += toNum(r.count);
     }
 
     // Add registers with no activity
@@ -224,10 +224,10 @@ const getActivityByRegister = asyncHandler(async (req, res) => {
 
 /** GET /api/audit/analytics/top-users?days=30&action=FILE_ACCESS&limit=15 */
 const getTopUsers = asyncHandler(async (req, res) => {
-    const days   = Math.max(1, parseInt(req.query.days)  || 30);
-    const limit  = Math.min(50, parseInt(req.query.limit) || 15);
+    const days = Math.max(1, parseInt(req.query.days) || 30);
+    const limit = Math.min(50, parseInt(req.query.limit) || 15);
     const action = req.query.action || null;
-    const since  = sinceDate(days);
+    const since = sinceDate(days);
     const actionWhere = action ? `AND al.action = '${action.replace(/[^A-Z_]/g, '')}'` : '';
 
     const rows = await prisma.$queryRawUnsafe(`
@@ -246,23 +246,23 @@ const getTopUsers = asyncHandler(async (req, res) => {
         LIMIT ?`, since, limit);
 
     res.json(rows.map(r => ({
-        id:               toNum(r.id),
-        firstName:        r.firstName,
-        lastName:         r.lastName,
-        role:             r.role,
-        register:         r.registerName ?? null,
-        total:            toNum(r.total),
-        logins:           toNum(r.logins),
-        fileDownloads:     toNum(r.fileDownloads),
+        id: toNum(r.id),
+        firstName: r.firstName,
+        lastName: r.lastName,
+        role: r.role,
+        register: r.registerName ?? null,
+        total: toNum(r.total),
+        logins: toNum(r.logins),
+        fileDownloads: toNum(r.fileDownloads),
         attendanceUpdates: toNum(r.attendanceUpdates),
     })));
 });
 
 /** GET /api/audit/analytics/inactive-users?days=30&role=all|member|admin */
 const getInactiveUsers = asyncHandler(async (req, res) => {
-    const days   = Math.max(1, parseInt(req.query.days) || 30);
+    const days = Math.max(1, parseInt(req.query.days) || 30);
     const cutoff = sinceDate(days);
-    const role   = req.query.role && req.query.role !== 'all' ? req.query.role : undefined;
+    const role = req.query.role && req.query.role !== 'all' ? req.query.role : undefined;
 
     // Candidates: active users with no recent lastSeenAt
     const candidates = await prisma.user.findMany({
@@ -321,9 +321,9 @@ const getInactiveUsers = asyncHandler(async (req, res) => {
 
 /** GET /api/audit/analytics/newly-registered?days=30&role=all|member|admin */
 const getNewlyRegisteredUsers = asyncHandler(async (req, res) => {
-    const days   = Math.max(1, parseInt(req.query.days) || 30);
-    const since  = sinceDate(days);
-    const role   = req.query.role && req.query.role !== 'all' ? req.query.role : undefined;
+    const days = Math.max(1, parseInt(req.query.days) || 30);
+    const since = sinceDate(days);
+    const role = req.query.role && req.query.role !== 'all' ? req.query.role : undefined;
 
     const users = await prisma.user.findMany({
         where: {
@@ -356,11 +356,106 @@ const getNewlyRegisteredUsers = asyncHandler(async (req, res) => {
     res.json({ days, count: enriched.length, users: enriched });
 });
 
+/** GET /api/audit/analytics/all-users-engagement?days=30&role=all|member|admin */
+const getAllUsersWithEngagement = asyncHandler(async (req, res) => {
+    const days = Math.max(1, parseInt(req.query.days) || 30);
+    const since = sinceDate(days);
+    const role = req.query.role && req.query.role !== 'all' ? req.query.role : undefined;
+
+    // Get all active users
+    const allUsers = await prisma.user.findMany({
+        where: {
+            status: 'active',
+            ...(role && { role }),
+        },
+        select: {
+            id: true, firstName: true, lastName: true, email: true,
+            role: true, lastSeenAt: true, createdAt: true,
+            register: { select: { name: true } },
+        },
+        orderBy: [{ lastName: 'asc' }, { firstName: 'asc' }],
+    });
+
+    if (allUsers.length === 0) {
+        return res.json({ days, users: [] });
+    }
+
+    // Get engagement stats for all users in one query
+    const userIds = allUsers.map(u => u.id);
+    const placeholders = userIds.map(() => '?').join(',');
+    const engagementRows = await prisma.$queryRawUnsafe(`
+        SELECT al.userId,
+               COUNT(*)                              AS total,
+               SUM(al.action = 'LOGIN')                                          AS logins,
+               SUM(al.action IN ('FILE_DOWNLOAD', 'FILE_ACCESS'))                 AS fileDownloads,
+               SUM(al.action = 'ATTENDANCE_UPDATE')   AS attendanceUpdates,
+               MAX(al.createdAt)                      AS lastActivityAt
+        FROM AuditLog al
+        WHERE al.createdAt >= ? AND al.userId IN (${placeholders})
+        GROUP BY al.userId`, since, ...userIds);
+
+    const engagementMap = new Map();
+    for (const row of engagementRows) {
+        engagementMap.set(toNum(row.userId), {
+            total: toNum(row.total),
+            logins: toNum(row.logins),
+            fileDownloads: toNum(row.fileDownloads),
+            attendanceUpdates: toNum(row.attendanceUpdates),
+            lastActivityAt: row.lastActivityAt,
+        });
+    }
+
+    // For users with null lastSeenAt, check AuditLog as fallback for last seen
+    const nullIds = allUsers.filter(u => !u.lastSeenAt).map(u => u.id);
+    let auditLastSeen = [];
+    if (nullIds.length > 0) {
+        const placeholders2 = nullIds.map(() => '?').join(',');
+        auditLastSeen = await prisma.$queryRawUnsafe(
+            `SELECT userId, MAX(createdAt) AS lastSeen FROM AuditLog WHERE userId IN (${placeholders2}) GROUP BY userId`,
+            ...nullIds
+        );
+    }
+
+    const auditLastSeenMap = new Map(auditLastSeen.map(r => [toNum(r.userId), r.lastSeen]));
+
+    const now = Date.now();
+    const users = allUsers.map(u => {
+        const engagement = engagementMap.get(u.id) || { total: 0, logins: 0, fileDownloads: 0, attendanceUpdates: 0, lastActivityAt: null };
+        // Note: engagement.lastActivityAt is intentionally omitted here – it is
+        // scoped to the selected time window and would give a misleading "last seen"
+        // date. The authoritative sources are: (1) lastSeenAt on the User record
+        // (updated on every login / heartbeat / disconnect) and (2) the unfiltered
+        // AuditLog MAX(createdAt) query above.
+        const effectiveLastSeen = u.lastSeenAt ?? auditLastSeenMap.get(u.id) ?? null;
+        const daysSinceLastSeen = effectiveLastSeen
+            ? Math.floor((now - new Date(effectiveLastSeen).getTime()) / 86_400_000)
+            : null;
+
+        return {
+            id: u.id,
+            firstName: u.firstName,
+            lastName: u.lastName,
+            email: u.email,
+            role: u.role,
+            register: u.register?.name ?? null,
+            total: engagement.total,
+            logins: engagement.logins,
+            fileDownloads: engagement.fileDownloads,
+            attendanceUpdates: engagement.attendanceUpdates,
+            lastSeenAt: effectiveLastSeen,
+            daysSinceLastSeen,
+            createdAt: u.createdAt,
+        };
+    });
+
+    res.json({ days, users });
+});
+
 // ─────────────────────────────────────────────────────────────────────────────
 
 module.exports = {
     getAuditLogs, getAuditFilters,
     getPeakTimes, getFeatureUsage,
     getOnlineNow, getActivityByRegister,
-    getTopUsers, getInactiveUsers, getNewlyRegisteredUsers,
+    getTopUsers, getInactiveUsers, getNewlyRegisteredUsers, getAllUsersWithEngagement,
 };

@@ -18,5 +18,6 @@ router.get('/analytics/activity-by-register', auditController.getActivityByRegis
 router.get('/analytics/top-users',            auditController.getTopUsers);
 router.get('/analytics/inactive-users',       auditController.getInactiveUsers);
 router.get('/analytics/newly-registered',     auditController.getNewlyRegisteredUsers);
+router.get('/analytics/all-users-engagement', auditController.getAllUsersWithEngagement);
 
 module.exports = router;

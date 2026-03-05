@@ -3,7 +3,6 @@ const jwt = require('jsonwebtoken');
 const { PrismaClient } = require('@prisma/client');
 const { asyncHandler, AppError } = require('../middlewares/errorHandler.middleware');
 const { sendWelcomeEmail, sendPasswordResetEmail } = require('../services/email.service');
-const { logEvent } = require('../utils/auditLog.service');
 const logger = require('../utils/logger');
 const crypto = require('crypto');
 
@@ -160,9 +159,16 @@ const login = asyncHandler(async (req, res) => {
 
         // Update lastLoginAt, lastSeenAt and log audit event (non-blocking)
         const now = new Date();
-        prisma.user.update({ where: { id: user.id }, data: { lastLoginAt: now, lastSeenAt: now } }).catch(() => {});
-        logEvent({ action: 'LOGIN', entity: 'User', entityId: user.id, userId: user.id, req });
-        logger.info({ userId: user.id, email: user.email, action: 'LOGIN', info: `${user.firstName} ${user.lastName} (${req.get('User-Agent')?.slice(0, 60) ?? '–'})` });
+        prisma.user.update({ where: { id: user.id }, data: { lastLoginAt: now, lastSeenAt: now } }).catch(() => { });
+        logger.info({
+            userId: user.id,
+            email: user.email,
+            action: 'LOGIN',
+            entity: 'User',
+            entityId: user.id,
+            req,
+            info: `${user.firstName} ${user.lastName} (${req.get('User-Agent')?.slice(0, 60) ?? '–'})`
+        });
 
         // Remove password from response
         const { password: _, ...userWithoutPassword } = user;

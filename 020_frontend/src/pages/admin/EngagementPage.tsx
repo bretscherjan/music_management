@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
     BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RTooltip,
     ResponsiveContainer, Cell, Legend,
@@ -28,7 +28,7 @@ type CombinedUser = {
     email?: string;
     role: string;
     register?: string | null;
-    category: 'top' | 'newly-registered' | 'inactive';
+    category: 'top' | 'newly-registered' | 'inactive' | 'all';
     // Top user fields
     total?: number;
     logins?: number;
@@ -41,32 +41,34 @@ type CombinedUser = {
     // Inactive user fields
     lastSeenAt?: string | null;
     daysInactive?: number | null;
+    // All users fields
+    daysSinceLastSeen?: number | null;
 };
 
 // ── Constants ──────────────────────────────────────────────────────────────────
 
 const ACTION_COLORS: Record<string, string> = {
-    LOGIN:                      '#3b82f6',
-    FILE_DOWNLOAD:              '#10b981',
-    FILE_PREVIEW:               '#06b6d4',
-    FILE_ACCESS:                '#10b981', // legacy
-    ATTENDANCE_UPDATE:          '#f59e0b',
-    MUSIC_FOLDER_OPEN:          '#8b5cf6',
-    MUSIC_FOLDER_ZIP_DOWNLOAD:  '#7c3aed',
-    SHEET_MUSIC_VIEW:           '#ec4899',
-    EVENT_VIEW:                 '#64748b',
+    LOGIN: '#3b82f6',
+    FILE_DOWNLOAD: '#10b981',
+    FILE_PREVIEW: '#06b6d4',
+    FILE_ACCESS: '#10b981', // legacy
+    ATTENDANCE_UPDATE: '#f59e0b',
+    MUSIC_FOLDER_OPEN: '#8b5cf6',
+    MUSIC_FOLDER_ZIP_DOWNLOAD: '#7c3aed',
+    SHEET_MUSIC_VIEW: '#ec4899',
+    EVENT_VIEW: '#64748b',
 };
 
 const ACTION_LABEL: Record<string, string> = {
-    LOGIN:                      'Login',
-    FILE_DOWNLOAD:              'Datei-Download',
-    FILE_PREVIEW:               'Datei-Vorschau',
-    FILE_ACCESS:                'Datei-Zugriff (alt)',
-    ATTENDANCE_UPDATE:          'Termin-Zusage',
-    MUSIC_FOLDER_OPEN:          'Mappe geöffnet',
-    MUSIC_FOLDER_ZIP_DOWNLOAD:  'Mappe als ZIP',
-    SHEET_MUSIC_VIEW:           'Noten angeschaut',
-    EVENT_VIEW:                 'Termin angeschaut',
+    LOGIN: 'Login',
+    FILE_DOWNLOAD: 'Datei-Download',
+    FILE_PREVIEW: 'Datei-Vorschau',
+    FILE_ACCESS: 'Datei-Zugriff (alt)',
+    ATTENDANCE_UPDATE: 'Termin-Zusage',
+    MUSIC_FOLDER_OPEN: 'Mappe geöffnet',
+    MUSIC_FOLDER_ZIP_DOWNLOAD: 'Mappe als ZIP',
+    SHEET_MUSIC_VIEW: 'Noten angeschaut',
+    EVENT_VIEW: 'Termin angeschaut',
 };
 
 // Fallback color for chart items without a configured color
@@ -89,12 +91,12 @@ function RoleBadge({ role }: { role: string }) {
 
 export function EngagementPage() {
     // ── Global filters ──────────────────────────────────────────────────────
-    const [days,       setDays]       = useState('30');
-    const [role,       setRole]       = useState<'all' | 'member' | 'admin'>('all');
+    const [days, setDays] = useState('30');
+    const [role, setRole] = useState<'all' | 'member' | 'admin'>('all');
     const [featureType, setFeatureType] = useState<'all' | 'interaction' | 'visit'>('all');
-    
+
     // ── Combined users table filters ────────────────────────────────────────
-    const [userCategory, setUserCategory] = useState<'all' | 'top' | 'newly-registered' | 'inactive'>('all');
+    const [userCategory, setUserCategory] = useState<'all' | 'top' | 'newly-registered' | 'inactive' | 'all-members'>('all');
     const [inactDays, setInactDays] = useState('30');
     const [newRegDays, setNewRegDays] = useState('30');
     const [topAction, setTopAction] = useState('all');
@@ -108,15 +110,17 @@ export function EngagementPage() {
     // Tracks last-seen time for users who recently went offline (keyed by userId)
     const [recentlyOffline, setRecentlyOffline] = useState<Record<number, Date>>({});
 
+    const queryClient = useQueryClient();
     const params: AnalyticsParams = { days: Number(days), role };
 
     // ── Queries ─────────────────────────────────────────────────────────────
-    const { data: peakData,     isLoading: loadingPeak }     = useQuery({ queryKey: ['eng-peak',    days, role], queryFn: () => engagementService.getPeakTimes(params) });
-    const { data: featureData,  isLoading: loadingFeature }  = useQuery({ queryKey: ['eng-feature', days, role, featureType], queryFn: () => engagementService.getFeatureUsage({ ...params, type: featureType }) });
-    const { data: regData,      isLoading: loadingReg }      = useQuery({ queryKey: ['eng-reg',     days], queryFn: () => engagementService.getActivityByRegister({ days: Number(days) }) });
-    const { data: topData,      isLoading: loadingTop }      = useQuery({ queryKey: ['eng-top',     days, role, topAction], queryFn: () => engagementService.getTopUsers({ ...params, action: topAction === 'all' ? undefined : topAction, limit: 100 }) });
+    const { data: peakData, isLoading: loadingPeak } = useQuery({ queryKey: ['eng-peak', days, role], queryFn: () => engagementService.getPeakTimes(params) });
+    const { data: featureData, isLoading: loadingFeature } = useQuery({ queryKey: ['eng-feature', days, role, featureType], queryFn: () => engagementService.getFeatureUsage({ ...params, type: featureType }) });
+    const { data: regData, isLoading: loadingReg } = useQuery({ queryKey: ['eng-reg', days], queryFn: () => engagementService.getActivityByRegister({ days: Number(days) }) });
+    const { data: topData, isLoading: loadingTop } = useQuery({ queryKey: ['eng-top', days, role, topAction], queryFn: () => engagementService.getTopUsers({ ...params, action: topAction === 'all' ? undefined : topAction, limit: 100 }) });
     const { data: inactiveData, isLoading: loadingInactive } = useQuery({ queryKey: ['eng-inactive', inactDays], queryFn: () => engagementService.getInactiveUsers({ days: Number(inactDays), role: 'all' }) });
-    const { data: newRegData,   isLoading: loadingNewReg }   = useQuery({ queryKey: ['eng-newreg',   newRegDays], queryFn: () => engagementService.getNewlyRegisteredUsers({ days: Number(newRegDays) }) });
+    const { data: newRegData, isLoading: loadingNewReg } = useQuery({ queryKey: ['eng-newreg', newRegDays], queryFn: () => engagementService.getNewlyRegisteredUsers({ days: Number(newRegDays) }) });
+    const { data: allUsersData, isLoading: loadingAllUsers } = useQuery({ queryKey: ['eng-all-users', days, role], queryFn: () => engagementService.getAllUsersWithEngagement(params), staleTime: 0 });
 
     // ── Initialize online data from API fallback & set up WebSocket listeners ──
     useEffect(() => {
@@ -144,6 +148,11 @@ export function EngagementPage() {
             // Record the moment they went offline as their last-seen time
             setRecentlyOffline(prev => ({ ...prev, [data.userId]: new Date() }));
             setOnlineUsers(prev => prev.filter(u => u.id !== data.userId));
+            // Invalidate allUsersData after a short delay so the DB write (lastSeenAt)
+            // from the disconnect handler has time to complete before we re-fetch.
+            setTimeout(() => {
+                queryClient.invalidateQueries({ queryKey: ['eng-all-users'] });
+            }, 1500);
         });
 
         // online:list replaces the full list (initial load or on-demand refresh)
@@ -207,11 +216,17 @@ export function EngagementPage() {
         return [...actions];
     }, [regData]);
 
-    const maxPeakHour    = Math.max(...(peakData?.hours.map(h => h.count)    ?? [0]));
+    const maxPeakHour = Math.max(...(peakData?.hours.map(h => h.count) ?? [0]));
     const maxPeakWeekday = Math.max(...(peakData?.weekdays.map(d => d.count) ?? [0]));
 
     // ── Merged Users (combine top, new, inactive) ──────────────────────────
     const combinedUsers: CombinedUser[] = useMemo(() => {
+        // Build a lookup map from allUsersData so every user in the combined table
+        // can get a lastSeenAt, even if their primary endpoint doesn't return it.
+        const allUsersMap = new Map(
+            (allUsersData?.users ?? []).map(u => [u.id, u])
+        );
+
         const merged: CombinedUser[] = [];
 
         // Add top users
@@ -227,6 +242,7 @@ export function EngagementPage() {
                 logins: u.logins,
                 fileDownloads: u.fileDownloads,
                 attendanceUpdates: u.attendanceUpdates,
+                lastSeenAt: allUsersMap.get(u.id)?.lastSeenAt ?? null,
             });
         });
 
@@ -244,6 +260,7 @@ export function EngagementPage() {
                     createdAt: u.createdAt,
                     daysSinceCreation: u.daysSinceCreation,
                     isActive: u.isActive,
+                    lastSeenAt: allUsersMap.get(u.id)?.lastSeenAt ?? null,
                 });
             }
         });
@@ -266,14 +283,14 @@ export function EngagementPage() {
         });
 
         return merged;
-    }, [topData, newRegData, inactiveData]);
+    }, [topData, newRegData, inactiveData, allUsersData]);
 
     // ── Combined Users Sort State ──────────────────────────────────────────
-    type CombinedUserSortCol = 'lastName' | 'firstName' | 'email' | 'register' | 'createdAt' | 'daysSinceCreation' | 'lastSeenAt' | 'daysInactive' | 'total' | 'logins' | 'fileDownloads' | 'attendanceUpdates';
-    
+    type CombinedUserSortCol = 'lastName' | 'firstName' | 'email' | 'register' | 'createdAt' | 'daysSinceCreation' | 'lastSeenAt' | 'daysInactive' | 'total' | 'logins' | 'fileDownloads' | 'attendanceUpdates' | 'daysSinceLastSeen';
+
     const [combinedSortCol, setCombinedSortCol] = useState<CombinedUserSortCol>('lastName');
     const [combinedSortDir, setCombinedSortDir] = useState<'asc' | 'desc'>('asc');
-    
+
     const toggleCombinedSort = (col: CombinedUserSortCol) => {
         if (col === combinedSortCol) {
             setCombinedSortDir(d => d === 'asc' ? 'desc' : 'asc');
@@ -282,8 +299,8 @@ export function EngagementPage() {
             setCombinedSortDir('desc');
         }
     };
-    
-    const getCombinedSortIcon = (col: CombinedUserSortCol) => 
+
+    const getCombinedSortIcon = (col: CombinedUserSortCol) =>
         col !== combinedSortCol ? <ChevronsUpDown className="h-3 w-3 opacity-40" /> : combinedSortDir === 'desc' ? <ChevronDown className="h-3 w-3" /> : <ChevronUp className="h-3 w-3" />;
 
     const sortedCombinedUsers = useMemo(() => {
@@ -542,6 +559,7 @@ export function EngagementPage() {
                         <SelectTrigger className="w-[200px]"><SelectValue /></SelectTrigger>
                         <SelectContent>
                             <SelectItem value="all">Alle Kategorien</SelectItem>
+                            <SelectItem value="all-members">Alle Mitglieder</SelectItem>
                             <SelectItem value="top">Top Mitglieder</SelectItem>
                             <SelectItem value="newly-registered">Neu registriert</SelectItem>
                             <SelectItem value="inactive">Inaktiv</SelectItem>
@@ -589,131 +607,250 @@ export function EngagementPage() {
 
                 <Card>
                     <CardContent className="p-0">
-                        {loadingTop || loadingNewReg || loadingInactive ? (
-                            <div className="p-8 text-center text-slate-400">Laden…</div>
-                        ) : sortedCombinedUsers.length === 0 ? (
-                            <div className="p-8 text-center text-slate-400">
-                                Keine Mitglieder in dieser Kategorie.
-                            </div>
-                        ) : (
-                            <div className="overflow-x-auto">
-                                <table className="w-full text-sm">
-                                    <thead className="bg-slate-50 border-b text-slate-500 sticky top-0">
-                                        <tr>
-                                            <th className="h-10 px-4 text-left">Kategorie</th>
-                                            <th className="h-10 px-4 font-medium cursor-pointer select-none hover:text-slate-800 whitespace-nowrap" onClick={() => toggleCombinedSort('lastName')}>
-                                                <span className="inline-flex items-center gap-1">Name {getCombinedSortIcon('lastName')}</span>
-                                            </th>
-                                            <th className="h-10 px-4 text-left">E-Mail</th>
-                                            <th className="h-10 px-4 text-left">Register</th>
-                                            <th className="h-10 px-4 text-left">Rolle</th>
-                                            <th className="h-10 px-4 font-medium cursor-pointer select-none hover:text-slate-800 whitespace-nowrap" onClick={() => toggleCombinedSort('createdAt')}>
-                                                <span className="inline-flex items-center gap-1">Registriert {getCombinedSortIcon('createdAt')}</span>
-                                            </th>
-                                            <th className="h-10 px-4 text-right font-medium cursor-pointer select-none hover:text-slate-800 whitespace-nowrap" onClick={() => toggleCombinedSort('daysSinceCreation')}>
-                                                <span className="inline-flex items-center gap-1 flex-row-reverse">Tage neu {getCombinedSortIcon('daysSinceCreation')}</span>
-                                            </th>
-                                            <th className="h-10 px-4 text-left">Status</th>
-                                            <th className="h-10 px-4 font-medium cursor-pointer select-none hover:text-slate-800 whitespace-nowrap" onClick={() => toggleCombinedSort('lastSeenAt')}>
-                                                <span className="inline-flex items-center gap-1">Zuletzt aktiv {getCombinedSortIcon('lastSeenAt')}</span>
-                                            </th>
-                                            <th className="h-10 px-4 text-right font-medium cursor-pointer select-none hover:text-slate-800 whitespace-nowrap" onClick={() => toggleCombinedSort('daysInactive')}>
-                                                <span className="inline-flex items-center gap-1 flex-row-reverse">Tage inaktiv {getCombinedSortIcon('daysInactive')}</span>
-                                            </th>
-                                            <th className="h-10 px-4 text-right font-medium cursor-pointer select-none hover:text-slate-800 whitespace-nowrap" onClick={() => toggleCombinedSort('total')}>
-                                                <span className="inline-flex items-center gap-1 flex-row-reverse">Gesamt Aktionen {getCombinedSortIcon('total')}</span>
-                                            </th>
-                                            <th className="h-10 px-4 text-right font-medium cursor-pointer select-none hover:text-slate-800 whitespace-nowrap" onClick={() => toggleCombinedSort('logins')}>
-                                                <span className="inline-flex items-center gap-1 flex-row-reverse">Logins {getCombinedSortIcon('logins')}</span>
-                                            </th>
-                                            <th className="h-10 px-4 text-right font-medium cursor-pointer select-none hover:text-slate-800 whitespace-nowrap" onClick={() => toggleCombinedSort('fileDownloads')}>
-                                                <span className="inline-flex items-center gap-1 flex-row-reverse">Downloads {getCombinedSortIcon('fileDownloads')}</span>
-                                            </th>
-                                            <th className="h-10 px-4 text-right font-medium cursor-pointer select-none hover:text-slate-800 whitespace-nowrap" onClick={() => toggleCombinedSort('attendanceUpdates')}>
-                                                <span className="inline-flex items-center gap-1 flex-row-reverse">Zusagen {getCombinedSortIcon('attendanceUpdates')}</span>
-                                            </th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {sortedCombinedUsers.map((u, i) => (
-                                            <tr key={`${u.id}-${u.category}`} className={`border-b transition-colors ${i % 2 === 0 ? 'bg-white' : 'bg-slate-50'} hover:bg-blue-50`}>
-                                                <td className="px-4 py-2.5">
-                                                    <Badge variant={u.category === 'top' ? 'default' : u.category === 'newly-registered' ? 'secondary' : 'outline'}>
-                                                        {u.category === 'top' ? '⭐ Top' : u.category === 'newly-registered' ? '🆕 Neu' : '⏸️ Inaktiv'}
-                                                    </Badge>
-                                                </td>
-                                                <td className="px-4 py-2.5 font-medium">{u.lastName} {u.firstName}</td>
-                                                <td className="px-4 py-2.5 text-slate-500 text-xs">{u.email ?? '–'}</td>
-                                                <td className="px-4 py-2.5 text-slate-500">{u.register ?? '–'}</td>
-                                                <td className="px-4 py-2.5"><RoleBadge role={u.role} /></td>
-                                                <td className="px-4 py-2.5 text-xs">
-                                                    {u.createdAt ? format(new Date(u.createdAt), 'dd.MM.yyyy HH:mm', { locale: de }) : '–'}
-                                                </td>
-                                                <td className="px-4 py-2.5 text-right text-xs font-mono">{u.daysSinceCreation ?? '–'}</td>
-                                                <td className="px-4 py-2.5">
-                                                    {(() => {
-                                                        const onlineEntry = onlineUsers.find(ou => ou.id === u.id);
-                                                        if (onlineEntry) {
-                                                            return (
-                                                                <span className="inline-flex items-center gap-1 text-xs font-semibold text-green-700 bg-green-100 rounded-full px-2 py-0.5">
-                                                                    <span className="h-1.5 w-1.5 rounded-full bg-green-500 animate-pulse" /> Online
-                                                                </span>
-                                                            );
-                                                        }
-                                                        if (u.isActive !== undefined) {
-                                                            return u.isActive
-                                                                ? <span className="inline-flex items-center gap-1 text-xs font-semibold text-green-700 bg-green-100 rounded-full px-2 py-0.5">
-                                                                    <span className="h-1.5 w-1.5 rounded-full bg-green-500" /> Aktiv
-                                                                </span>
-                                                                : <span className="inline-flex items-center gap-1 text-xs font-semibold text-slate-600 bg-slate-100 rounded-full px-2 py-0.5">
-                                                                    <span className="h-1.5 w-1.5 rounded-full bg-slate-400" /> Inaktiv
-                                                                </span>;
-                                                        }
-                                                        return '–';
-                                                    })()}
-                                                </td>
-                                                <td className="px-4 py-2.5">
-                                                    {(() => {
-                                                        const onlineEntry = onlineUsers.find(ou => ou.id === u.id);
-                                                        if (onlineEntry) {
-                                                            return (
-                                                                <div className="flex flex-col">
-                                                                    <span className="text-green-600 text-xs font-medium">Gerade aktiv</span>
-                                                                    <span className="text-slate-400 text-xs">
-                                                                        {formatDistanceToNow(onlineEntry.lastSeen, { addSuffix: true, locale: de })}
-                                                                    </span>
-                                                                </div>
-                                                            );
-                                                        }
-                                                        const recentTs = recentlyOffline[u.id];
-                                                        const lastSeenDate = recentTs ?? (u.lastSeenAt ? new Date(u.lastSeenAt) : null);
-                                                        if (lastSeenDate) {
-                                                            return (
-                                                                <div className="flex flex-col">
-                                                                    <span className="text-amber-600 text-xs">
-                                                                        {format(lastSeenDate, 'dd.MM.yyyy HH:mm', { locale: de })}
-                                                                    </span>
-                                                                    <span className="text-slate-400 text-xs">
-                                                                        {formatDistanceToNow(lastSeenDate, { addSuffix: true, locale: de })}
-                                                                    </span>
-                                                                </div>
-                                                            );
-                                                        }
-                                                        return u.category === 'inactive' ? <span className="text-red-500 font-medium text-xs">Noch nie</span> : '–';
-                                                    })()}
-                                                </td>
-                                                <td className="px-4 py-2.5 text-right">
-                                                    {u.daysInactive !== undefined ? <InactiveBadge days={u.daysInactive} /> : '–'}
-                                                </td>
-                                                <td className="px-4 py-2.5 text-right font-bold">{u.total ?? '–'}</td>
-                                                <td className="px-4 py-2.5 text-right text-blue-600">{u.logins ?? '–'}</td>
-                                                <td className="px-4 py-2.5 text-right text-emerald-600">{u.fileDownloads ?? '–'}</td>
-                                                <td className="px-4 py-2.5 text-right text-amber-600">{u.attendanceUpdates ?? '–'}</td>
+                        {userCategory === 'all-members' ? (
+                            // All Members Table
+                            loadingAllUsers ? (
+                                <div className="p-8 text-center text-slate-400">Laden…</div>
+                            ) : !allUsersData?.users.length ? (
+                                <div className="p-8 text-center text-slate-400">
+                                    Keine Mitglieder gefunden.
+                                </div>
+                            ) : (
+                                <div className="overflow-x-auto">
+                                    <table className="w-full text-sm">
+                                        <thead className="bg-slate-50 border-b text-slate-500 sticky top-0">
+                                            <tr>
+                                                <th className="h-10 px-4 font-medium cursor-pointer select-none hover:text-slate-800 whitespace-nowrap" onClick={() => toggleCombinedSort('lastName')}>
+                                                    <span className="inline-flex items-center gap-1">Name {getCombinedSortIcon('lastName')}</span>
+                                                </th>
+                                                <th className="h-10 px-4 text-left">E-Mail</th>
+                                                <th className="h-10 px-4 text-left">Register</th>
+                                                <th className="h-10 px-4 text-left">Rolle</th>
+                                                <th className="h-10 px-4 text-right font-medium cursor-pointer select-none hover:text-slate-800 whitespace-nowrap" onClick={() => toggleCombinedSort('total')}>
+                                                    <span className="inline-flex items-center gap-1 flex-row-reverse">Gesamt {getCombinedSortIcon('total')}</span>
+                                                </th>
+                                                <th className="h-10 px-4 text-right font-medium cursor-pointer select-none hover:text-slate-800 whitespace-nowrap" onClick={() => toggleCombinedSort('logins')}>
+                                                    <span className="inline-flex items-center gap-1 flex-row-reverse">Logins {getCombinedSortIcon('logins')}</span>
+                                                </th>
+                                                <th className="h-10 px-4 text-right font-medium cursor-pointer select-none hover:text-slate-800 whitespace-nowrap" onClick={() => toggleCombinedSort('fileDownloads')}>
+                                                    <span className="inline-flex items-center gap-1 flex-row-reverse">Downloads {getCombinedSortIcon('fileDownloads')}</span>
+                                                </th>
+                                                <th className="h-10 px-4 text-right font-medium cursor-pointer select-none hover:text-slate-800 whitespace-nowrap" onClick={() => toggleCombinedSort('attendanceUpdates')}>
+                                                    <span className="inline-flex items-center gap-1 flex-row-reverse">Anwesenheit {getCombinedSortIcon('attendanceUpdates')}</span>
+                                                </th>
+                                                <th className="h-10 px-4 font-medium cursor-pointer select-none hover:text-slate-800 whitespace-nowrap" onClick={() => toggleCombinedSort('lastSeenAt')}>
+                                                    <span className="inline-flex items-center gap-1">Zuletzt aktiv {getCombinedSortIcon('lastSeenAt')}</span>
+                                                </th>
                                             </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            </div>
+                                        </thead>
+                                        <tbody>
+                                            {allUsersData.users
+                                                .sort((a, b) => {
+                                                    let aVal: any, bVal: any;
+                                                    switch (combinedSortCol) {
+                                                        case 'lastName': aVal = a.lastName; bVal = b.lastName; break;
+                                                        case 'firstName': aVal = a.firstName; bVal = b.firstName; break;
+                                                        case 'email': aVal = a.email; bVal = b.email; break;
+                                                        case 'register': aVal = a.register; bVal = b.register; break;
+                                                        case 'total': aVal = a.total; bVal = b.total; break;
+                                                        case 'logins': aVal = a.logins; bVal = b.logins; break;
+                                                        case 'fileDownloads': aVal = a.fileDownloads; bVal = b.fileDownloads; break;
+                                                        case 'attendanceUpdates': aVal = a.attendanceUpdates; bVal = b.attendanceUpdates; break;
+                                                        case 'lastSeenAt': aVal = a.lastSeenAt ? new Date(a.lastSeenAt).getTime() : null; bVal = b.lastSeenAt ? new Date(b.lastSeenAt).getTime() : null; break;
+                                                        case 'daysSinceLastSeen': aVal = a.daysSinceLastSeen; bVal = b.daysSinceLastSeen; break;
+                                                        default: return 0;
+                                                    }
+                                                    if (aVal == null && bVal == null) return 0;
+                                                    if (aVal == null) return combinedSortDir === 'asc' ? 1 : -1;
+                                                    if (bVal == null) return combinedSortDir === 'asc' ? -1 : 1;
+                                                    if (typeof aVal === 'string' && typeof bVal === 'string') {
+                                                        return combinedSortDir === 'asc' ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal);
+                                                    }
+                                                    if (typeof aVal === 'number' && typeof bVal === 'number') {
+                                                        return combinedSortDir === 'asc' ? aVal - bVal : bVal - aVal;
+                                                    }
+                                                    return 0;
+                                                })
+                                                .map((u, i) => (
+                                                    <tr key={u.id} className={`border-b hover:bg-slate-50 ${i % 2 === 0 ? 'bg-white' : 'bg-slate-25'}`}>
+                                                        <td className="px-4 py-3 font-medium">{u.lastName}, {u.firstName}</td>
+                                                        <td className="px-4 py-3 text-slate-600">{u.email}</td>
+                                                        <td className="px-4 py-3">{u.register || '-'}</td>
+                                                        <td className="px-4 py-3">
+                                                            <Badge variant={u.role === 'admin' ? 'destructive' : 'secondary'} className="text-xs">
+                                                                {u.role === 'admin' ? 'Admin' : 'Mitglied'}
+                                                            </Badge>
+                                                        </td>
+                                                        <td className="px-4 py-3 text-right font-mono">{u.total}</td>
+                                                        <td className="px-4 py-3 text-right font-mono">{u.logins}</td>
+                                                        <td className="px-4 py-3 text-right font-mono">{u.fileDownloads}</td>
+                                                        <td className="px-4 py-3 text-right font-mono">{u.attendanceUpdates}</td>
+                                                        <td className="px-4 py-3">
+                                                            {(() => {
+                                                                const onlineEntry = onlineUsers.find(ou => ou.id === u.id);
+                                                                const recentTs = recentlyOffline[u.id];
+                                                                if (onlineEntry) {
+                                                                    return (
+                                                                        <div className="flex flex-col">
+                                                                            <span className="inline-flex items-center gap-1 text-xs font-semibold text-green-700 bg-green-100 rounded-full px-2 py-0.5 w-fit">
+                                                                                <span className="h-1.5 w-1.5 rounded-full bg-green-500 animate-pulse" /> Online
+                                                                            </span>
+                                                                            <span className="text-slate-400 text-xs mt-0.5">
+                                                                                {formatDistanceToNow(onlineEntry.lastSeen, { addSuffix: true, locale: de })}
+                                                                            </span>
+                                                                        </div>
+                                                                    );
+                                                                }
+                                                                const lastSeenDate = recentTs ?? (u.lastSeenAt ? new Date(u.lastSeenAt) : null);
+                                                                if (lastSeenDate) {
+                                                                    return (
+                                                                        <div className="flex flex-col">
+                                                                            <span className="text-amber-600 text-xs">
+                                                                                {format(lastSeenDate, 'dd.MM.yyyy HH:mm', { locale: de })}
+                                                                            </span>
+                                                                            <span className="text-slate-400 text-xs">
+                                                                                {formatDistanceToNow(lastSeenDate, { addSuffix: true, locale: de })}
+                                                                            </span>
+                                                                        </div>
+                                                                    );
+                                                                }
+                                                                return <span className="text-slate-400 text-xs">Nie</span>;
+                                                            })()}
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            )
+                        ) : (
+                            // Existing Combined Table
+                            loadingTop || loadingNewReg || loadingInactive ? (
+                                <div className="p-8 text-center text-slate-400">Laden…</div>
+                            ) : sortedCombinedUsers.length === 0 ? (
+                                <div className="p-8 text-center text-slate-400">
+                                    Keine Mitglieder in dieser Kategorie.
+                                </div>
+                            ) : (
+                                <div className="overflow-x-auto">
+                                    <table className="w-full text-sm">
+                                        <thead className="bg-slate-50 border-b text-slate-500 sticky top-0">
+                                            <tr>
+                                                <th className="h-10 px-4 text-left">Kategorie</th>
+                                                <th className="h-10 px-4 font-medium cursor-pointer select-none hover:text-slate-800 whitespace-nowrap" onClick={() => toggleCombinedSort('lastName')}>
+                                                    <span className="inline-flex items-center gap-1">Name {getCombinedSortIcon('lastName')}</span>
+                                                </th>
+                                                <th className="h-10 px-4 text-left">E-Mail</th>
+                                                <th className="h-10 px-4 text-left">Register</th>
+                                                <th className="h-10 px-4 text-left">Rolle</th>
+                                                <th className="h-10 px-4 font-medium cursor-pointer select-none hover:text-slate-800 whitespace-nowrap" onClick={() => toggleCombinedSort('createdAt')}>
+                                                    <span className="inline-flex items-center gap-1">Registriert {getCombinedSortIcon('createdAt')}</span>
+                                                </th>
+                                                <th className="h-10 px-4 text-right font-medium cursor-pointer select-none hover:text-slate-800 whitespace-nowrap" onClick={() => toggleCombinedSort('daysSinceCreation')}>
+                                                    <span className="inline-flex items-center gap-1 flex-row-reverse">Tage neu {getCombinedSortIcon('daysSinceCreation')}</span>
+                                                </th>
+                                                <th className="h-10 px-4 text-left">Status</th>
+                                                <th className="h-10 px-4 font-medium cursor-pointer select-none hover:text-slate-800 whitespace-nowrap" onClick={() => toggleCombinedSort('lastSeenAt')}>
+                                                    <span className="inline-flex items-center gap-1">Zuletzt aktiv {getCombinedSortIcon('lastSeenAt')}</span>
+                                                </th>
+                                                <th className="h-10 px-4 text-right font-medium cursor-pointer select-none hover:text-slate-800 whitespace-nowrap" onClick={() => toggleCombinedSort('daysInactive')}>
+                                                    <span className="inline-flex items-center gap-1 flex-row-reverse">Tage inaktiv {getCombinedSortIcon('daysInactive')}</span>
+                                                </th>
+                                                <th className="h-10 px-4 text-right font-medium cursor-pointer select-none hover:text-slate-800 whitespace-nowrap" onClick={() => toggleCombinedSort('total')}>
+                                                    <span className="inline-flex items-center gap-1 flex-row-reverse">Gesamt Aktionen {getCombinedSortIcon('total')}</span>
+                                                </th>
+                                                <th className="h-10 px-4 text-right font-medium cursor-pointer select-none hover:text-slate-800 whitespace-nowrap" onClick={() => toggleCombinedSort('logins')}>
+                                                    <span className="inline-flex items-center gap-1 flex-row-reverse">Logins {getCombinedSortIcon('logins')}</span>
+                                                </th>
+                                                <th className="h-10 px-4 text-right font-medium cursor-pointer select-none hover:text-slate-800 whitespace-nowrap" onClick={() => toggleCombinedSort('fileDownloads')}>
+                                                    <span className="inline-flex items-center gap-1 flex-row-reverse">Downloads {getCombinedSortIcon('fileDownloads')}</span>
+                                                </th>
+                                                <th className="h-10 px-4 text-right font-medium cursor-pointer select-none hover:text-slate-800 whitespace-nowrap" onClick={() => toggleCombinedSort('attendanceUpdates')}>
+                                                    <span className="inline-flex items-center gap-1 flex-row-reverse">Zusagen {getCombinedSortIcon('attendanceUpdates')}</span>
+                                                </th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {sortedCombinedUsers.map((u, i) => (
+                                                <tr key={`${u.id}-${u.category}`} className={`border-b transition-colors ${i % 2 === 0 ? 'bg-white' : 'bg-slate-50'} hover:bg-blue-50`}>
+                                                    <td className="px-4 py-2.5">
+                                                        <Badge variant={u.category === 'top' ? 'default' : u.category === 'newly-registered' ? 'secondary' : 'outline'}>
+                                                            {u.category === 'top' ? 'Top' : u.category === 'newly-registered' ? 'Neu' : 'Inaktiv'}
+                                                        </Badge>
+                                                    </td>
+                                                    <td className="px-4 py-2.5 font-medium">{u.lastName} {u.firstName}</td>
+                                                    <td className="px-4 py-2.5 text-slate-500 text-xs">{u.email ?? '–'}</td>
+                                                    <td className="px-4 py-2.5 text-slate-500">{u.register ?? '–'}</td>
+                                                    <td className="px-4 py-2.5"><RoleBadge role={u.role} /></td>
+                                                    <td className="px-4 py-2.5 text-xs">
+                                                        {u.createdAt ? format(new Date(u.createdAt), 'dd.MM.yyyy HH:mm', { locale: de }) : '–'}
+                                                    </td>
+                                                    <td className="px-4 py-2.5 text-right text-xs font-mono">{u.daysSinceCreation ?? '–'}</td>
+                                                    <td className="px-4 py-2.5">
+                                                        {(() => {
+                                                            const onlineEntry = onlineUsers.find(ou => ou.id === u.id);
+                                                            if (onlineEntry) {
+                                                                return (
+                                                                    <span className="inline-flex items-center gap-1 text-xs font-semibold text-green-700 bg-green-100 rounded-full px-2 py-0.5">
+                                                                        <span className="h-1.5 w-1.5 rounded-full bg-green-500 animate-pulse" /> Online
+                                                                    </span>
+                                                                );
+                                                            }
+                                                            if (u.isActive !== undefined) {
+                                                                return u.isActive
+                                                                    ? <span className="inline-flex items-center gap-1 text-xs font-semibold text-green-700 bg-green-100 rounded-full px-2 py-0.5">
+                                                                        <span className="h-1.5 w-1.5 rounded-full bg-green-500" /> Aktiv
+                                                                    </span>
+                                                                    : <span className="inline-flex items-center gap-1 text-xs font-semibold text-slate-600 bg-slate-100 rounded-full px-2 py-0.5">
+                                                                        <span className="h-1.5 w-1.5 rounded-full bg-slate-400" /> Inaktiv
+                                                                    </span>;
+                                                            }
+                                                            return '–';
+                                                        })()}
+                                                    </td>
+                                                    <td className="px-4 py-2.5">
+                                                        {(() => {
+                                                            const onlineEntry = onlineUsers.find(ou => ou.id === u.id);
+                                                            if (onlineEntry) {
+                                                                return (
+                                                                    <div className="flex flex-col">
+                                                                        <span className="text-green-600 text-xs font-medium">Gerade aktiv</span>
+                                                                        <span className="text-slate-400 text-xs">
+                                                                            {formatDistanceToNow(onlineEntry.lastSeen, { addSuffix: true, locale: de })}
+                                                                        </span>
+                                                                    </div>
+                                                                );
+                                                            }
+                                                            const recentTs = recentlyOffline[u.id];
+                                                            const lastSeenDate = recentTs ?? (u.lastSeenAt ? new Date(u.lastSeenAt) : null);
+                                                            if (lastSeenDate) {
+                                                                return (
+                                                                    <div className="flex flex-col">
+                                                                        <span className="text-amber-600 text-xs">
+                                                                            {format(lastSeenDate, 'dd.MM.yyyy HH:mm', { locale: de })}
+                                                                        </span>
+                                                                        <span className="text-slate-400 text-xs">
+                                                                            {formatDistanceToNow(lastSeenDate, { addSuffix: true, locale: de })}
+                                                                        </span>
+                                                                    </div>
+                                                                );
+                                                            }
+                                                            return u.category === 'inactive' ? <span className="text-red-500 font-medium text-xs">Noch nie</span> : '–';
+                                                        })()}
+                                                    </td>
+                                                    <td className="px-4 py-2.5 text-right">
+                                                        {u.daysInactive !== undefined ? <InactiveBadge days={u.daysInactive} /> : '–'}
+                                                    </td>
+                                                    <td className="px-4 py-2.5 text-right font-bold">{u.total ?? '–'}</td>
+                                                    <td className="px-4 py-2.5 text-right text-blue-600">{u.logins ?? '–'}</td>
+                                                    <td className="px-4 py-2.5 text-right text-emerald-600">{u.fileDownloads ?? '–'}</td>
+                                                    <td className="px-4 py-2.5 text-right text-amber-600">{u.attendanceUpdates ?? '–'}</td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            )
                         )}
                     </CardContent>
                 </Card>

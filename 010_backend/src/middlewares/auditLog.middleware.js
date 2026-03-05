@@ -1,4 +1,4 @@
-const { logEvent } = require('../utils/auditLog.service');
+const logger = require('../utils/logger');
 
 /**
  * Returns an Express middleware that logs a named audit event
@@ -18,7 +18,7 @@ const auditMiddleware = (action, entity, getEntityId = null) => {
             // Only log successful responses (2xx / 3xx)
             if (_res.statusCode >= 400) return;
 
-            logEvent({
+            logger.info({
                 action,
                 entity,
                 entityId: getEntityId ? getEntityId(req) : null,

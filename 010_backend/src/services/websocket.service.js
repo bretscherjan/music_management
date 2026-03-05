@@ -133,9 +133,21 @@ function initializeWebSocket(httpServer) {
         });
 
         // Handle user going away (tab hidden / window minimized)
-        socket.on('user:away', () => {
+        socket.on('user:away', async () => {
             if (onlineUsers.has(socket.user.id)) {
                 onlineUsers.delete(socket.user.id);
+                
+                // Persist lastSeenAt to database
+                try {
+                    await prisma.user.update({
+                        where: { id: socket.user.id },
+                        data: { lastSeenAt: new Date() }
+                    });
+                    console.log(`💾 lastSeenAt updated for user ${socket.user.id}`);
+                } catch (err) {
+                    console.error(`Failed to update lastSeenAt: ${err.message}`);
+                }
+                
                 socket.to('workspace').emit('online:left', { userId: socket.user.id });
             }
         });
@@ -195,9 +207,25 @@ function initializeWebSocket(httpServer) {
         });
 
         // Handle disconnection
-        socket.on('disconnect', () => {
+        socket.on('disconnect', async () => {
             console.log(`🔌 Admin disconnected from workspace: ${socket.user.firstName} ${socket.user.lastName}`);
-            onlineUsers.delete(socket.user.id);
+            
+            // Only update if user was still online
+            if (onlineUsers.has(socket.user.id)) {
+                onlineUsers.delete(socket.user.id);
+                
+                // Persist lastSeenAt to database
+                try {
+                    await prisma.user.update({
+                        where: { id: socket.user.id },
+                        data: { lastSeenAt: new Date() }
+                    });
+                    console.log(`💾 lastSeenAt updated for user ${socket.user.id} on disconnect`);
+                } catch (err) {
+                    console.error(`Failed to update lastSeenAt on disconnect: ${err.message}`);
+                }
+            }
+            
             socket.to('workspace').emit('user:left', {
                 userId: socket.user.id
             });
@@ -208,12 +236,24 @@ function initializeWebSocket(httpServer) {
     });
 
     // ── Cleanup inactive users every 30 seconds ──
-    const cleanupInterval = setInterval(() => {
+    const cleanupInterval = setInterval(async () => {
         const now = Date.now();
         for (const [userId, userInfo] of onlineUsers.entries()) {
             if (now - userInfo.lastHeartbeat > HEARTBEAT_TIMEOUT) {
                 console.log(`⏰ User ${userId} timed out (inactive for 2+ min)`);
                 onlineUsers.delete(userId);
+                
+                // Persist lastSeenAt to database
+                try {
+                    await prisma.user.update({
+                        where: { id: userId },
+                        data: { lastSeenAt: new Date() }
+                    });
+                    console.log(`💾 lastSeenAt updated for user ${userId} on heartbeat timeout`);
+                } catch (err) {
+                    console.error(`Failed to update lastSeenAt on timeout: ${err.message}`);
+                }
+                
                 io.to('workspace').emit('online:left', { userId });
                 // Also notify via socket if it's still connected
                 if (io.sockets.sockets.get(userInfo.socketId)) {

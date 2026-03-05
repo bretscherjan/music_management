@@ -4,7 +4,7 @@ const FormData = require('form-data');
 const PDFDocument = require('pdfkit');
 const llmService = require('../services/llm.service');
 
-const WHISPER_URL = process.env.WHISPER_URL || 'http://whisper-api:8000';
+const WHISPER_URL = process.env.WHISPER_URL || 'http://ollama.letsbuild.ch:9000/';
 
 // Store audio in memory (max 500 MB) – large enough for 3h recordings
 const upload = multer({

@@ -3,7 +3,7 @@ const multer = require('multer');
 const FormData = require('form-data');
 
 // Whisper server URL – can be overridden via environment variable
-const WHISPER_URL = process.env.WHISPER_URL || 'http://whisper-api:8000';
+const WHISPER_URL = process.env.WHISPER_URL || 'http://ollama.letsbuild.ch:9000/';
 
 // Store audio in memory (max 200 MB) – large enough for long meetings
 const upload = multer({

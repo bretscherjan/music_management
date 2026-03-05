@@ -17,14 +17,42 @@
  *   logger.error({ source: 'BullMQ',  action: 'REMINDER_FAILED',   info: 'Redis Timeout', error: err });
  */
 
-const path        = require('path');
-const winston     = require('winston');
+const path = require('path');
+const fs = require('fs');
+const winston = require('winston');
 require('winston-daily-rotate-file');
 
 // ── Constants ────────────────────────────────────────────────────────────────
 
-const LOG_DIR        = path.join(process.cwd(), 'logs');
-const BUFFER_SIZE    = 200; // entries kept in memory for the live-feed
+const LOG_DIR = path.join(process.cwd(), 'logs');
+const BUFFER_SIZE = 200; // entries kept in memory for the live-feed
+
+// ── NDJSON structured log writer ─────────────────────────────────────────────
+
+function writeJsonEntry(entry) {
+    const date = entry.timestamp.slice(0, 10); // YYYY-MM-DD
+    const file = path.join(LOG_DIR, `${date}.ndjson`);
+    fs.appendFile(file, JSON.stringify(entry) + '\n', () => { });
+}
+
+/** Delete NDJSON files older than 30 days (matches winston maxFiles:'30d'). */
+function cleanupOldJsonFiles() {
+    try {
+        const cutoff = Date.now() - 30 * 24 * 60 * 60 * 1000;
+        fs.readdirSync(LOG_DIR)
+            .filter(f => f.endsWith('.ndjson'))
+            .forEach(f => {
+                const full = path.join(LOG_DIR, f);
+                if (fs.statSync(full).mtimeMs < cutoff) fs.unlinkSync(full);
+            });
+    } catch (_) { }
+}
+
+// Run cleanup once at startup (non-blocking)
+setImmediate(() => {
+    try { fs.mkdirSync(LOG_DIR, { recursive: true }); } catch (_) { }
+    cleanupOldJsonFiles();
+});
 
 // ── Circular in-memory buffer ────────────────────────────────────────────────
 
@@ -44,12 +72,12 @@ const lineFormat = winston.format.printf(({ timestamp, level, message }) => {
 // ── Transports ───────────────────────────────────────────────────────────────
 
 const fileTransport = new winston.transports.DailyRotateFile({
-    dirname:        LOG_DIR,
-    filename:       '%DATE%.log',
-    datePattern:    'YYYY-MM-DD',
-    zippedArchive:  false,
-    maxFiles:       '30d',          // auto-delete after 30 days (DSGVO)
-    level:          'info',
+    dirname: LOG_DIR,
+    filename: '%DATE%.log',
+    datePattern: 'YYYY-MM-DD',
+    zippedArchive: false,
+    maxFiles: '30d',          // auto-delete after 30 days (DSGVO)
+    level: 'info',
 });
 
 const consoleTransport = new winston.transports.Console({
@@ -100,7 +128,7 @@ function actor({ userId, email, ip, source } = {}) {
  * @param {{ userId?, ip?, source?, action, info }} params
  */
 function buildEntry(level, { userId = null, email = null, ip = null, source = null, action, info = '', error = null }) {
-    const ts  = new Date().toISOString().replace('T', ' ').slice(0, 19);
+    const ts = new Date().toISOString().replace('T', ' ').slice(0, 19);
     const act = actor({ userId, email, ip, source });
 
     // attach error message/stack if provided
@@ -118,16 +146,17 @@ function buildEntry(level, { userId = null, email = null, ip = null, source = nu
 
     const msg = `${act.padEnd(20)} - ${action}${info ? ` (${info})` : ''}`;
     return {
-        id:        `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+        id: `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
         timestamp: ts,
         level,
-        actor:     act,
+        actor: act,
         userId,
         email,
+        ip,
         action,
         info,
-        error:      error instanceof Error ? error.stack || error.message : error,
-        message:   msg,
+        error: error instanceof Error ? error.stack || error.message : error,
+        message: msg,
     };
 }
 
@@ -144,11 +173,46 @@ function broadcastEntry(entry) {
     }
 }
 
+/**
+ * Save log entry to the database via auditLog (lazy import).
+ */
+function saveToDb(entry, params) {
+    try {
+        const { logEvent } = require('./auditLog.service');
+        const entity = params.entity || 'SystemLog';
+
+        let newValue = params.newValue;
+        // If it has info or error details, store them in newValue
+        if (!newValue && (entry.info || entry.error)) {
+            newValue = {
+                level: entry.level,
+                message: entry.message,
+                ...(entry.info && { info: entry.info }),
+                ...(params.error && { error: params.error instanceof Error ? params.error.message : String(params.error) })
+            };
+        }
+
+        logEvent({
+            action: entry.action,
+            entity,
+            entityId: params.entityId || null,
+            userId: entry.userId,
+            req: params.req || null,
+            ip: entry.ip,
+            userAgent: params.userAgent || null,
+            oldValue: params.oldValue,
+            newValue
+        });
+    } catch (err) {
+        console.error('[Logger] Failed to save to DB:', err.message);
+    }
+}
+
 // ── Public API ───────────────────────────────────────────────────────────────
 
 const logger = {
     /**
-     * @param {{ userId?, email?, ip?, source?, action: string, info?: string, error?: any }} params
+     * @param {{ userId?, email?, ip?, source?, action: string, info?: string, error?: any, req?: any, entity?: string, entityId?: any, oldValue?: any, newValue?: any, userAgent?: string }} params
      *        - `email` is logged when available to identify users in entries
      *        - `error` may be an Error object whose message/stack are appended
      */
@@ -156,28 +220,34 @@ const logger = {
         const entry = buildEntry('INFO', params);
         winstonLogger.info(entry.message);
         pushToBuffer(entry);
+        writeJsonEntry(entry);
         broadcastEntry(entry);
+        saveToDb(entry, params);
     },
 
     /**
-     * @param {{ userId?, email?, ip?, source?, action: string, info?: string, error?: any }} params
+     * @param {{ userId?, email?, ip?, source?, action: string, info?: string, error?: any, req?: any, entity?: string, entityId?: any, oldValue?: any, newValue?: any, userAgent?: string }} params
      */
     warn(params) {
         const entry = buildEntry('WARN', params);
         winstonLogger.warn(entry.message);
         pushToBuffer(entry);
+        writeJsonEntry(entry);
         broadcastEntry(entry);
+        saveToDb(entry, params);
     },
 
     /**
-     * @param {{ userId?, email?, ip?, source?, action: string, info?: string, error?: any }} params
+     * @param {{ userId?, email?, ip?, source?, action: string, info?: string, error?: any, req?: any, entity?: string, entityId?: any, oldValue?: any, newValue?: any, userAgent?: string }} params
      *        - if `params.error` is provided the message or stack will be logged
      */
     error(params) {
         const entry = buildEntry('ERROR', params);
         winstonLogger.error(entry.message);
         pushToBuffer(entry);
+        writeJsonEntry(entry);
         broadcastEntry(entry);
+        saveToDb(entry, params);
     },
 
     /** Returns last N buffer entries (newest first). */

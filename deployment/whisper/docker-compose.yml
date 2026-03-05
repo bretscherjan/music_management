@@ -5,10 +5,10 @@ services:
       context: .
       dockerfile: Dockerfile
     restart: unless-stopped
-    environment:
+environment:
       WHISPER_MODEL: "large-v3"
       WHISPER_DEVICE: "cuda"
-      WHISPER_COMPUTE_TYPE: "float16"
+      WHISPER_COMPUTE_TYPE: "int8_float16"
     volumes:
       - ./models:/app/models
     ports:

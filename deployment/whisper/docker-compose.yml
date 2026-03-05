@@ -7,7 +7,7 @@ services:
     restart: unless-stopped
     environment:
       WHISPER_MODEL: "large-v3"
-      WHISPER_DEVICE: "cuda"
+      WHISPER_DEVICE: "cpu"
       WHISPER_COMPUTE_TYPE: "int8"
     volumes:
       - ./models:/app/models

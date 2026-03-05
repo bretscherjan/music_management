@@ -5,39 +5,18 @@ services:
       context: .
       dockerfile: Dockerfile
     restart: unless-stopped
-
     environment:
-      # Model size: tiny | base | small | medium | large-v2 | large-v3
-      # large-v3 is best for Swiss German but needs ~3 GB RAM (CPU) or VRAM (GPU)
-      # For slow/low-RAM servers use "medium" or "small"
       WHISPER_MODEL: "large-v3"
-
-      # Device: "cpu" (works everywhere) or "cuda" (requires NVIDIA GPU + nvidia-container-toolkit)
-      WHISPER_DEVICE: "cpu"
-
-      # Compute type:
-      #   CPU:  "int8" (fast, low RAM) or "float32" (accurate, more RAM)
-      #   GPU:  "float16" (recommended)
-      WHISPER_COMPUTE_TYPE: "int8"
-
+      WHISPER_DEVICE: "cuda"
+      WHISPER_COMPUTE_TYPE: "float16"
     volumes:
-      # Models are downloaded once and cached here (can be several GB)
       - ./models:/app/models
-      - ./outputs:/app/outputs
-
     ports:
-      - "9000:8000"   # Host port 9000 → Container port 8000
-
-    # ── GPU Support (NVIDIA) ────────────────────────────────────────────────
-    # To enable GPU:
-    #   1. Install nvidia-container-toolkit on the host
-    #   2. Set WHISPER_DEVICE=cuda and WHISPER_COMPUTE_TYPE=float16 above
-    #   3. Uncomment the deploy section below
-    # -------------------------------------------------------------------------
-    # deploy:
-    #   resources:
-    #     reservations:
-    #       devices:
-    #         - driver: nvidia
-    #           count: all
-    #           capabilities: [ gpu ]
+      - "9000:8000"
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]

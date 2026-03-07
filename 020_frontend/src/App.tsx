@@ -32,6 +32,7 @@ import { EngagementPage } from '@/pages/admin/EngagementPage';
 import { MusicFolderPage } from '@/pages/secured/music-folder/MusicFolderPage';
 import { ToolkitPage } from '@/pages/secured/toolkit/ToolkitPage';
 import { TheoryPage } from '@/pages/secured/theory/TheoryPage';
+import { GrifftabellePage } from '@/pages/secured/grifftabelle/GrifftabellePage';
 import { WorkspacePage } from '@/pages/admin/WorkspacePage';
 import { CmsManagementPage } from '@/pages/admin/CmsManagementPage';
 import { DatabasePreviewerPage } from '@/pages/admin/DatabasePreviewerPage';
@@ -74,6 +75,7 @@ function App() {
               <Route path="settings" element={<UserSettingsPage />} />
               <Route path="members" element={<UserManagementPage />} />
 
+              <Route path="grifftabelle" element={<GrifftabellePage />} />
               <Route path="admin/toolkit" element={<ToolkitPage />} />
               <Route path="admin/theory" element={<TheoryPage />} />
               <Route path="admin/events/new" element={<ProtectedRoute requireAdmin><CreateEventPage /></ProtectedRoute>} />

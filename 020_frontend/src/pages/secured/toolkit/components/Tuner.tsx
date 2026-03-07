@@ -24,25 +24,25 @@ function noteToFrequency(noteIndex: number, octave: number): number {
   return 440 * Math.pow(2, semisFromA4 / 12);
 }
 
-// ── Pitch Detection ──────────────────────────────────────────────────────────
+// ── Pitch Detection (MPM – McLeod Pitch Method) ──────────────────────────────
 
 function detectPitch(buffer: Float32Array<ArrayBuffer>, sampleRate: number): number {
   const n = buffer.length;
 
-  // RMS check – reject silence
+  // RMS check – reject silence / very quiet input
   let rms = 0;
   for (let i = 0; i < n; i++) rms += buffer[i] * buffer[i];
   rms = Math.sqrt(rms / n);
-  if (rms < 0.015) return -1;
+  if (rms < 0.01) return -1;
 
   // Limit lag search to audible musical range 50 Hz – 2 kHz
   const minLag = Math.floor(sampleRate / 2000);
   const maxLag = Math.min(Math.floor(sampleRate / 50), Math.floor(n / 2));
+  const nsdfLen = maxLag - minLag + 1;
 
-  // Normalised sum-of-differences (NSDF / YIN-like)
-  let bestLag = -1;
-  let bestCorr = -Infinity;
-  const corrs: number[] = [];
+  // Compute NSDF (normalised autocorrelation) for every lag and track global max
+  const nsdf = new Float32Array(nsdfLen);
+  let globalMax = -Infinity;
 
   for (let lag = minLag; lag <= maxLag; lag++) {
     let num = 0, denom = 0;
@@ -50,20 +50,38 @@ function detectPitch(buffer: Float32Array<ArrayBuffer>, sampleRate: number): num
       num += buffer[i] * buffer[i + lag];
       denom += buffer[i] * buffer[i] + buffer[i + lag] * buffer[i + lag];
     }
-    const nsdf = denom > 0 ? 2 * num / denom : 0;
-    corrs.push(nsdf);
-    if (nsdf > bestCorr) {
-      bestCorr = nsdf;
-      bestLag = lag;
+    const val = denom > 0 ? 2 * num / denom : 0;
+    nsdf[lag - minLag] = val;
+    if (val > globalMax) globalMax = val;
+  }
+
+  // Reject weak / noisy signals
+  if (globalMax < 0.4) return -1;
+
+  // MPM key insight: the fundamental period is the FIRST local maximum above
+  // KEY * globalMax — NOT the global maximum (which is often a harmonic).
+  const threshold = 0.86 * globalMax;
+  let bestLag = -1;
+
+  for (let i = 1; i < nsdfLen - 1; i++) {
+    if (nsdf[i] >= nsdf[i - 1] && nsdf[i] > nsdf[i + 1] && nsdf[i] >= threshold) {
+      bestLag = i + minLag;
+      break; // first peak above threshold = fundamental, stop here
     }
   }
 
-  if (bestCorr < 0.8 || bestLag < 0) return -1;
+  // Fallback to global max if no peak was found above threshold
+  if (bestLag < 0) {
+    for (let i = 0; i < nsdfLen; i++) {
+      if (nsdf[i] === globalMax) { bestLag = i + minLag; break; }
+    }
+    if (globalMax < 0.6) return -1;
+  }
 
   // Parabolic interpolation for sub-sample accuracy
   const idx = bestLag - minLag;
-  if (idx > 0 && idx < corrs.length - 1) {
-    const a = corrs[idx - 1], b = corrs[idx], c = corrs[idx + 1];
+  if (idx > 0 && idx < nsdfLen - 1) {
+    const a = nsdf[idx - 1], b = nsdf[idx], c = nsdf[idx + 1];
     const denom2 = 2 * b - a - c;
     const delta = denom2 > 0 ? (c - a) / (2 * denom2) : 0;
     return sampleRate / (bestLag + delta);
@@ -151,6 +169,8 @@ export function Tuner() {
   const streamRef = useRef<MediaStream | null>(null);
   const rafRef = useRef<number>(0);
   const bufferRef = useRef<Float32Array<ArrayBuffer> | null>(null);
+  // Median filter: keeps last N valid frequencies to smooth out jitter
+  const freqHistoryRef = useRef<number[]>([]);
 
   const tonePlayer = useTonePlayer();
 
@@ -168,8 +188,20 @@ export function Tuner() {
   }, [noteInfo, transpose]);
 
   const startListening = useCallback(async () => {
+    // getUserMedia requires HTTPS or localhost
+    if (!navigator.mediaDevices?.getUserMedia) {
+      alert('Das Stimmgerät benötigt eine sichere Verbindung (HTTPS). Bitte die App über HTTPS aufrufen.');
+      return;
+    }
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          echoCancellation: false,
+          autoGainControl: false,
+          noiseSuppression: false,
+        },
+        video: false,
+      });
       streamRef.current = stream;
       const ctx = new AudioContext();
       audioCtxRef.current = ctx;
@@ -179,24 +211,39 @@ export function Tuner() {
       bufferRef.current = new Float32Array(analyser.fftSize);
       const source = ctx.createMediaStreamSource(stream);
       source.connect(analyser);
+      freqHistoryRef.current = [];
       setListening(true);
 
       const tick = () => {
         if (!analyserRef.current || !bufferRef.current) return;
         analyserRef.current.getFloatTimeDomainData(bufferRef.current);
-        const freq = detectPitch(bufferRef.current, ctx.sampleRate);
-        if (freq > 0) {
-          setFrequency(freq);
-          setNoteInfo(frequencyToNote(freq));
+        const raw = detectPitch(bufferRef.current, ctx.sampleRate);
+        if (raw > 0) {
+          // Median filter: accumulate last 5 readings, display median to reduce jitter
+          const hist = freqHistoryRef.current;
+          hist.push(raw);
+          if (hist.length > 5) hist.shift();
+          const sorted = [...hist].sort((a, b) => a - b);
+          const median = sorted[Math.floor(sorted.length / 2)];
+          setFrequency(median);
+          setNoteInfo(frequencyToNote(median));
         } else {
+          freqHistoryRef.current = [];
           setFrequency(null);
           setNoteInfo(null);
         }
         rafRef.current = requestAnimationFrame(tick);
       };
       rafRef.current = requestAnimationFrame(tick);
-    } catch {
-      alert('Mikrofon-Zugriff wurde verweigert.');
+    } catch (err) {
+      const name = err instanceof DOMException ? err.name : '';
+      if (name === 'NotAllowedError' || name === 'PermissionDeniedError') {
+        alert('Mikrofon-Zugriff wurde verweigert. Bitte die Berechtigung im Browser erteilen.');
+      } else if (name === 'NotFoundError' || name === 'DevicesNotFoundError') {
+        alert('Kein Mikrofon gefunden. Bitte ein Mikrofon anschließen.');
+      } else {
+        alert(`Mikrofon konnte nicht gestartet werden: ${err instanceof Error ? err.message : err}`);
+      }
     }
   }, []);
 
@@ -212,11 +259,17 @@ export function Tuner() {
     setNoteInfo(null);
   }, []);
 
-  useEffect(() => () => { stopListening(); tonePlayer.stop(); }, [stopListening, tonePlayer]);
+  const tonePlayerStop = tonePlayer.stop;
+  useEffect(() => {
+    return () => {
+      stopListening();
+      tonePlayerStop();
+    };
+  }, [stopListening, tonePlayerStop]);
 
-  // Needle angle: ±50 cents → ±60°
+  // Needle angle: ±50 cents → ±90°
   const centsVal = displayNoteInfo?.cents ?? 0;
-  const needleAngle = Math.max(-60, Math.min(60, (centsVal / 50) * 60));
+  const needleAngle = Math.max(-90, Math.min(90, (centsVal / 50) * 90));
   const isInTune = Math.abs(centsVal) <= 5;
   const needleColor = isInTune ? '#405116' : Math.abs(centsVal) <= 20 ? '#BDD18C' : '#ef4444';
 
@@ -414,7 +467,8 @@ function ToneKeyboard({ transpose, tonePlayer }: ToneKeyboardProps) {
                 // Position black keys between white keys
                 const prevWhite = slice.filter((r, idx) => idx < i && !isSharp(r.writtenNote)).length;
                 const whiteWidth = 100 / 7;
-                const leftPct = (prevWhite) * whiteWidth + whiteWidth * 0.6;
+                // Center the black key over the boundary of the previous white key
+                const leftPct = prevWhite * whiteWidth - (whiteWidth * 0.4);
                 return (
                   <button
                     key={row.writtenNote}

@@ -14,9 +14,9 @@ $ErrorActionPreference = "Stop"
 
 $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 if ([string]::IsNullOrWhiteSpace($ScriptDir)) { $ScriptDir = $PWD.Path }
-$DeploymentDir = Join-Path $ScriptDir "deployment"
-$FrontendDir = Join-Path $ScriptDir "020_frontend"
-$BackendDir = Join-Path $ScriptDir "010_backend"
+$DeploymentDir = Join-Path $ScriptDir "../deployment"
+$FrontendDir = Join-Path $ScriptDir "../020_frontend"
+$BackendDir = Join-Path $ScriptDir "../010_backend"
 $OllamaModel = if ($ENV:OLLAMA_MODEL) { $ENV:OLLAMA_MODEL } else { "llama3.1:8b" }
 
 Write-Host "========================================" -ForegroundColor Cyan

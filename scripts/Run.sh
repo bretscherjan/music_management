@@ -34,9 +34,9 @@ done
 
 OLLAMA_MODEL="${OLLAMA_MODEL:-llama3.1:8b}"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-DEPLOYMENT_DIR="$SCRIPT_DIR/deployment"
-FRONTEND_DIR="$SCRIPT_DIR/020_frontend"
-BACKEND_DIR="$SCRIPT_DIR/010_backend"
+DEPLOYMENT_DIR="$SCRIPT_DIR/../deployment"
+FRONTEND_DIR="$SCRIPT_DIR/../020_frontend"
+BACKEND_DIR="$SCRIPT_DIR/../010_backend"
 
 echo "========================================"
 echo "  musig-elgg Start Script"

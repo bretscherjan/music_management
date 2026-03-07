@@ -7,7 +7,7 @@ import {
     Folder,
     Wrench,
     BookOpen,
-    TableProperties,
+    // TableProperties,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -19,7 +19,7 @@ const navItems = [
     { label: 'Mitglieder', href: '/member/members', icon: Users },
     { label: 'Toolkit', href: '/member/admin/toolkit', icon: Wrench },
     { label: 'Theorie', href: '/member/admin/theory', icon: BookOpen },
-    { label: 'Grifftabelle', href: '/member/grifftabelle', icon: TableProperties },
+    // { label: 'Grifftabelle', href: '/member/grifftabelle', icon: TableProperties },
 ];
 
 export function MobileBottomNav() {

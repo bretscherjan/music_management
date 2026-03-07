@@ -14,7 +14,7 @@ import {
     ScrollText,
     Wrench,
     BookOpen,
-    TableProperties,
+    // TableProperties,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -35,7 +35,7 @@ const mainNavItems: NavItem[] = [
 const adminNavItems: NavItem[] = [
     { label: 'Toolkit', href: '/member/admin/toolkit', icon: <Wrench className="h-5 w-5" /> },
     { label: 'Theorie', href: '/member/admin/theory', icon: <BookOpen className="h-5 w-5" /> },
-    { label: 'Grifftabelle', href: '/member/grifftabelle', icon: <TableProperties className="h-5 w-5" /> },
+    // { label: 'Grifftabelle', href: '/member/grifftabelle', icon: <TableProperties className="h-5 w-5" /> },
     { label: 'Termine verwalten', href: '/member/admin/events', icon: <Calendar className="h-5 w-5" />, adminOnly: true },
     { label: 'Workspace', href: '/member/admin/workspace', icon: <Folder className="h-5 w-5" />, adminOnly: true },
     { label: 'Notenverwaltung', href: '/member/admin/sheet-music', icon: <Library className="h-5 w-5" />, adminOnly: true },

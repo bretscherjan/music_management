@@ -1,5 +1,4 @@
 import { useMemo } from 'react';
-import { Range } from 'tonal';
 import grifftabellenData from '@/data/grifftabellen.json';
 import type { GrifftabelleInstrument, GrifftabelleFingering } from '@/types/grifftabelle';
 
@@ -13,7 +12,7 @@ export function useFingering(instrumentId: string, selectedNote: string | null) 
 
   const availableNotes = useMemo((): string[] => {
     if (!instrument) return [];
-    return Range.chromatic([instrument.metadata.range.min, instrument.metadata.range.max]);
+    return instrument.fingerings.map(f => f.note);
   }, [instrument]);
 
   const fingering = useMemo((): GrifftabelleFingering | null => {

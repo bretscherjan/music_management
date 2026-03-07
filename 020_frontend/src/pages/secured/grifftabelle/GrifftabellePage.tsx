@@ -6,22 +6,12 @@ import { NoteStaff } from './components/NoteStaff';
 import { FingeringDisplay } from './components/FingeringDisplay';
 import { useFingering } from './hooks/useFingering';
 
-const BASS_CLEF_INSTRUMENTS = new Set([
-  'trombone',
-  'tuba_eb',
-  'tuba_bb',
-  'euphonium',
-  'baritone_horn',
-  'bassoon',
-]);
-
 export function GrifftabellePage() {
   const [instrumentId, setInstrumentId] = useState('flute');
   const [selectedNote, setSelectedNote] = useState<string | null>(null);
+  const [clef, setClef] = useState<'treble' | 'bass'>('treble');
 
   const { instrument, availableNotes, fingering } = useFingering(instrumentId, selectedNote);
-
-  const clef: 'treble' | 'bass' = BASS_CLEF_INSTRUMENTS.has(instrumentId) ? 'bass' : 'treble';
 
   function handleInstrumentChange(id: string) {
     setInstrumentId(id);
@@ -50,12 +40,41 @@ export function GrifftabellePage() {
         </div>
       </div>
 
-      {/* Instrument selector */}
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
-        <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
-          Instrument
-        </p>
-        <InstrumentSelector value={instrumentId} onChange={handleInstrumentChange} />
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        {/* Instrument selector */}
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
+          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
+            Instrument
+          </p>
+          <InstrumentSelector value={instrumentId} onChange={handleInstrumentChange} />
+        </div>
+
+        {/* Clef selector */}
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
+          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
+            Notenschlüssel
+          </p>
+          <div className="flex items-center gap-1 bg-gray-50 p-1 rounded-xl border border-gray-100">
+            <button
+              onClick={() => setClef('treble')}
+              className={`flex-1 text-sm font-medium py-2 px-3 rounded-lg transition-all ${clef === 'treble'
+                  ? 'bg-white shadow-sm text-[#405116] border border-gray-200/50'
+                  : 'text-gray-500 hover:text-gray-700'
+                }`}
+            >
+              Violinschlüssel
+            </button>
+            <button
+              onClick={() => setClef('bass')}
+              className={`flex-1 text-sm font-medium py-2 px-3 rounded-lg transition-all ${clef === 'bass'
+                  ? 'bg-white shadow-sm text-[#405116] border border-gray-200/50'
+                  : 'text-gray-500 hover:text-gray-700'
+                }`}
+            >
+              Bassschlüssel
+            </button>
+          </div>
+        </div>
       </div>
 
       {/* Note selector — long VexFlow staff */}

@@ -14,7 +14,7 @@ const SVG_HEIGHT = 260;    // total SVG height (room for ledger lines above + be
 const STAVE_Y = 120;       // vertical position of stave (generous margin above for high notes)
 
 function toVexKey(note: string): string {
-  const m = note.match(/^([A-G])(#?)(\d+)$/);
+  const m = note.match(/^([A-G])([#b]?)(\d+)$/);
   if (!m) return 'c/4';
   return `${m[1].toLowerCase()}${m[2]}/${m[3]}`;
 }
@@ -46,6 +46,8 @@ export function NoteSelector({ notes, selected, onChange, clef = 'treble' }: Not
       const sn = new StaveNote({ keys: [toVexKey(note)], duration: 'q', clef });
       if (note.includes('#')) {
         sn.addModifier(new Accidental('#'));
+      } else if (note.includes('b')) {
+        sn.addModifier(new Accidental('b'));
       }
       // Colour: selected = brand dark green, others = light gray
       if (note === selected) {

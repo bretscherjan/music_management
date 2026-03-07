@@ -58,15 +58,16 @@ export function GrifftabellePage() {
         <InstrumentSelector value={instrumentId} onChange={handleInstrumentChange} />
       </div>
 
-      {/* Note selector (piano keyboard) */}
+      {/* Note selector — long VexFlow staff */}
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
         <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">
-          Klaviatur — Ton wählen
+          Ton wählen — auf Note klicken
         </p>
         <NoteSelector
           notes={availableNotes}
           selected={selectedNote}
           onChange={setSelectedNote}
+          clef={clef}
         />
       </div>
 

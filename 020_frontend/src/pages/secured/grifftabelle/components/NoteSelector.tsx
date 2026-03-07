@@ -1,147 +1,119 @@
-import { useEffect, useRef } from 'react';
-import { cn } from '@/lib/utils';
+import { useEffect, useRef, useCallback } from 'react';
+import { Renderer, Stave, StaveNote, Voice, Formatter, Accidental } from 'vexflow';
 
 interface NoteSelectorProps {
   notes: string[];
   selected: string | null;
   onChange: (note: string) => void;
+  clef?: 'treble' | 'bass';
 }
 
-const WHITE_KEY_W = 32;
-const WHITE_KEY_H = 96;
-const BLACK_KEY_W = 20;
-const BLACK_KEY_H = 58;
+const NOTE_SPACING = 42;   // px per note
+const MARGIN_LEFT = 90;    // space for clef on the left
+const SVG_HEIGHT = 260;    // total SVG height (room for ledger lines above + below)
+const STAVE_Y = 120;       // vertical position of stave (generous margin above for high notes)
 
-// Index of each white key within one octave
-const WHITE_KEY_INDEX: Record<string, number> = {
-  C: 0, D: 1, E: 2, F: 3, G: 4, A: 5, B: 6,
-};
-
-// Center alignment (in white-key units) for each black key within one octave
-const BLACK_KEY_CENTER: Record<string, number> = {
-  'C#': 1, 'D#': 2, 'F#': 4, 'G#': 5, 'A#': 6,
-};
-
-function parseNote(note: string): { pc: string; oct: number } {
-  const m = note.match(/^([A-G]#?)(\d+)$/);
-  return m ? { pc: m[1], oct: parseInt(m[2], 10) } : { pc: 'C', oct: 4 };
+function toVexKey(note: string): string {
+  const m = note.match(/^([A-G])(#?)(\d+)$/);
+  if (!m) return 'c/4';
+  return `${m[1].toLowerCase()}${m[2]}/${m[3]}`;
 }
 
-interface KeyData {
-  note: string;
-  x: number;
-  black: boolean;
-}
-
-function buildKeyLayout(notes: string[]): { keys: KeyData[]; totalWidth: number } {
-  if (notes.length === 0) return { keys: [], totalWidth: 0 };
-
-  const parsed = notes.map(n => ({ note: n, ...parseNote(n) }));
-  const baseOctave = parsed[0].oct;
-
-  const keys: KeyData[] = parsed.map(({ note, pc, oct }) => {
-    const octOffset = (oct - baseOctave) * 7 * WHITE_KEY_W;
-    const black = pc in BLACK_KEY_CENTER;
-    const x = black
-      ? octOffset + BLACK_KEY_CENTER[pc] * WHITE_KEY_W - BLACK_KEY_W / 2
-      : octOffset + WHITE_KEY_INDEX[pc] * WHITE_KEY_W;
-    return { note, x, black };
-  });
-
-  // Normalize so the first white key starts at x=0
-  const minX = Math.min(...keys.filter(k => !k.black).map(k => k.x));
-  keys.forEach(k => (k.x -= minX));
-
-  const lastWhite = keys.filter(k => !k.black).at(-1);
-  const totalWidth = lastWhite ? lastWhite.x + WHITE_KEY_W : 0;
-
-  return { keys, totalWidth };
-}
-
-export function NoteSelector({ notes, selected, onChange }: NoteSelectorProps) {
+export function NoteSelector({ notes, selected, onChange, clef = 'treble' }: NoteSelectorProps) {
+  const containerRef = useRef<HTMLDivElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
-  const selectedRef = useRef<HTMLButtonElement>(null);
+  // Store x-center of each rendered note for click detection
+  const noteXRef = useRef<{ note: string; x: number }[]>([]);
 
   useEffect(() => {
-    selectedRef.current?.scrollIntoView({
-      behavior: 'smooth',
-      block: 'nearest',
-      inline: 'center',
+    const container = containerRef.current;
+    if (!container || notes.length === 0) return;
+
+    container.innerHTML = '';
+    noteXRef.current = [];
+
+    const totalWidth = MARGIN_LEFT + notes.length * NOTE_SPACING + 30;
+
+    const renderer = new Renderer(container, Renderer.Backends.SVG);
+    renderer.resize(totalWidth, SVG_HEIGHT);
+    const ctx = renderer.getContext();
+
+    const stave = new Stave(0, STAVE_Y, totalWidth - 5);
+    stave.addClef(clef);
+    stave.setContext(ctx).draw();
+
+    const staveNoteData = notes.map(note => {
+      const sn = new StaveNote({ keys: [toVexKey(note)], duration: 'q', clef });
+      if (note.includes('#')) {
+        sn.addModifier(new Accidental('#'));
+      }
+      // Colour: selected = brand dark green, others = light gray
+      if (note === selected) {
+        sn.setStyle({ fillStyle: '#405116', strokeStyle: '#405116' });
+      } else {
+        sn.setStyle({ fillStyle: '#9ca3af', strokeStyle: '#9ca3af' });
+      }
+      return { note, sn };
     });
-  }, [selected]);
 
-  const { keys, totalWidth } = buildKeyLayout(notes);
+    const voice = new Voice({ numBeats: notes.length, beatValue: 4 });
+    voice.addTickables(staveNoteData.map(d => d.sn));
+    new Formatter()
+      .joinVoices([voice])
+      .format([voice], totalWidth - MARGIN_LEFT - 20);
+    voice.draw(ctx, stave);
 
-  if (keys.length === 0) return null;
+    // Store rendered x-center positions for click detection
+    noteXRef.current = staveNoteData.map(({ note, sn }) => ({
+      note,
+      x: sn.getAbsoluteX(),
+    }));
 
-  const whiteKeys = keys.filter(k => !k.black);
-  const blackKeys = keys.filter(k => k.black);
+    // Auto-scroll to selected note
+    if (selected) {
+      const pos = noteXRef.current.find(p => p.note === selected);
+      if (pos && scrollRef.current) {
+        const scrollEl = scrollRef.current;
+        scrollEl.scrollTo({
+          left: pos.x - scrollEl.clientWidth / 2,
+          behavior: 'smooth',
+        });
+      }
+    }
+  }, [notes, selected, clef]);
+
+  const handleClick = useCallback(
+    (e: React.MouseEvent<HTMLDivElement>) => {
+      const container = containerRef.current;
+      if (!container) return;
+      // getBoundingClientRect().left already accounts for scroll offset
+      const x = e.clientX - container.getBoundingClientRect().left;
+      let best: string | null = null;
+      let bestDist = Infinity;
+      for (const { note, x: nx } of noteXRef.current) {
+        const dist = Math.abs(x - nx);
+        if (dist < bestDist) { bestDist = dist; best = note; }
+      }
+      if (best && bestDist < NOTE_SPACING / 2) onChange(best);
+    },
+    [onChange],
+  );
+
+  if (notes.length === 0) return null;
 
   return (
-    <div ref={scrollRef} className="overflow-x-auto pb-2 -mx-1 px-1">
+    <div ref={scrollRef} className="overflow-x-auto rounded-lg border border-gray-100 bg-white">
       <div
-        className="relative select-none"
-        style={{ width: totalWidth, height: WHITE_KEY_H + 4 }}
-      >
-        {/* White keys */}
-        {whiteKeys.map(({ note, x }) => {
-          const isSelected = note === selected;
-          const { pc, oct } = parseNote(note);
-          return (
-            <button
-              key={note}
-              ref={isSelected ? (selectedRef as React.RefObject<HTMLButtonElement>) : undefined}
-              onClick={() => onChange(note)}
-              title={note}
-              className={cn(
-                'absolute top-0 border border-gray-300 rounded-b-md transition-colors',
-                isSelected
-                  ? 'bg-[#BDD18C] border-[#405116] z-10'
-                  : 'bg-white hover:bg-[#BDD18C]/20 active:bg-[#BDD18C]/50',
-              )}
-              style={{ left: x, width: WHITE_KEY_W - 1, height: WHITE_KEY_H }}
-            >
-              <span
-                className={cn(
-                  'absolute bottom-1.5 left-0 right-0 text-center text-[9px] leading-none',
-                  isSelected ? 'text-[#405116] font-bold' : 'text-gray-400',
-                )}
-              >
-                {pc === 'C' ? `C${oct}` : ''}
-              </span>
-            </button>
-          );
-        })}
-
-        {/* Black keys (rendered on top) */}
-        {blackKeys.map(({ note, x }) => {
-          const isSelected = note === selected;
-          return (
-            <button
-              key={note}
-              ref={isSelected ? (selectedRef as React.RefObject<HTMLButtonElement>) : undefined}
-              onClick={() => onChange(note)}
-              title={note}
-              className={cn(
-                'absolute top-0 z-20 rounded-b-sm transition-colors',
-                isSelected
-                  ? 'bg-[#405116] ring-2 ring-[#BDD18C]'
-                  : 'bg-gray-800 hover:bg-gray-600 active:bg-gray-500',
-              )}
-              style={{ left: x, width: BLACK_KEY_W, height: BLACK_KEY_H }}
-            />
-          );
-        })}
-      </div>
-
-      {/* Selected note label below keyboard */}
-      <div className="mt-2 text-center text-xs text-gray-500 min-h-[1.25rem]">
-        {selected && (
-          <span>
-            Ausgewählt: <span className="font-semibold text-[#405116]">{selected}</span>
-          </span>
-        )}
-      </div>
+        ref={containerRef}
+        onClick={handleClick}
+        className="cursor-pointer"
+        title="Ton durch Klicken auf die Note auswählen"
+      />
+      {selected && (
+        <p className="text-center text-xs text-gray-500 pb-2">
+          Ausgewählt: <span className="font-semibold text-[#405116]">{selected}</span>
+        </p>
+      )}
     </div>
   );
 }

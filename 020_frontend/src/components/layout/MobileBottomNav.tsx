@@ -4,7 +4,8 @@ import {
     Users,
     FileText,
     Home,
-    Folder
+    Folder,
+    Wrench,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -14,6 +15,7 @@ const navItems = [
     { label: 'Dateien', href: '/member/files', icon: FileText },
     { label: 'Mappen', href: '/member/music-folders', icon: Folder },
     { label: 'Mitglieder', href: '/member/members', icon: Users },
+    { label: 'Toolkit', href: '/member/toolkit', icon: Wrench },
 ];
 
 export function MobileBottomNav() {

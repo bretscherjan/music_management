@@ -30,6 +30,7 @@ import { SheetMusicManagementPage } from '@/pages/admin/SheetMusicManagementPage
 import { StatisticsPage } from '@/pages/admin/StatisticsPage';
 import { EngagementPage } from '@/pages/admin/EngagementPage';
 import { MusicFolderPage } from '@/pages/secured/music-folder/MusicFolderPage';
+import { ToolkitPage } from '@/pages/secured/toolkit/ToolkitPage';
 import { WorkspacePage } from '@/pages/admin/WorkspacePage';
 import { CmsManagementPage } from '@/pages/admin/CmsManagementPage';
 import { DatabasePreviewerPage } from '@/pages/admin/DatabasePreviewerPage';
@@ -69,6 +70,7 @@ function App() {
               <Route path="files" element={<FileListPage />} />
               <Route path="music-folders" element={<MusicFolderPage />} />
               <Route path="music-folders/:id" element={<MusicFolderPage />} />
+              <Route path="toolkit" element={<ToolkitPage />} />
               <Route path="settings" element={<UserSettingsPage />} />
               <Route path="members" element={<UserManagementPage />} />
 

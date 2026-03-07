@@ -1,8 +1,8 @@
 import { useEffect } from 'react';
 import { Outlet } from 'react-router-dom';
-import { Header } from './Header';
+import Header from './Header';
 import { Sidebar } from './Sidebar';
-import { MobileBottomNav } from './MobileBottomNav';
+import MobileBottomNav from './MobileBottomNav';
 import { pushNotificationService } from '@/services/pushNotificationService';
 
 export function MainLayout() {

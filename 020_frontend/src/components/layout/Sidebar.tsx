@@ -12,6 +12,7 @@ import {
     ClipboardList,
     Activity,
     ScrollText,
+    Wrench,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -27,6 +28,7 @@ const mainNavItems: NavItem[] = [
     { label: 'Dateien', href: '/member/files', icon: <FileText className="h-5 w-5" /> },
     { label: 'Mappen', href: '/member/music-folders', icon: <Folder className="h-5 w-5" /> },
     { label: 'Mitglieder', href: '/member/members', icon: <Users className="h-5 w-5" /> },
+    { label: 'Toolkit', href: '/member/toolkit', icon: <Wrench className="h-5 w-5" /> },
 ];
 
 const adminNavItems: NavItem[] = [
@@ -38,7 +40,7 @@ const adminNavItems: NavItem[] = [
     { label: 'Statistiken', href: '/member/admin/statistics', icon: <BarChart className="h-5 w-5" />, adminOnly: true },
     { label: 'Engagement', href: '/member/admin/engagement', icon: <Activity className="h-5 w-5" />, adminOnly: true },
     { label: 'Protokoll', href: '/member/admin/protokoll', icon: <ClipboardList className="h-5 w-5" />, adminOnly: true },
-    { label: 'Logs',      href: '/member/admin/logs',      icon: <ScrollText    className="h-5 w-5" />, adminOnly: true },
+    { label: 'Logs', href: '/member/admin/logs', icon: <ScrollText className="h-5 w-5" />, adminOnly: true },
 ];
 
 export function Sidebar() {
@@ -132,5 +134,3 @@ export function Sidebar() {
         </aside>
     );
 }
-
-export default Sidebar;

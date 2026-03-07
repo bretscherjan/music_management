@@ -14,7 +14,8 @@ import {
     ScrollText,
     Wrench,
     BookOpen,
-    // TableProperties,
+    Database,
+    TableProperties,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -33,9 +34,9 @@ const mainNavItems: NavItem[] = [
 ];
 
 const adminNavItems: NavItem[] = [
-    { label: 'Toolkit', href: '/member/admin/toolkit', icon: <Wrench className="h-5 w-5" /> },
-    { label: 'Theorie', href: '/member/admin/theory', icon: <BookOpen className="h-5 w-5" /> },
-    // { label: 'Grifftabelle', href: '/member/grifftabelle', icon: <TableProperties className="h-5 w-5" /> },
+    { label: 'Toolkit', href: '/member/admin/toolkit', icon: <Wrench className="h-5 w-5" />, adminOnly: true },
+    { label: 'Theorie', href: '/member/admin/theory', icon: <BookOpen className="h-5 w-5" />, adminOnly: true },
+    { label: 'Grifftabelle', href: '/member/grifftabelle', icon: <TableProperties className="h-5 w-5" />, adminOnly: true },
     { label: 'Termine verwalten', href: '/member/admin/events', icon: <Calendar className="h-5 w-5" />, adminOnly: true },
     { label: 'Workspace', href: '/member/admin/workspace', icon: <Folder className="h-5 w-5" />, adminOnly: true },
     { label: 'Notenverwaltung', href: '/member/admin/sheet-music', icon: <Library className="h-5 w-5" />, adminOnly: true },
@@ -45,6 +46,8 @@ const adminNavItems: NavItem[] = [
     { label: 'Engagement', href: '/member/admin/engagement', icon: <Activity className="h-5 w-5" />, adminOnly: true },
     { label: 'Protokoll', href: '/member/admin/protokoll', icon: <ClipboardList className="h-5 w-5" />, adminOnly: true },
     { label: 'Logs', href: '/member/admin/logs', icon: <ScrollText className="h-5 w-5" />, adminOnly: true },
+    { label: 'CMS', href: '/member/admin/cms', icon: <Newspaper className="h-5 w-5" />, adminOnly: true },
+    { label: 'DB', href: '/member/admin/db', icon: <Database className="h-5 w-5" />, adminOnly: true },
 ];
 
 export function Sidebar() {

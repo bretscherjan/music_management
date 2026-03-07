@@ -3,7 +3,6 @@ import {
     Calendar,
     Users,
     FileText,
-    Home,
     Folder,
     Wrench,
     BookOpen,
@@ -12,7 +11,6 @@ import {
 import { cn } from '@/lib/utils';
 
 const navItems = [
-    { label: 'Home', href: '/member', icon: Home },
     { label: 'Termine', href: '/member/events', icon: Calendar },
     { label: 'Dateien', href: '/member/files', icon: FileText },
     { label: 'Mappen', href: '/member/music-folders', icon: Folder },

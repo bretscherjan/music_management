@@ -13,6 +13,7 @@ import {
     Activity,
     ScrollText,
     Wrench,
+    BookOpen,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -28,10 +29,11 @@ const mainNavItems: NavItem[] = [
     { label: 'Dateien', href: '/member/files', icon: <FileText className="h-5 w-5" /> },
     { label: 'Mappen', href: '/member/music-folders', icon: <Folder className="h-5 w-5" /> },
     { label: 'Mitglieder', href: '/member/members', icon: <Users className="h-5 w-5" /> },
-    { label: 'Toolkit', href: '/member/toolkit', icon: <Wrench className="h-5 w-5" /> },
 ];
 
 const adminNavItems: NavItem[] = [
+    { label: 'Toolkit', href: '/member/admin/toolkit', icon: <Wrench className="h-5 w-5" /> },
+    { label: 'Theorie', href: '/member/admin/theory', icon: <BookOpen className="h-5 w-5" /> },
     { label: 'Termine verwalten', href: '/member/admin/events', icon: <Calendar className="h-5 w-5" />, adminOnly: true },
     { label: 'Workspace', href: '/member/admin/workspace', icon: <Folder className="h-5 w-5" />, adminOnly: true },
     { label: 'Notenverwaltung', href: '/member/admin/sheet-music', icon: <Library className="h-5 w-5" />, adminOnly: true },

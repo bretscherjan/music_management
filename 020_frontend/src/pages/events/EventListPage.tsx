@@ -43,9 +43,10 @@ export function EventListPage() {
     );
 
     // Group by upcoming vs past
-    const now = new Date();
-    const upcomingEvents = sortedEvents.filter(e => new Date(e.date) >= now);
-    const pastEvents = sortedEvents.filter(e => new Date(e.date) < now).reverse();
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const upcomingEvents = sortedEvents.filter(e => new Date(e.date) >= today);
+    const pastEvents = sortedEvents.filter(e => new Date(e.date) < today).reverse();
 
     return (
         <div className="space-y-8">

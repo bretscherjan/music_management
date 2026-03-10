@@ -19,6 +19,7 @@ import {
 } from '@/services/engagementService';
 import socketService from '@/services/socketService';
 import type { OnlineJoinedEvent, OnlineLeftEvent, OnlineListEvent } from '@/services/socketService';
+import { storage } from '@/lib/storage';
 
 // ── Combined User Type for merged table ────────────────────────────────────────
 type CombinedUser = {
@@ -175,7 +176,7 @@ export function EngagementPage() {
                     socketService.requestOnlineList();
                 } else {
                     // Fallback: connect first (e.g., during dev hot-reload) then request list
-                    const token = localStorage.getItem('accessToken');
+                    const token = storage.getItem('accessToken');
                     if (token) {
                         await socketService.connect(token);
                         socketService.requestOnlineList();

@@ -4,8 +4,8 @@ import {
     Users,
     FileText,
     Folder,
-    Wrench,
-    BookOpen,
+    // Wrench,
+    // BookOpen,
     // TableProperties,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -15,8 +15,8 @@ const navItems = [
     { label: 'Dateien', href: '/member/files', icon: FileText },
     { label: 'Mappen', href: '/member/music-folders', icon: Folder },
     { label: 'Mitglieder', href: '/member/members', icon: Users },
-    { label: 'Toolkit', href: '/member/admin/toolkit', icon: Wrench },
-    { label: 'Theorie', href: '/member/admin/theory', icon: BookOpen },
+    // { label: 'Toolkit', href: '/member/admin/toolkit', icon: Wrench },
+    // { label: 'Theorie', href: '/member/admin/theory', icon: BookOpen },
     // { label: 'Grifftabelle', href: '/member/grifftabelle', icon: TableProperties },
 ];
 

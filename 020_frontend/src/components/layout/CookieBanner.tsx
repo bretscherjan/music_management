@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
+import { storage } from '@/lib/storage';
 
 const STORAGE_KEY = 'cookie-consent';
 
@@ -65,7 +66,7 @@ export function CookieBanner() {
         const check = () => {
             // Only show if not already dismissed in this JS session (prevents
             // popping up on every window-focus after declining) AND not accepted.
-            if (!dismissedInSession && localStorage.getItem(STORAGE_KEY) !== 'accepted') {
+            if (!dismissedInSession && storage.getItem(STORAGE_KEY) !== 'accepted') {
                 setVisible(true);
             }
         };
@@ -87,7 +88,7 @@ export function CookieBanner() {
 
     // Guetzli Ässe → kein Fressen, sofort schliessen + dauerhaft speichern
     const accept = () => {
-        localStorage.setItem(STORAGE_KEY, 'accepted');
+        storage.setItem(STORAGE_KEY, 'accepted');
         dismissedInSession = true;
         setVisible(false);
     };

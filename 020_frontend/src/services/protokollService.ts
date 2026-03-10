@@ -1,4 +1,5 @@
 import api from '../lib/api';
+import { storage } from '../lib/storage';
 
 export interface TranscribeProgress {
     type: 'progress' | 'chunk_text' | 'complete' | 'error';
@@ -41,7 +42,7 @@ const protokollService = {
         // SSE streaming for large files
         return new Promise((resolve, reject) => {
             const xhr = new XMLHttpRequest();
-            const token = localStorage.getItem('accessToken');
+            const token = storage.getItem('accessToken');
             // api is an axios instance, baseURL might be undefined if not explicitly set, 
             // but we can just use the import.meta.env.VITE_API_URL
             const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:3004/api';

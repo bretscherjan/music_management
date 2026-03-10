@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import logsService, { type LogEntry } from '@/services/logsService';
 import socketService from '@/services/socketService';
+import { storage } from '@/lib/storage';
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
@@ -95,7 +96,7 @@ export function LogsPage() {
     }, [isToday]);
 
     useEffect(() => {
-        const token = localStorage.getItem('accessToken');
+        const token = storage.getItem('accessToken');
         if (token && !socketService.isConnected()) {
             socketService.connect(token).catch(() => {});
         }

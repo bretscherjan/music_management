@@ -19,6 +19,9 @@ const { initializeWebSocket, attachIO } = require('./src/services/websocket.serv
 const app = express();
 const PORT = process.env.PORT || 3004;
 
+// Trust proxy to respect X-Forwarded-For in production (Nginx, cloud)
+app.set('trust proxy', 1);
+
 // Create HTTP server for WebSocket support
 const server = http.createServer(app);
 
@@ -29,12 +32,23 @@ const io = initializeWebSocket(server);
 app.use(helmet());
 
 // CORS Configuration
-const corsOrigin = process.env.CORS_ORIGIN;
-if (!corsOrigin) {
-  console.warn('⚠️  CORS_ORIGIN not set — defaulting to localhost:5173 (set it explicitly in production!)');
+const corsOrigins = (process.env.CORS_ORIGIN || '')
+  .split(',')
+  .map(origin => origin.trim())
+  .filter(Boolean);
+const resolvedCorsOrigins = corsOrigins.length ? corsOrigins : ['http://localhost:5173'];
+
+if (!corsOrigins.length) {
+  console.warn('⚠️  CORS_ORIGIN not set — defaulting to http://localhost:5173');
 }
+
 app.use(cors({
-  origin: corsOrigin || 'http://localhost:5173',
+  origin: (origin, callback) => {
+    // Allow non-browser requests with no Origin header
+    if (!origin) return callback(null, true);
+    if (resolvedCorsOrigins.includes(origin)) return callback(null, true);
+    return callback(new Error('Not allowed by CORS'));
+  },
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
   allowedHeaders: ['Content-Type', 'Authorization'],
 }));

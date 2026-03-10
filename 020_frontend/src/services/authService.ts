@@ -1,4 +1,5 @@
 import api from '@/lib/api';
+import { storage } from '@/lib/storage';
 import type { User, LoginDto, RegisterDto, AuthResponse } from '@/types';
 
 export const authService = {
@@ -17,8 +18,8 @@ export const authService = {
         return response.data.user;
     },
 
-    async refreshToken(): Promise<{ token: string }> {
-        const response = await api.post<{ token: string }>('/auth/refresh');
+    async refreshToken(): Promise<{ token: string; refreshToken?: string }> {
+        const response = await api.post<{ token: string; refreshToken?: string }>('/auth/refresh');
         return response.data;
     },
 
@@ -33,16 +34,24 @@ export const authService = {
     },
 
     logout() {
-        localStorage.removeItem('accessToken');
-        localStorage.removeItem('refreshToken');
+        storage.removeItem('accessToken');
+        storage.removeItem('refreshToken');
     },
 
     setToken(token: string) {
-        localStorage.setItem('accessToken', token);
+        storage.setItem('accessToken', token);
+    },
+
+    setRefreshToken(token: string) {
+        storage.setItem('refreshToken', token);
     },
 
     getToken(): string | null {
-        return localStorage.getItem('accessToken');
+        return storage.getItem('accessToken');
+    },
+
+    getRefreshToken(): string | null {
+        return storage.getItem('refreshToken');
     },
 
     isAuthenticated(): boolean {

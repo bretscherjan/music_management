@@ -43,4 +43,5 @@ export interface RegisterDto {
 export interface AuthResponse {
     user: import('./user').User;
     token: string;
+    refreshToken?: string;
 }

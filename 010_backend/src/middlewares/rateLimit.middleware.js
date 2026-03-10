@@ -15,7 +15,13 @@ const redis = new Redis({
  */
 const rateLimiter = (keyPrefix, limit, windowSeconds) => {
     return async (req, res, next) => {
-        const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+        const forwarded = req.headers['x-forwarded-for'];
+        const forwardedIp = Array.isArray(forwarded)
+            ? forwarded[0]
+            : typeof forwarded === 'string'
+                ? forwarded.split(',')[0].trim()
+                : null;
+        const ip = forwardedIp || req.ip || req.socket.remoteAddress || 'unknown';
         const key = `${keyPrefix}:${ip}`;
 
         try {

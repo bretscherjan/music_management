@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
+import axios from 'axios';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useAuth } from '@/context/AuthContext';
@@ -43,7 +44,18 @@ export function LoginPage() {
             await login(data);
             navigate(from, { replace: true });
         } catch (err) {
-            setError('Login fehlgeschlagen. Bitte überprüfe deine Zugangsdaten.');
+            if (axios.isAxiosError(err)) {
+                if (err.response?.status === 429) {
+                    const msg = err.response?.data?.message;
+                    setError(msg || 'Zu viele Anfragen. Bitte versuche es spaeter erneut.');
+                } else if (!err.response) {
+                    setError('Netzwerkfehler. Bitte pruefe deine Verbindung oder CORS-Einstellungen.');
+                } else {
+                    setError('Login fehlgeschlagen. Bitte pruefe deine Zugangsdaten.');
+                }
+            } else {
+                setError('Login fehlgeschlagen. Bitte pruefe deine Zugangsdaten.');
+            }
         } finally {
             setIsLoading(false);
         }

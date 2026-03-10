@@ -8,6 +8,22 @@ const crypto = require('crypto');
 
 const prisma = new PrismaClient();
 
+function generateAccessToken(userId) {
+    return jwt.sign(
+        { userId, type: 'access' },
+        process.env.JWT_SECRET,
+        { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
+    );
+}
+
+function generateRefreshToken(userId) {
+    return jwt.sign(
+        { userId, type: 'refresh' },
+        process.env.JWT_SECRET,
+        { expiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '30d' }
+    );
+}
+
 /**
  * Register a new user
  * POST /auth/register
@@ -66,12 +82,9 @@ const register = asyncHandler(async (req, res) => {
         },
     });
 
-    // Generate JWT
-    const token = jwt.sign(
-        { userId: user.id },
-        process.env.JWT_SECRET,
-        { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
-    );
+    // Generate JWTs
+    const token = generateAccessToken(user.id);
+    const refreshToken = generateRefreshToken(user.id);
 
     // Send welcome email (don't wait for it)
     sendWelcomeEmail(user).catch(err => {
@@ -82,6 +95,7 @@ const register = asyncHandler(async (req, res) => {
         message: 'Registrierung erfolgreich',
         user,
         token,
+        refreshToken,
     });
 });
 
@@ -150,12 +164,9 @@ const login = asyncHandler(async (req, res) => {
             throw new AppError('Ungültige E-Mail oder Passwort', 401);
         }
 
-        // Generate JWT
-        const token = jwt.sign(
-            { userId: user.id },
-            process.env.JWT_SECRET,
-            { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
-        );
+        // Generate JWTs
+        const token = generateAccessToken(user.id);
+        const refreshToken = generateRefreshToken(user.id);
 
         // Update lastLoginAt, lastSeenAt and log audit event (non-blocking)
         const now = new Date();
@@ -177,6 +188,7 @@ const login = asyncHandler(async (req, res) => {
             message: 'Login erfolgreich',
             user: userWithoutPassword,
             token,
+            refreshToken,
         });
     } catch (err) {
         // Only log unexpected errors (not AppError which are already logged above)
@@ -237,16 +249,14 @@ const getMe = asyncHandler(async (req, res) => {
  * POST /auth/refresh
  */
 const refreshToken = asyncHandler(async (req, res) => {
-    // User is already authenticated via middleware
-    const token = jwt.sign(
-        { userId: req.user.id },
-        process.env.JWT_SECRET,
-        { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
-    );
+    // User is already authenticated via refresh token middleware
+    const token = generateAccessToken(req.user.id);
+    const refreshToken = generateRefreshToken(req.user.id);
 
     res.json({
         message: 'Token aktualisiert',
         token,
+        refreshToken,
     });
 });
 

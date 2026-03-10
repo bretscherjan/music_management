@@ -56,6 +56,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
     const login = async (credentials: LoginDto) => {
         const response = await authService.login(credentials);
         authService.setToken(response.token);
+        if (response.refreshToken) {
+            authService.setRefreshToken(response.refreshToken);
+        }
         setUser(response.user);
         // Connect WebSocket for presence tracking
         socketService.connect(response.token).catch(err =>

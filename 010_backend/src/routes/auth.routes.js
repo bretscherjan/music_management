@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 
 const authController = require('../controllers/auth.controller');
-const { authMiddleware } = require('../middlewares/auth.middleware');
+const { authMiddleware, refreshTokenMiddleware } = require('../middlewares/auth.middleware');
 const { validate } = require('../middlewares/validate.middleware');
 const { registerSchema, loginSchema } = require('../validations/auth.validation');
 const { rateLimiter } = require('../middlewares/rateLimit.middleware');
@@ -43,7 +43,7 @@ router.get('/me', authMiddleware, authController.getMe);
  * @desc    Refresh access token
  * @access  Private
  */
-router.post('/refresh', authMiddleware, authController.refreshToken);
+router.post('/refresh', refreshTokenMiddleware, authController.refreshToken);
 
 /**
  * @route   POST /api/auth/forgot-password

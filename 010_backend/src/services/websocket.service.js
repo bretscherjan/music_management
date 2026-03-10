@@ -21,9 +21,14 @@ const CLEANUP_INTERVAL = 30 * 1000; // Check every 30 seconds
  * @param {http.Server} httpServer - The HTTP server instance
  */
 function initializeWebSocket(httpServer) {
+    const corsOrigins = (process.env.CORS_ORIGIN || '')
+        .split(',')
+        .map(origin => origin.trim())
+        .filter(Boolean);
+
     io = new Server(httpServer, {
         cors: {
-            origin: process.env.CORS_ORIGIN || '*',
+            origin: corsOrigins.length ? corsOrigins : '*',
             methods: ['GET', 'POST'],
             credentials: true
         },

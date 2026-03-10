@@ -75,9 +75,9 @@ function App() {
               <Route path="settings" element={<UserSettingsPage />} />
               <Route path="members" element={<UserManagementPage />} />
 
-              <Route path="grifftabelle" element={<GrifftabellePage />} />
-              <Route path="admin/toolkit" element={<ToolkitPage />} />
-              <Route path="admin/theory" element={<TheoryPage />} />
+              <Route path="grifftabelle" element={<ProtectedRoute requireAdmin><GrifftabellePage /></ProtectedRoute>} />
+              <Route path="admin/toolkit" element={<ProtectedRoute requireAdmin><ToolkitPage /></ProtectedRoute>} />
+              <Route path="admin/theory" element={<ProtectedRoute requireAdmin><TheoryPage /></ProtectedRoute>} />
               <Route path="admin/events/new" element={<ProtectedRoute requireAdmin><CreateEventPage /></ProtectedRoute>} />
               <Route path="admin/events/:id/edit" element={<ProtectedRoute requireAdmin><CreateEventPage /></ProtectedRoute>} />
               <Route path="admin/registers" element={<ProtectedRoute requireAdmin><RegisterManagementPage /></ProtectedRoute>} />

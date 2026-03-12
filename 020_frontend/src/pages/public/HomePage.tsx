@@ -18,9 +18,9 @@ export function HomePage() {
     today.setHours(0, 0, 0, 0);
 
     const upcomingEvents = events
-        .filter((event: Event) => new Date(event.date) >= today)
+        .filter((event: Event) => new Date(event.date) >= today && event.category === 'performance')
         .sort((a: Event, b: Event) => new Date(a.date).getTime() - new Date(b.date).getTime())
-        .slice(0, 6);
+        .slice(0, 3);
 
     return (
         <div>
@@ -75,7 +75,7 @@ export function HomePage() {
                             Wir Proben jeden 2. Montag (jeweils ungerade Kalenderwochen) um 20:00 Uhr im Singsaal der Primarschule Im See
                         </p>
                         <h2 className="text-3xl md:text-4xl font-bold text-[hsl(var(--musig-primary))] mb-4">
-                            Kommende Termine
+                            <Link to="/events">Kommende Termine</Link>
                         </h2>
                     </div>
 
@@ -99,10 +99,10 @@ export function HomePage() {
                 </div>
             </section>
 
-            <SponsorSlider />
-
             {/* Werbung / Promotions Section */}
             <WerbungGrid />
+
+            <SponsorSlider />
 
             {/* Call to Action */}
             <section className="py-16 md:py-24 bg-gradient-to-r from-[hsl(var(--musig-primary))]/5 to-[hsl(var(--musig-contrast))]/5">

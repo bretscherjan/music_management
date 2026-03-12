@@ -43,6 +43,15 @@ export function Navbar() {
                         >
                             Start
                         </Link>
+                        <Link
+                            to="/events"
+                            className={`text-sm font-medium transition-colors ${location.pathname === '/events'
+                                ? 'text-[hsl(var(--musig-primary))] font-bold'
+                                : 'hover:text-[hsl(var(--musig-primary))]'
+                                }`}
+                        >
+                            Termine
+                        </Link>
                         {hasGallery && (
                             <Link
                                 to="/gallery"

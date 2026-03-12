@@ -15,6 +15,7 @@ import { GalleryPage } from '@/pages/public/GalleryPage';
 import { LoginPage } from '@/pages/LoginPage';
 import { ForgotPasswordPage } from '@/pages/ForgotPasswordPage';
 import { ResetPasswordPage } from '@/pages/ResetPasswordPage';
+import { UpcommingEvents } from '@/pages/public/UpcommingEvents';
 
 // Member/Admin Pages
 import { EventListPage } from '@/pages/events/EventListPage';
@@ -59,6 +60,7 @@ function App() {
               <Route path="/about" element={<AboutPage />} />
               <Route path="/contact" element={<ContactPage />} />
               <Route path="/gallery" element={<GalleryPage />} />
+              <Route path="/events" element={<UpcommingEvents />} />
             </Route>
 
             <Route path="/login" element={<LoginPage />} />

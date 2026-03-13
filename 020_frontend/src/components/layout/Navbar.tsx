@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Mail, Music, User, Menu, X, Image } from 'lucide-react';
+import { Mail, Music, User, Menu, X, Image, Calendar } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { cmsService } from '@/services/cmsService';
 
@@ -119,6 +119,17 @@ export function Navbar() {
                         >
                             <Music className="h-4 w-4" />
                             Start
+                        </Link>
+                        <Link
+                            to="/events"
+                            className={`px-4 py-3 rounded-md text-sm font-medium transition-colors flex items-center gap-2 ${location.pathname === '/events'
+                                ? 'bg-[hsl(var(--musig-primary))]/10 text-[hsl(var(--musig-primary))]'
+                                : 'hover:bg-[hsl(var(--muted))]'
+                                }`}
+                            onClick={closeMenu}
+                        >
+                            <Calendar className="h-4 w-4" />
+                            Termine
                         </Link>
                         {hasGallery && (
                             <Link

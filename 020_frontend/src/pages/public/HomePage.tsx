@@ -67,6 +67,9 @@ export function HomePage() {
                 </div>
             </section>
 
+            {/* Werbung / Promotions Section */}
+            <WerbungGrid />
+
             {/* Upcoming Events */}
             <section className="py-16 md:py-24 bg-[hsl(var(--background))]">
                 <div className="container-app">
@@ -80,9 +83,11 @@ export function HomePage() {
                     </div>
 
                     {upcomingEvents.length > 0 ? (
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8 px-4 md:px-0">
+                        <div className="flex flex-wrap justify-center gap-6 md:gap-8 px-4 md:px-0">
                             {upcomingEvents.map((event: Event) => (
-                                <EventCard key={event.id} event={event} />
+                                <div key={event.id} className="w-full md:max-w-[calc(50%-1rem)] lg:max-w-[calc(33.333%-1.5rem)]">
+                                    <EventCard event={event} />
+                                </div>
                             ))}
                         </div>
                     ) : (
@@ -98,9 +103,6 @@ export function HomePage() {
                     )}
                 </div>
             </section>
-
-            {/* Werbung / Promotions Section */}
-            <WerbungGrid />
 
             <SponsorSlider />
 

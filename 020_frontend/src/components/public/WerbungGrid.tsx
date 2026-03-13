@@ -34,58 +34,60 @@ export function WerbungGrid() {
                     <div className="h-1 w-20 bg-[hsl(var(--musig-primary))] mx-auto rounded-full opacity-20" />
                 </div>
 
-                <div className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 justify-center max-w-6xl mx-auto px-4`}>
+                <div className="flex flex-wrap justify-center gap-8 max-w-6xl mx-auto px-4">
                     {promos.map((promo) => (
-                        <Card key={promo.id} className="overflow-hidden border-2 border-primary/5 hover:border-primary/20 transition-all shadow-sm hover:shadow-xl group bg-white flex flex-col">
-                            <div className="relative w-full aspect-[3/4] bg-zinc-100 overflow-hidden flex items-center justify-center">
-                                {promo.filename.toLowerCase().endsWith('.pdf') ? (
-                                    <iframe
-                                        src={`${getMediaUrl(`/uploads/cms/flyers/${promo.filename}`)}#toolbar=0`}
-                                        className="w-full h-full border-none bg-white"
-                                        title={promo.title}
-                                    />
-                                ) : (
-                                    <img
-                                        src={getMediaUrl(`/uploads/cms/flyers/${promo.filename}`)}
-                                        alt={promo.title}
-                                        className="w-full h-full object-contain transition-transform duration-700 group-hover:scale-105"
-                                    />
-                                )}
-                            </div>
-
-                            <CardContent className="p-6 w-full flex-grow flex flex-col text-left">
-                                <h3 className="text-lg font-bold text-[hsl(var(--musig-primary))] mb-2 line-clamp-1">
-                                    {promo.title}
-                                </h3>
-                                {promo.description && (
-                                    <p className="text-sm text-muted-foreground line-clamp-3 mb-4">
-                                        {promo.description}
-                                    </p>
-                                )}
-                                <div className="mt-auto pt-4 flex items-center gap-3">
-                                    <Button
-                                        variant="secondary"
-                                        size="sm"
-                                        asChild
-                                        className="flex-1"
-                                    >
-                                        <a href={getMediaUrl(`/uploads/cms/flyers/${promo.filename}`)} target="_blank" rel="noopener noreferrer">
-                                            <ExternalLink className="h-4 w-4 mr-2" /> Ansehen
-                                        </a>
-                                    </Button>
-                                    <Button
-                                        variant="outline"
-                                        size="icon"
-                                        asChild
-                                        className="shrink-0"
-                                    >
-                                        <a href={getMediaUrl(`/uploads/cms/flyers/${promo.filename}`)} download={promo.filename}>
-                                            <Download className="h-4 w-4" />
-                                        </a>
-                                    </Button>
+                        <div key={promo.id} className="w-full md:max-w-[calc(50%-1rem)] lg:max-w-[calc(33.333%-1.5rem)] flex flex-col">
+                            <Card className="overflow-hidden border-2 border-primary/5 hover:border-primary/20 transition-all shadow-sm hover:shadow-xl group bg-white flex flex-col h-full">
+                                <div className="relative w-full aspect-[3/4] bg-zinc-100 overflow-hidden flex items-center justify-center">
+                                    {promo.filename.toLowerCase().endsWith('.pdf') ? (
+                                        <iframe
+                                            src={`${getMediaUrl(`/uploads/cms/flyers/${promo.filename}`)}#toolbar=0`}
+                                            className="w-full h-full border-none bg-white"
+                                            title={promo.title}
+                                        />
+                                    ) : (
+                                        <img
+                                            src={getMediaUrl(`/uploads/cms/flyers/${promo.filename}`)}
+                                            alt={promo.title}
+                                            className="w-full h-full object-contain transition-transform duration-700 group-hover:scale-105"
+                                        />
+                                    )}
                                 </div>
-                            </CardContent>
-                        </Card>
+
+                                <CardContent className="p-6 w-full flex-grow flex flex-col text-left">
+                                    <h3 className="text-lg font-bold text-[hsl(var(--musig-primary))] mb-2 line-clamp-1">
+                                        {promo.title}
+                                    </h3>
+                                    {promo.description && (
+                                        <p className="text-sm text-muted-foreground line-clamp-3 mb-4">
+                                            {promo.description}
+                                        </p>
+                                    )}
+                                    <div className="mt-auto pt-4 flex items-center gap-3">
+                                        <Button
+                                            variant="secondary"
+                                            size="sm"
+                                            asChild
+                                            className="flex-1"
+                                        >
+                                            <a href={getMediaUrl(`/uploads/cms/flyers/${promo.filename}`)} target="_blank" rel="noopener noreferrer">
+                                                <ExternalLink className="h-4 w-4 mr-2" /> Ansehen
+                                            </a>
+                                        </Button>
+                                        <Button
+                                            variant="outline"
+                                            size="icon"
+                                            asChild
+                                            className="shrink-0"
+                                        >
+                                            <a href={getMediaUrl(`/uploads/cms/flyers/${promo.filename}`)} download={promo.filename}>
+                                                <Download className="h-4 w-4" />
+                                            </a>
+                                        </Button>
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        </div>
                     ))}
 
                     {/* Centering spacer for grid if 1 or 2 items (using grid-cols-1 md:grid-cols-2 lg:grid-cols-3) */}

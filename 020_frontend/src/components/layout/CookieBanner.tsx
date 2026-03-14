@@ -149,7 +149,7 @@ export function CookieBanner() {
                     <div className="flex flex-wrap items-center gap-2 shrink-0">
                         <button
                             onClick={accept}
-                            className="text-sm font-medium bg-[hsl(var(--musig-primary))] text-white px-4 py-1.5 rounded-full hover:opacity-90 active:scale-95 transition-all"
+                            className="text-sm font-medium bg-brand-primary text-white px-4 py-1.5 rounded-full hover:opacity-90 active:scale-95 transition-all"
                         >
                             🍪 Guetzli Ässe
                         </button>

@@ -144,7 +144,7 @@ function BentoCard({ title, icon, children, className }: BentoCardProps) {
     )}>
       <div className="flex items-center gap-2 shrink-0">
         {icon && (
-          <div className="p-1.5 rounded-lg bg-[#BDD18C]/20 text-[#405116]">
+          <div className="p-1.5 rounded-lg bg-green-300/20 text-green-800">
             {icon}
           </div>
         )}

@@ -41,7 +41,7 @@ export function SponsorSlider() {
 
     return (
         <section className="py-12 bg-muted/30 overflow-hidden">
-            <div className="container mx-auto px-4 mb-8 text-center text-sm font-semibold uppercase tracking-widest text-[hsl(var(--muted-foreground))] opacity-70">
+            <div className="container mx-auto px-4 mb-8 text-center text-sm font-semibold uppercase tracking-widest text-muted-foreground opacity-70">
                 Unsere Sponsoren
             </div>
 

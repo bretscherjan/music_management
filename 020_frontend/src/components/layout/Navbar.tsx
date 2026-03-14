@@ -24,11 +24,9 @@ export function Navbar() {
                 <div className="flex items-center justify-between h-20">
                     {/* Logo */}
                     <Link to="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity" onClick={closeMenu}>
-                        <img src="/logo.png" alt="Musig Elgg Logo" className="h-14 w-auto" />
+                        <img src="/public/musig.png" alt="Musig Elgg Logo" className="h-14 w-auto" />
                         <div className="flex flex-col">
-                            <span className="text-2xl font-bold text-[hsl(var(--musig-primary))]">
-                                Musig Elgg
-                            </span>
+                            <span className="text-2xl font-bold text-foreground">Elgg</span>
                         </div>
                     </Link>
 
@@ -37,8 +35,8 @@ export function Navbar() {
                         <Link
                             to="/"
                             className={`text-sm font-medium transition-colors ${location.pathname === '/'
-                                ? 'text-[hsl(var(--musig-primary))] font-bold'
-                                : 'hover:text-[hsl(var(--musig-primary))]'
+                                ? 'text-brand-primary font-bold'
+                                : 'hover:text-brand-primary'
                                 }`}
                         >
                             Start
@@ -46,8 +44,8 @@ export function Navbar() {
                         <Link
                             to="/events"
                             className={`text-sm font-medium transition-colors ${location.pathname === '/events'
-                                ? 'text-[hsl(var(--musig-primary))] font-bold'
-                                : 'hover:text-[hsl(var(--musig-primary))]'
+                                ? 'text-brand-primary font-bold'
+                                : 'hover:text-brand-primary'
                                 }`}
                         >
                             Termine
@@ -56,8 +54,8 @@ export function Navbar() {
                             <Link
                                 to="/gallery"
                                 className={`text-sm font-medium transition-colors ${location.pathname === '/gallery'
-                                    ? 'text-[hsl(var(--musig-primary))] font-bold'
-                                    : 'hover:text-[hsl(var(--musig-primary))]'
+                                    ? 'text-brand-primary font-bold'
+                                    : 'hover:text-brand-primary'
                                     }`}
                             >
                                 Galerie
@@ -66,8 +64,8 @@ export function Navbar() {
                         <Link
                             to="/about"
                             className={`text-sm font-medium transition-colors ${location.pathname === '/about'
-                                ? 'text-[hsl(var(--musig-primary))] font-bold'
-                                : 'hover:text-[hsl(var(--musig-primary))]'
+                                ? 'text-brand-primary font-bold'
+                                : 'hover:text-brand-primary'
                                 }`}
                         >
                             Über uns
@@ -75,15 +73,15 @@ export function Navbar() {
                         <Link
                             to="/contact"
                             className={`text-sm font-medium transition-colors ${location.pathname === '/contact'
-                                ? 'text-[hsl(var(--musig-primary))] font-bold'
-                                : 'hover:text-[hsl(var(--musig-primary))]'
+                                ? 'text-brand-primary font-bold'
+                                : 'hover:text-brand-primary'
                                 }`}
                         >
                             Kontakt
                         </Link>
                         <Link
                             to="/login"
-                            className="inline-flex items-center gap-2 px-4 py-2 bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))] rounded-md hover:bg-[hsl(var(--primary))]/90 transition-colors font-medium shadow-sm hover:shadow-md"
+                            className="inline-flex items-center gap-2 px-4 py-2 bg-brand-primary text-white rounded-md hover:bg-brand-primary/90 transition-colors font-medium shadow-sm hover:shadow-md"
                         >
                             <User className="h-4 w-4" />
                             Mitgliederbereich
@@ -92,7 +90,7 @@ export function Navbar() {
 
                     {/* Mobile Menu Button */}
                     <button
-                        className="md:hidden p-2 text-[hsl(var(--musig-primary))] hover:bg-[hsl(var(--muted))] rounded-md transition-colors"
+                        className="md:hidden p-2 text-brand-primary hover:bg-[hsl(var(--muted))] rounded-md transition-colors"
                         onClick={toggleMenu}
                         aria-label="Menu"
                     >
@@ -112,7 +110,7 @@ export function Navbar() {
                         <Link
                             to="/"
                             className={`px-4 py-3 rounded-md text-sm font-medium transition-colors flex items-center gap-2 ${location.pathname === '/'
-                                ? 'bg-[hsl(var(--musig-primary))]/10 text-[hsl(var(--musig-primary))]'
+                                ? 'bg-brand-primary/10 text-brand-primary'
                                 : 'hover:bg-[hsl(var(--muted))]'
                                 }`}
                             onClick={closeMenu}
@@ -123,7 +121,7 @@ export function Navbar() {
                         <Link
                             to="/events"
                             className={`px-4 py-3 rounded-md text-sm font-medium transition-colors flex items-center gap-2 ${location.pathname === '/events'
-                                ? 'bg-[hsl(var(--musig-primary))]/10 text-[hsl(var(--musig-primary))]'
+                                ? 'bg-brand-primary/10 text-brand-primary'
                                 : 'hover:bg-[hsl(var(--muted))]'
                                 }`}
                             onClick={closeMenu}
@@ -135,7 +133,7 @@ export function Navbar() {
                             <Link
                                 to="/gallery"
                                 className={`px-4 py-3 rounded-md text-sm font-medium transition-colors flex items-center gap-2 ${location.pathname === '/gallery'
-                                    ? 'bg-[hsl(var(--musig-primary))]/10 text-[hsl(var(--musig-primary))]'
+                                    ? 'bg-brand-primary/10 text-brand-primary'
                                     : 'hover:bg-[hsl(var(--muted))]'
                                     }`}
                                 onClick={closeMenu}
@@ -147,7 +145,7 @@ export function Navbar() {
                         <Link
                             to="/about"
                             className={`px-4 py-3 rounded-md text-sm font-medium transition-colors flex items-center gap-2 ${location.pathname === '/about'
-                                ? 'bg-[hsl(var(--musig-primary))]/10 text-[hsl(var(--musig-primary))]'
+                                ? 'bg-brand-primary/10 text-brand-primary'
                                 : 'hover:bg-[hsl(var(--muted))]'
                                 }`}
                             onClick={closeMenu}
@@ -158,7 +156,7 @@ export function Navbar() {
                         <Link
                             to="/contact"
                             className={`px-4 py-3 rounded-md text-sm font-medium transition-colors flex items-center gap-2 ${location.pathname === '/contact'
-                                ? 'bg-[hsl(var(--musig-primary))]/10 text-[hsl(var(--musig-primary))]'
+                                ? 'bg-brand-primary/10 text-brand-primary'
                                 : 'hover:bg-[hsl(var(--muted))]'
                                 }`}
                             onClick={closeMenu}
@@ -169,7 +167,7 @@ export function Navbar() {
                         <div className="h-px bg-[hsl(var(--border))] my-2" />
                         <Link
                             to="/login"
-                            className="px-4 py-3 rounded-md text-sm font-medium text-[hsl(var(--musig-primary))] hover:bg-[hsl(var(--muted))] transition-colors flex items-center gap-2"
+                            className="px-4 py-3 rounded-md text-sm font-medium text-brand-primary hover:bg-[hsl(var(--muted))] transition-colors flex items-center gap-2"
                             onClick={closeMenu}
                         >
                             <User className="h-4 w-4" />

@@ -58,7 +58,7 @@ export function GrifftabellePage() {
             <button
               onClick={() => setClef('treble')}
               className={`flex-1 text-sm font-medium py-2 px-3 rounded-lg transition-all ${clef === 'treble'
-                  ? 'bg-white shadow-sm text-[#405116] border border-gray-200/50'
+                  ? 'bg-white shadow-sm text-green-800 border border-gray-200/50'
                   : 'text-gray-500 hover:text-gray-700'
                 }`}
             >
@@ -67,7 +67,7 @@ export function GrifftabellePage() {
             <button
               onClick={() => setClef('bass')}
               className={`flex-1 text-sm font-medium py-2 px-3 rounded-lg transition-all ${clef === 'bass'
-                  ? 'bg-white shadow-sm text-[#405116] border border-gray-200/50'
+                  ? 'bg-white shadow-sm text-green-800 border border-gray-200/50'
                   : 'text-gray-500 hover:text-gray-700'
                 }`}
             >

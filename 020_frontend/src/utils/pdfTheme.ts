@@ -5,7 +5,7 @@
 
 // ─── Brand colours ────────────────────────────────────────────────────────────
 export const BRAND = {
-    primary: '#BDD18C',
+    primary: 'var(--color-green-300)',
     accent: '#1c471eff',
     altRow: '#f0f5fb',
     border: '#d1dce8',

@@ -43,13 +43,10 @@ export function GalleryPage() {
         <div className="min-h-screen bg-white pb-20 pt-24 md:pt-32">
             <div className="container-app">
                 <header className="mb-12 md:mb-20 text-center">
-                    <h1 className="text-4xl md:text-5xl lg:text-6xl font-black text-[hsl(var(--musig-primary))] mb-6 tracking-tight">
+                    <h1 className="text-4xl md:text-5xl lg:text-6xl font-black text-brand-primary mb-6 tracking-tight">
                         Galerie
                     </h1>
-                    <div className="h-1.5 w-24 bg-[hsl(var(--musig-primary))] mx-auto rounded-full opacity-20" />
-                    <p className="mt-8 text-lg text-muted-foreground max-w-2xl mx-auto px-4">
-                        Eindrücke aus unserem Vereinsleben, Konzerten und gemeinsamen Anlässen.
-                    </p>
+                    <div className="h-1.5 w-24 bg-brand-primary mx-auto rounded-full opacity-20" />
                 </header>
 
                 {images.length > 0 ? (

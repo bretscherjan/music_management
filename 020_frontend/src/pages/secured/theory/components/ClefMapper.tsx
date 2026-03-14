@@ -16,12 +16,12 @@ interface ClefDef {
 }
 
 const CLEFS: ClefDef[] = [
-  { id: 'treble', vexClef: 'treble', label: 'Violinschlüssel', instrument: 'Flöte, Klarinette, Trompete', octaveShift: 0, group: 'G-Schlüssel', color: '#405116' },
+  { id: 'treble', vexClef: 'treble', label: 'Violinschlüssel', instrument: 'Flöte, Klarinette, Trompete', octaveShift: 0, group: 'G-Schlüssel', color: 'var(--color-green-800)' },
   { id: 'treble8vb', vexClef: 'treble', vexClefAnnotation: '8vb', label: 'Violin-8vb', instrument: 'Tenor (Gesang), Gitarre', octaveShift: -1, group: 'G-Schlüssel', color: '#6b7f2e' },
-  { id: 'bass', vexClef: 'bass', label: 'Bassschlüssel', instrument: 'Tuba, Posaune, E-Bass', octaveShift: 0, group: 'F-Schlüssel', color: '#1e3a5f' },
+  { id: 'bass', vexClef: 'bass', label: 'Bassschlüssel', instrument: 'Tuba, Posaune, E-Bass', octaveShift: 0, group: 'F-Schlüssel', color: 'var(--color-blue-900)' },
   { id: 'baritone', vexClef: 'baritone-f', label: 'Baritonschlüssel', instrument: 'Historische Notation', octaveShift: 0, group: 'F-Schlüssel', color: '#2e5f7a' },
   { id: 'subbass', vexClef: 'subbass', label: 'Subbassschlüssel', instrument: 'Sehr tiefe Register', octaveShift: 0, group: 'F-Schlüssel', color: '#1a2f4a' },
-  { id: 'alto', vexClef: 'alto', label: 'Altschlüssel', instrument: 'Bratsche, Altposaune', octaveShift: 0, group: 'C-Schlüssel', color: '#7a3f1e' },
+  { id: 'alto', vexClef: 'alto', label: 'Altschlüssel', instrument: 'Bratsche, Altposaune', octaveShift: 0, group: 'C-Schlüssel', color: 'var(--color-orange-800)' },
   { id: 'tenor', vexClef: 'tenor', label: 'Tenorschlüssel', instrument: 'Cello, Fagott, Tenorposaune', octaveShift: 0, group: 'C-Schlüssel', color: '#9a5a2e' },
   { id: 'soprano', vexClef: 'soprano', label: 'Sopranschlüssel', instrument: 'Historischer Gesang', octaveShift: 0, group: 'C-Schlüssel', color: '#5a3a7a' },
   { id: 'mezzo-soprano', vexClef: 'mezzo-soprano', label: 'Mezzosopranschlüssel', instrument: 'Transpositionshilfe', octaveShift: 0, group: 'C-Schlüssel', color: '#7a4a8a' },
@@ -180,8 +180,8 @@ export function ClefMapper() {
                 className={cn(
                   'w-9 h-8 rounded-md text-sm font-medium border transition-all',
                   noteIndex === i
-                    ? 'bg-[#BDD18C] text-[#405116] border-[#405116]/30 font-bold'
-                    : 'bg-white text-gray-600 border-gray-200 hover:border-[#BDD18C]'
+                    ? 'bg-green-300 text-green-800 border-green-800/30 font-bold'
+                    : 'bg-white text-gray-600 border-gray-200 hover:border-green-300'
                 )}
               >{n}</button>
             ))}
@@ -197,8 +197,8 @@ export function ClefMapper() {
                 className={cn(
                   'w-9 h-8 rounded-md text-sm font-medium border transition-all',
                   octave === o
-                    ? 'bg-[#405116] text-white border-[#405116]'
-                    : 'bg-white text-gray-600 border-gray-200 hover:border-[#BDD18C]'
+                    ? 'bg-green-800 text-white border-green-800'
+                    : 'bg-white text-gray-600 border-gray-200 hover:border-green-300'
                 )}
               >{o}</button>
             ))}
@@ -215,15 +215,15 @@ export function ClefMapper() {
             className={cn(
               'px-2.5 py-1 rounded-full text-xs font-medium border transition-all',
               activeGroups.has(g)
-                ? 'bg-[#405116]/10 text-[#405116] border-[#405116]/20'
-                : 'bg-white text-gray-400 border-gray-200 hover:border-[#BDD18C]'
+                ? 'bg-green-800/10 text-green-800 border-green-800/20'
+                : 'bg-white text-gray-400 border-gray-200 hover:border-green-300'
             )}
           >{g}</button>
         ))}
       </div>
 
       {/* Selected note badge */}
-      <div className="inline-flex items-center gap-2 bg-[#405116] text-white rounded-xl px-4 py-2 self-start">
+      <div className="inline-flex items-center gap-2 bg-green-800 text-white rounded-xl px-4 py-2 self-start">
         <span className="text-xs opacity-70">Gewählte Note:</span>
         <span className="text-xl font-bold">
           {noteName}<sub className="text-sm font-normal opacity-80">{octave}</sub>
@@ -270,15 +270,15 @@ export function ClefMapper() {
           <div className="overflow-x-auto">
             <table className="text-xs w-full">
               <thead>
-                <tr className="bg-gray-100">
+                <tr className="border-b transition-colors hover:bg-muted/50 even:bg-muted/30">
                   <th className="text-left px-3 py-2 font-medium text-gray-500 whitespace-nowrap">Note</th>
-                  <th className="text-left px-3 py-2 font-medium whitespace-nowrap" style={{ color: '#405116' }}>
+                  <th className="text-left px-3 py-2 font-medium whitespace-nowrap" style={{ color: 'var(--color-green-800)' }}>
                     Violine (G)
                   </th>
-                  <th className="text-left px-3 py-2 font-medium whitespace-nowrap" style={{ color: '#1e3a5f' }}>
+                  <th className="text-left px-3 py-2 font-medium whitespace-nowrap" style={{ color: 'var(--color-blue-900)' }}>
                     Bass (F)
                   </th>
-                  <th className="text-left px-3 py-2 font-medium whitespace-nowrap" style={{ color: '#7a3f1e' }}>
+                  <th className="text-left px-3 py-2 font-medium whitespace-nowrap" style={{ color: 'var(--color-orange-800)' }}>
                     Alt (C/3)
                   </th>
                   <th className="text-left px-3 py-2 font-medium whitespace-nowrap" style={{ color: '#9a5a2e' }}>
@@ -295,8 +295,8 @@ export function ClefMapper() {
                       key={n}
                       className={cn(
                         'border-b border-gray-100 transition-colors',
-                        isSelected ? 'bg-[#BDD18C]/20' : isC ? 'bg-white' : 'bg-gray-50/50',
-                        'hover:bg-[#BDD18C]/10 cursor-pointer'
+                        isSelected ? 'bg-green-300/20' : isC ? 'bg-white' : 'bg-gray-50/50',
+                        'hover:bg-green-300/10 cursor-pointer'
                       )}
                       onClick={() => {
                         const match = n.match(/^([A-G]b?)(\d)$/);
@@ -308,7 +308,7 @@ export function ClefMapper() {
                     >
                       <td className="px-3 py-1.5 font-bold font-mono">
                         {n}
-                        {isSelected && <span className="ml-1 text-[#405116]">◀</span>}
+                        {isSelected && <span className="ml-1 text-green-800">◀</span>}
                       </td>
                       <td className="px-3 py-1.5 text-gray-600">{CLEF_POSITIONS.violin[n] ?? '—'}</td>
                       <td className="px-3 py-1.5 text-gray-600">{CLEF_POSITIONS.bass[n] ?? '—'}</td>

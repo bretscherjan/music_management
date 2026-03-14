@@ -77,7 +77,7 @@ const defaultColor = '#64748b';
 
 // Palette used for register stacked bars
 const REGISTER_PALETTE = [
-    '#2563eb', '#f59e0b', '#10b981', '#7c3aed', '#ef4444', '#06b6d4', '#ec4899', '#065f46', '#7c2d12', '#0ea5a4',
+    '#2563eb', '#f59e0b', '#10b981', '#7c3aed', 'var(--color-red-500)', '#06b6d4', '#ec4899', '#065f46', '#7c2d12', '#0ea5a4',
 ];
 
 // ── Small helpers ──────────────────────────────────────────────────────────────
@@ -672,8 +672,8 @@ export function EngagementPage() {
                                                     }
                                                     return 0;
                                                 })
-                                                .map((u, i) => (
-                                                    <tr key={u.id} className={`border-b hover:bg-slate-50 ${i % 2 === 0 ? 'bg-white' : 'bg-slate-25'}`}>
+                                                .map((u) => (
+                                                    <tr key={u.id} className="border-b transition-colors hover:bg-muted/50 even:bg-muted/30">
                                                         <td className="px-4 py-3 font-medium">{u.lastName}, {u.firstName}</td>
                                                         <td className="px-4 py-3 text-slate-600">{u.email}</td>
                                                         <td className="px-4 py-3">{u.register || '-'}</td>
@@ -772,8 +772,8 @@ export function EngagementPage() {
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            {sortedCombinedUsers.map((u, i) => (
-                                                <tr key={`${u.id}-${u.category}`} className={`border-b transition-colors ${i % 2 === 0 ? 'bg-white' : 'bg-slate-50'} hover:bg-blue-50`}>
+                                            {sortedCombinedUsers.map((u) => (
+                                                <tr key={`${u.id}-${u.category}`} className="border-b transition-colors hover:bg-muted/50 even:bg-muted/30">
                                                     <td className="px-4 py-2.5">
                                                         <Badge variant={u.category === 'top' ? 'default' : u.category === 'newly-registered' ? 'secondary' : 'outline'}>
                                                             {u.category === 'top' ? 'Top' : u.category === 'newly-registered' ? 'Neu' : 'Inaktiv'}

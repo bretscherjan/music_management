@@ -1,4 +1,4 @@
-import { Mail, MapPin, Clock } from 'lucide-react';
+import { Mail, Clock } from 'lucide-react';
 import { useState } from 'react';
 import api from '../../lib/api';
 
@@ -59,7 +59,7 @@ export function ContactPage() {
     return (
         <div>
             {/* Hero Section */}
-            <section className="bg-gradient-to-br from-[hsl(var(--musig-primary))] to-[hsl(var(--musig-primary))]/80 text-white py-20">
+            <section className="bg-gradient-to-br from-brand-primary to-brand-primary/80 text-white py-20">
                 <div className="container-app">
                     <div className="max-w-3xl mx-auto text-center">
                         <h1 className="text-5xl font-bold mb-6">Kontakt</h1>
@@ -76,7 +76,7 @@ export function ContactPage() {
                     <div className="max-w-5xl mx-auto grid md:grid-cols-2 gap-12">
                         {/* Contact Information */}
                         <div>
-                            <h2 className="text-3xl font-bold text-[hsl(var(--musig-primary))] mb-8">
+                            <h2 className="text-3xl font-bold text-brand-primary mb-8">
                                 Kontaktinformationen
                             </h2>
 
@@ -112,9 +112,8 @@ export function ContactPage() {
                             </div>
 
                             {/* Map Placeholder */}
-                            <div className="mt-8 bg-gradient-to-br from-[hsl(var(--musig-contrast))]/10 to-[hsl(var(--musig-primary))]/10 rounded-xl border-2 border-[hsl(var(--musig-contrast))]/30 p-8 text-center">
-                                <MapPin className="h-12 w-12 text-[hsl(var(--musig-primary))] mx-auto mb-4" />
-                                <h3 className="text-xl font-bold text-[hsl(var(--musig-primary))] mb-2">
+                            <div className="mt-8 bg-brand-primary/7.5 rounded-xl border-2 border-brand-secondary/30 p-8 text-center">
+                                <h3 className="text-xl font-bold text-brand-primary mb-2">
                                     Unser Probelokal
                                 </h3>
                                 <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d697.3061700364333!2d8.867176345141536!3d47.49589626201634!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x479a96abf445a797%3A0x26bc98540a0ccac1!2sSeegartenstrasse%2021%2C%208353%20Elgg!5e1!3m2!1sde!2sch!4v1768857013028!5m2!1sde!2sch" className="w-full h-100" loading="lazy"></iframe>
@@ -124,7 +123,7 @@ export function ContactPage() {
 
                         {/* Contact Form */}
                         <div>
-                            <h2 className="text-3xl font-bold text-[hsl(var(--musig-primary))] mb-8">
+                            <h2 className="text-3xl font-bold text-brand-primary mb-8">
                                 Nachricht senden
                             </h2>
 
@@ -134,12 +133,12 @@ export function ContactPage() {
                                         <Mail className="h-8 w-8" />
                                     </div>
                                     <h3 className="text-2xl font-bold text-green-500 mb-2">Nachricht gesendet!</h3>
-                                    <p className="text-[hsl(var(--muted-foreground))] mb-6">
+                                    <p className="text-muted-foreground mb-6">
                                         Vielen Dank für deine Nachricht. Wir werden uns so schnell wie möglich bei dir melden.
                                     </p>
                                     <button
                                         onClick={() => setStatus('idle')}
-                                        className="text-[hsl(var(--musig-primary))] font-medium hover:underline"
+                                        className="text-brand-primary font-medium hover:underline"
                                     >
                                         Weitere Nachricht senden
                                     </button>
@@ -149,7 +148,7 @@ export function ContactPage() {
                                     <div>
                                         <label
                                             htmlFor="name"
-                                            className="block text-sm font-medium text-[hsl(var(--foreground))] mb-2"
+                                            className="block text-sm font-medium text-foreground mb-2"
                                         >
                                             Name
                                         </label>
@@ -163,7 +162,7 @@ export function ContactPage() {
                                                 setFormData({ ...formData, name: val });
                                                 setErrors({ ...errors, name: validateField('name', val) });
                                             }}
-                                            className={`w-full px-4 py-3 rounded-lg border focus:ring-2 focus:ring-[hsl(var(--musig-primary))] focus:border-transparent outline-none transition-all ${errors.name ? 'border-red-500' : 'border-[hsl(var(--border))]'}`}
+                                            className={`w-full px-4 py-3 rounded-lg border focus:ring-2 focus:ring-brand-primary focus:border-transparent outline-none transition-all ${errors.name ? 'border-red-500' : 'border-[hsl(var(--border))]'}`}
                                             placeholder="Ihr Name"
                                         />
                                         {errors.name && <p className="text-red-500 text-xs mt-1">{errors.name}</p>}
@@ -172,7 +171,7 @@ export function ContactPage() {
                                     <div>
                                         <label
                                             htmlFor="email"
-                                            className="block text-sm font-medium text-[hsl(var(--foreground))] mb-2"
+                                            className="block text-sm font-medium text-foreground mb-2"
                                         >
                                             E-Mail
                                         </label>
@@ -182,7 +181,7 @@ export function ContactPage() {
                                             required
                                             value={formData.email}
                                             onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                                            className="w-full px-4 py-3 rounded-lg border border-[hsl(var(--border))] focus:ring-2 focus:ring-[hsl(var(--musig-primary))] focus:border-transparent outline-none transition-all"
+                                            className="w-full px-4 py-3 rounded-lg border border-[hsl(var(--border))] focus:ring-2 focus:ring-brand-primary focus:border-transparent outline-none transition-all"
                                             placeholder="ihre.email@beispiel.ch"
                                         />
                                     </div>
@@ -190,7 +189,7 @@ export function ContactPage() {
                                     <div className="relative group">
                                         <label
                                             htmlFor="subject"
-                                            className="block text-sm font-medium text-[hsl(var(--foreground))] mb-2"
+                                            className="block text-sm font-medium text-foreground mb-2"
                                         >
                                             Betreff
                                         </label>
@@ -205,7 +204,7 @@ export function ContactPage() {
                                                     setFormData({ ...formData, subject: val });
                                                     setErrors({ ...errors, subject: validateField('subject', val) });
                                                 }}
-                                                className={`w-full px-4 py-3 rounded-lg border focus:ring-2 focus:ring-[hsl(var(--musig-primary))] focus:border-transparent outline-none transition-all ${errors.subject ? 'border-red-500' : 'border-[hsl(var(--border))]'}`}
+                                                className={`w-full px-4 py-3 rounded-lg border focus:ring-2 focus:ring-brand-primary focus:border-transparent outline-none transition-all ${errors.subject ? 'border-red-500' : 'border-[hsl(var(--border))]'}`}
                                                 placeholder="Worum geht es?"
                                                 list="subject-suggestions"
                                             />
@@ -217,7 +216,7 @@ export function ContactPage() {
                                             </datalist>
                                         </div>
                                         {errors.subject && <p className="text-red-500 text-xs mt-1">{errors.subject}</p>}
-                                        <p className="text-xs text-[hsl(var(--muted-foreground))] mt-1">
+                                        <p className="text-xs text-muted-foreground mt-1">
                                             Wählen Sie einen Vorschlag oder geben Sie einen eigenen Betreff ein.
                                         </p>
                                     </div>
@@ -225,7 +224,7 @@ export function ContactPage() {
                                     <div>
                                         <label
                                             htmlFor="message"
-                                            className="block text-sm font-medium text-[hsl(var(--foreground))] mb-2"
+                                            className="block text-sm font-medium text-foreground mb-2"
                                         >
                                             Nachricht
                                         </label>
@@ -240,7 +239,7 @@ export function ContactPage() {
                                                 setFormData({ ...formData, message: val });
                                                 setErrors({ ...errors, message: validateField('message', val) });
                                             }}
-                                            className={`w-full px-4 py-3 rounded-lg border focus:ring-2 focus:ring-[hsl(var(--musig-primary))] focus:border-transparent outline-none transition-all resize-none ${errors.message ? 'border-red-500' : 'border-[hsl(var(--border))]'}`}
+                                            className={`w-full px-4 py-3 rounded-lg border focus:ring-2 focus:ring-brand-primary focus:border-transparent outline-none transition-all resize-none ${errors.message ? 'border-red-500' : 'border-[hsl(var(--border))]'}`}
                                             placeholder="Ihre Nachricht an uns..."
                                         />
                                         {errors.message && <p className="text-red-500 text-xs mt-1">{errors.message}</p>}
@@ -261,7 +260,7 @@ export function ContactPage() {
                                     <button
                                         type="submit"
                                         disabled={status === 'loading'}
-                                        className="w-full bg-[hsl(var(--musig-primary))] text-white px-6 py-3 rounded-lg hover:bg-[hsl(var(--musig-primary))]/90 transition-colors font-medium flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                                        className="w-full bg-brand-primary text-white px-6 py-3 rounded-lg hover:bg-brand-primary/90 transition-colors font-medium flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                                     >
                                         {status === 'loading' ? (
                                             <>
@@ -285,17 +284,17 @@ export function ContactPage() {
             </section>
 
             {/* Call to Action */}
-            <section className="py-16 bg-gradient-to-r from-[hsl(var(--musig-primary))]/5 to-[hsl(var(--musig-contrast))]/5">
+            <section className="py-16 bg-brand-primary/5">
                 <div className="container-app">
                     <div className="max-w-3xl mx-auto text-center">
-                        <h2 className="text-3xl font-bold text-[hsl(var(--musig-primary))] mb-4">
+                        <h2 className="text-3xl font-bold text-brand-primary mb-4">
                             Schnupperprobe gewünscht?
                         </h2>
-                        <p className="text-lg text-[hsl(var(--muted-foreground))] mb-6 leading-relaxed">
+                        <p className="text-lg text-muted-foreground mb-6 leading-relaxed">
                             Möchtest du uns persönlich kennenlernen? Komm doch einfach bei einer unserer
                             Proben vorbei – jeden 2. Montag um 20:00 Uhr. Wir wären froh um eine kurze Anmeldung!
                         </p>
-                        <div className="inline-flex items-center gap-2 text-[hsl(var(--musig-primary))] font-medium">
+                        <div className="inline-flex items-center gap-2 text-brand-primary font-medium">
                             <Clock className="h-5 w-5" />
                             Jeden 2. Montag (jeweils ungerade Kalenderwochen), 20:00 Uhr im Probelokal
                         </div>
@@ -316,20 +315,20 @@ interface ContactItemProps {
 
 function ContactItem({ icon, title, content, subtitle, link }: ContactItemProps) {
     const ContentWrapper = link ? 'a' : 'div';
-    const wrapperProps = link ? { href: link, className: 'hover:text-[hsl(var(--musig-primary))] transition-colors' } : {};
+    const wrapperProps = link ? { href: link, className: 'hover:text-brand-primary transition-colors' } : {};
 
     return (
         <div className="flex items-start gap-4">
-            <div className="bg-gradient-to-br from-[hsl(var(--musig-primary))] to-[hsl(var(--musig-primary))]/80 text-white w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0">
+            <div className="bg-gradient-to-br from-brand-primary to-brand-primary/80 text-white w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0">
                 {icon}
             </div>
             <div>
-                <div className="text-sm text-[hsl(var(--muted-foreground))] mb-1">{title}</div>
-                <ContentWrapper {...wrapperProps} className={`text-lg font-medium text-[hsl(var(--foreground))] ${link ? 'hover:text-[hsl(var(--musig-primary))] transition-colors' : ''}`}>
+                <div className="text-sm text-muted-foreground mb-1">{title}</div>
+                <ContentWrapper {...wrapperProps} className={`text-lg font-medium text-foreground ${link ? 'hover:text-brand-primary transition-colors' : ''}`}>
                     {content}
                 </ContentWrapper>
                 {subtitle && (
-                    <div className="text-sm text-[hsl(var(--muted-foreground))] mt-1">
+                    <div className="text-sm text-muted-foreground mt-1">
                         {subtitle}
                     </div>
                 )}

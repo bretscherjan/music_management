@@ -51,9 +51,9 @@ export function NoteSelector({ notes, selected, onChange, clef = 'treble' }: Not
       }
       // Colour: selected = brand dark green, others = light gray
       if (note === selected) {
-        sn.setStyle({ fillStyle: '#405116', strokeStyle: '#405116' });
+        sn.setStyle({ fillStyle: 'var(--color-green-800)', strokeStyle: 'var(--color-green-800)' });
       } else {
-        sn.setStyle({ fillStyle: '#9ca3af', strokeStyle: '#9ca3af' });
+        sn.setStyle({ fillStyle: 'var(--color-gray-400)', strokeStyle: 'var(--color-gray-400)' });
       }
       return { note, sn };
     });
@@ -113,7 +113,7 @@ export function NoteSelector({ notes, selected, onChange, clef = 'treble' }: Not
       />
       {selected && (
         <p className="text-center text-xs text-gray-500 pb-2">
-          Ausgewählt: <span className="font-semibold text-[#405116]">{selected}</span>
+          Ausgewählt: <span className="font-semibold text-green-800">{selected}</span>
         </p>
       )}
     </div>

@@ -163,8 +163,8 @@ const sendTestNotification = async (req, res) => {
         const payload = {
             title: title || 'Test Benachrichtigung',
             body: body || 'Dies ist eine Test-Push-Benachrichtigung von Musig Elgg',
-            icon: '/logo.png',
-            badge: '/logo.png',
+            icon: '/logo_red.png',
+            badge: '/logo_red.png',
             data: {
                 type: 'test',
                 url: '/',

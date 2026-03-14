@@ -37,7 +37,7 @@ export function MobileBottomNav() {
                             className={cn(
                                 "flex flex-col items-center justify-center gap-1 flex-1 h-full transition-colors",
                                 isActive
-                                    ? "text-[hsl(var(--musig-primary))]"
+                                    ? "text-brand-primary"
                                     : "text-gray-500"
                             )}
                         >

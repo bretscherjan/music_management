@@ -70,7 +70,7 @@ function StaffSVG({ notes, halfStepAfter, semitonesAfter }: StaffProps) {
           <g key={i}>
             {/* Ledger lines */}
             {getLedgerLines(y).map(ly => (
-              <line key={ly} x1={x - 8} y1={ly} x2={x + 8} y2={ly} stroke="#9ca3af" strokeWidth="1.2" />
+              <line key={ly} x1={x - 8} y1={ly} x2={x + 8} y2={ly} stroke="var(--color-gray-400)" strokeWidth="1.2" />
             ))}
 
             {/* Accidental */}
@@ -84,7 +84,7 @@ function StaffSVG({ notes, halfStepAfter, semitonesAfter }: StaffProps) {
             <ellipse
               cx={x} cy={y}
               rx={6} ry={4.5}
-              fill={isHalfStepBefore ? '#405116' : '#1f2937'}
+              fill={isHalfStepBefore ? 'var(--color-green-800)' : '#1f2937'}
               stroke="none"
             />
 
@@ -94,7 +94,7 @@ function StaffSVG({ notes, halfStepAfter, semitonesAfter }: StaffProps) {
               const stemX = stemUp ? x + 5.5 : x - 5.5;
               const stemY2 = stemUp ? y - 28 : y + 28;
               return (
-                <line x1={stemX} y1={y} x2={stemX} y2={stemY2} stroke={isHalfStepBefore ? '#405116' : '#4b5563'} strokeWidth="1.2" />
+                <line x1={stemX} y1={y} x2={stemX} y2={stemY2} stroke={isHalfStepBefore ? 'var(--color-green-800)' : '#4b5563'} strokeWidth="1.2" />
               );
             })()}
 
@@ -104,7 +104,7 @@ function StaffSVG({ notes, halfStepAfter, semitonesAfter }: StaffProps) {
                 <path
                   d={`M ${x + 12} ${y + 16} Q ${x + NOTE_X_STEP / 2} ${y + 24} ${x + NOTE_X_STEP - 12} ${noteY(notes[i + 1]) + 16}`}
                   fill="none"
-                  stroke={semitonesAfter[i] === 1 ? '#ef4444' : '#a855f7'}
+                  stroke={semitonesAfter[i] === 1 ? 'var(--color-red-500)' : '#a855f7'}
                   strokeWidth="1.5"
                   strokeDasharray="3,2"
                 />
@@ -113,7 +113,7 @@ function StaffSVG({ notes, halfStepAfter, semitonesAfter }: StaffProps) {
                   y={Math.max(noteY(notes[i]), noteY(notes[i + 1])) + 30}
                   textAnchor="middle"
                   fontSize="7"
-                  fill={semitonesAfter[i] === 1 ? '#ef4444' : '#a855f7'}
+                  fill={semitonesAfter[i] === 1 ? 'var(--color-red-500)' : '#a855f7'}
                   fontWeight="600"
                 >
                   {semitonesAfter[i] === 1 ? '½' : '1½'}
@@ -149,8 +149,8 @@ export function ScaleAnalyzer() {
                 className={cn(
                   'w-9 h-8 rounded-md text-sm font-medium border transition-all',
                   root === n.value
-                    ? 'bg-[#BDD18C] text-[#405116] border-[#405116]/30 font-bold'
-                    : 'bg-white text-gray-600 border-gray-200 hover:border-[#BDD18C]'
+                    ? 'bg-green-300 text-green-800 border-green-800/30 font-bold'
+                    : 'bg-white text-gray-600 border-gray-200 hover:border-green-300'
                 )}
               >
                 {n.label}
@@ -169,8 +169,8 @@ export function ScaleAnalyzer() {
                 className={cn(
                   'px-2.5 py-1.5 text-xs font-medium rounded-lg border transition-all',
                   mode === m
-                    ? 'bg-[#BDD18C] text-[#405116] border-[#405116]/30'
-                    : 'bg-white text-gray-500 border-gray-200 hover:border-[#BDD18C]'
+                    ? 'bg-green-300 text-green-800 border-green-800/30'
+                    : 'bg-white text-gray-500 border-gray-200 hover:border-green-300'
                 )}
               >
                 {SCALE_MODES[m].split(' ')[0]}
@@ -193,7 +193,7 @@ export function ScaleAnalyzer() {
           </span>
         )}
         {scaleInfo.relativeKey && (
-          <span className="text-xs text-[#405116] bg-[#BDD18C]/20 px-2 py-0.5 rounded-full">
+          <span className="text-xs text-green-800 bg-green-300/20 px-2 py-0.5 rounded-full">
             Relative: {scaleInfo.relativeKey}
           </span>
         )}
@@ -222,7 +222,7 @@ export function ScaleAnalyzer() {
               <div className={cn(
                 'flex flex-col items-center min-w-[28px] h-8 rounded-lg border text-xs font-bold justify-center transition-colors',
                 isHalfBefore
-                  ? 'bg-[#405116] text-white border-[#405116]'
+                  ? 'bg-green-800 text-white border-green-800'
                   : 'bg-gray-50 text-gray-700 border-gray-200'
               )}>
                 {name}
@@ -236,7 +236,7 @@ export function ScaleAnalyzer() {
       <p className="text-[11px] text-gray-400 border-t pt-2 mt-1">
         <span className="text-red-500 font-medium">Rote Bögen & ½</span> = Halbtonschritte.<br />
         <span className="text-purple-500 font-medium">Violette Bögen & 1½</span> = Anderthalbtonschritte.<br />
-        <span className="text-[#BDD18C] font-medium">Natürliche Halbtöne:</span> <strong>E–F</strong> und <strong>H–C</strong>.
+        <span className="text-green-300 font-medium">Natürliche Halbtöne:</span> <strong>E–F</strong> und <strong>H–C</strong>.
       </p>
     </div>
   );

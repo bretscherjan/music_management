@@ -28,10 +28,10 @@ export function WerbungGrid() {
         <section className="py-20 bg-zinc-50/50">
             <div className="container-app">
                 <div className="text-center mb-12">
-                    <h2 className="text-3xl md:text-4xl font-bold text-[hsl(var(--musig-primary))] mb-4">
+                    <h2 className="text-3xl md:text-4xl font-bold text-brand-primary mb-4">
                         Aktuelles
                     </h2>
-                    <div className="h-1 w-20 bg-[hsl(var(--musig-primary))] mx-auto rounded-full opacity-20" />
+                    <div className="h-1 w-20 bg-brand-primary mx-auto rounded-full opacity-20" />
                 </div>
 
                 <div className="flex flex-wrap justify-center gap-8 max-w-6xl mx-auto px-4">
@@ -55,7 +55,7 @@ export function WerbungGrid() {
                                 </div>
 
                                 <CardContent className="p-6 w-full flex-grow flex flex-col text-left">
-                                    <h3 className="text-lg font-bold text-[hsl(var(--musig-primary))] mb-2 line-clamp-1">
+                                    <h3 className="text-lg font-bold text-brand-primary mb-2 line-clamp-1">
                                         {promo.title}
                                     </h3>
                                     {promo.description && (

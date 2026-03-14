@@ -5,7 +5,7 @@ import { CookieBanner } from './CookieBanner';
 
 export function PublicLayout() {
     return (
-        <div className="min-h-screen flex flex-col bg-[hsl(var(--background))]">
+        <div className="theme-public min-h-screen flex flex-col bg-background">
             <Navbar />
             <main className="flex-1">
                 <Outlet />

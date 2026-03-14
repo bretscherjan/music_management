@@ -14,7 +14,7 @@ export function MainLayout() {
     }, []);
 
     return (
-        <div className="min-h-screen flex flex-col bg-background">
+        <div className="theme-member min-h-screen flex flex-col bg-background">
             <Header />
             {/* Full width flex container for Sidebar + Content */}
             <div className="flex-1 flex">

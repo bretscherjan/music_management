@@ -273,7 +273,7 @@ export function FileListPage() {
                     <CardHeader>
                         <CardTitle className="text-lg flex items-center justify-between gap-2 overflow-hidden">
                             <div className="flex items-center gap-2 overflow-hidden">
-                                <Folder className="h-5 w-5 fill-primary/20 text-primary shrink-0" />
+                                <Folder className="h-5 w-5 fill-musig-contrast/20 text-musig-contrast shrink-0" />
                                 <span className="truncate">{currentFolderName}</span>
                             </div>
 

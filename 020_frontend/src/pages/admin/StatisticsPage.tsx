@@ -92,11 +92,11 @@ export function StatisticsPage() {
     const top10Attendance = attendanceStats?.topAttendees || [];
 
     // Colors
-    const COLORS = ['#ef4444', '#f59e0b', '#3b82f6', '#10b981'];
+    const COLORS = ['var(--color-red-500)', '#f59e0b', '#3b82f6', '#10b981'];
     const ATTENDANCE_COLORS = {
         'PRESENT': '#10b981', // Green
         'EXCUSED': '#f59e0b', // Orange
-        'UNEXCUSED': '#ef4444' // Red
+        'UNEXCUSED': 'var(--color-red-500)' // Red
     };
 
     const isLoading = activeTab === 'repertoire' ? isLoadingRepertoire : isLoadingAttendance;
@@ -252,7 +252,7 @@ export function StatisticsPage() {
                                     </thead>
                                     <tbody>
                                         {repertoireStats?.slice(0, 50).map((item) => (
-                                            <tr key={item.id} className="border-b transition-colors hover:bg-slate-50/50">
+                                            <tr key={item.id} className="border-b transition-colors hover:bg-muted/50 even:bg-muted/30">
                                                 <td className="p-4 font-medium">{item.title}</td>
                                                 <td className="p-4 text-slate-500">{item.composer || '-'}</td>
                                                 <td className="p-4 text-right">{item.rehearsalCount}</td>
@@ -362,8 +362,8 @@ export function StatisticsPage() {
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        {attendanceStats?.attendees?.map((item, index) => (
-                                            <tr key={item.id} className={`transition-colors border-b ${index % 2 === 0 ? 'bg-white' : 'bg-slate-50'} hover:bg-slate-100`}>
+                                        {attendanceStats?.attendees?.map((item) => (
+                                            <tr key={item.id} className="border-b transition-colors hover:bg-muted/50 even:bg-muted/30">
                                                 <td className="p-3 font-medium flex items-center gap-3">
                                                     {item.name}
                                                 </td>

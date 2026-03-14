@@ -68,7 +68,7 @@ export function Header() {
             <div className="container-app flex h-16 items-center justify-between">
                 {/* Logo & Mobile Menu Trigger (Left align on mobile?) No, standart right aligned hamburger usually. */}
                 <Link to="/member" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
-                    <Music className="h-8 w-8 text-primary" />
+                    <Music className="h-8 w-8 text-brand-primary" />
                     <div className="flex flex-col">
                         <span className="font-bold text-lg leading-tight">Musig Elgg</span>
                         <span className="text-xs text-muted-foreground">Mitgliederbereich</span>
@@ -121,7 +121,7 @@ export function Header() {
                                     className={cn(
                                         "flex items-center gap-3 px-4 py-3 rounded-md text-base font-medium transition-colors active:bg-muted",
                                         location.pathname === item.href
-                                            ? "bg-primary/10 text-primary"
+                                            ? "bg-brand-primary/10 text-brand-primary"
                                             : "text-muted-foreground hover:bg-muted hover:text-foreground"
                                     )}
                                 >
@@ -147,7 +147,7 @@ export function Header() {
                                         className={cn(
                                             "flex items-center gap-3 px-4 py-3 rounded-md text-base font-medium transition-colors active:bg-muted",
                                             location.pathname === item.href
-                                                ? "bg-primary/10 text-primary"
+                                                ? "bg-brand-primary/10 text-brand-primary"
                                                 : "text-muted-foreground hover:bg-muted hover:text-foreground"
                                         )}
                                     >

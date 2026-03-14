@@ -58,10 +58,10 @@ const ALL_TIME_SIGNATURES: TSConfig[] = [
 
 const CATEGORY_ORDER: TSCategory[] = ['Einfach', 'Zusammengesetzt', 'Asymmetrisch'];
 const CATEGORY_COLOR: Record<TSCategory, string> = {
-  'Einfach': '#405116',
-  'Zusammengesetzt': '#1e3a5f',
-  'Asymmetrisch': '#7a3f1e',
-  'Sonderform': '#4a2f6a',
+  'Einfach': 'var(--color-green-800)',
+  'Zusammengesetzt': 'var(--color-blue-900)',
+  'Asymmetrisch': 'var(--color-orange-800)',
+  'Sonderform': 'var(--color-purple-900)',
 };
 
 // ── AudioContext Metronome ───────────────────────────────────────────────────
@@ -188,7 +188,7 @@ export function Metronome({ initialTimeSig }: Props) {
     }
   }, []);
 
-  const bpmColor = bpm < 60 ? '#9ca3af' : bpm < 100 ? '#405116' : bpm < 160 ? '#BDD18C' : '#ef4444';
+  const bpmColor = bpm < 60 ? 'var(--color-gray-400)' : bpm < 100 ? 'var(--color-green-800)' : bpm < 160 ? 'var(--color-green-300)' : 'var(--color-red-500)';
   const activeCatColor = CATEGORY_COLOR[timeSig.category];
 
   return (
@@ -257,8 +257,8 @@ export function Metronome({ initialTimeSig }: Props) {
               className={cn('rounded-full transition-all duration-75', size)}
               style={{
                 background: isActive
-                  ? (level === 2 ? activeCatColor : level === 1 ? `${activeCatColor}cc` : '#BDD18C')
-                  : '#e5e7eb',
+                  ? (level === 2 ? activeCatColor : level === 1 ? `${activeCatColor}cc` : 'var(--color-green-300)')
+                  : 'var(--color-gray-200)',
                 transform: isActive ? 'scale(1.3)' : 'scale(1)',
                 boxShadow: isActive ? `0 0 8px ${activeCatColor}50` : 'none',
               }}
@@ -277,14 +277,14 @@ export function Metronome({ initialTimeSig }: Props) {
       {/* ── BPM Slider ── */}
       <div className="flex items-center gap-3">
         <button onClick={() => setBpm(b => Math.max(20, b - 1))} className="w-9 h-9 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold text-lg transition-colors flex items-center justify-center">−</button>
-        <input type="range" min={20} max={300} value={bpm} onChange={e => setBpm(Number(e.target.value))} className="flex-1 accent-[#BDD18C] h-2" />
+        <input type="range" min={20} max={300} value={bpm} onChange={e => setBpm(Number(e.target.value))} className="flex-1 accent-green-300 h-2" />
         <button onClick={() => setBpm(b => Math.min(300, b + 1))} className="w-9 h-9 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold text-lg transition-colors flex items-center justify-center">+</button>
       </div>
 
       {/* ── BPM Presets ── */}
       <div className="flex flex-wrap gap-2 justify-center">
         {[60, 72, 80, 90, 96, 100, 108, 120, 132, 144, 160].map(b => (
-          <button key={b} onClick={() => setBpm(b)} className={cn('px-2.5 py-1 rounded-md text-xs font-medium border transition-all', bpm === b ? 'bg-[#BDD18C] text-[#405116] border-[#405116]/20' : 'bg-white text-gray-500 border-gray-200 hover:border-[#BDD18C]')}>{b}</button>
+          <button key={b} onClick={() => setBpm(b)} className={cn('px-2.5 py-1 rounded-md text-xs font-medium border transition-all', bpm === b ? 'bg-green-300 text-green-800 border-green-800/20' : 'bg-white text-gray-500 border-gray-200 hover:border-green-300')}>{b}</button>
         ))}
       </div>
 
@@ -299,7 +299,7 @@ export function Metronome({ initialTimeSig }: Props) {
           {isPlaying ? <Square className="h-5 w-5 fill-current" /> : <Play className="h-5 w-5 fill-current" />}
           {isPlaying ? 'Stopp' : 'Start'}
         </Button>
-        <Button onClick={handleTap} variant="outline" size="lg" className="gap-2 px-6 border-[#BDD18C] text-[#405116] hover:bg-[#BDD18C]/10 active:scale-95 transition-all select-none">
+        <Button onClick={handleTap} variant="outline" size="lg" className="gap-2 px-6 border-green-300 text-green-800 hover:bg-green-300/10 active:scale-95 transition-all select-none">
           <Music className="h-4 w-4" />
           Tap Tempo
         </Button>

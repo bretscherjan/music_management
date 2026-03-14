@@ -74,10 +74,10 @@ const TIME_SIGNATURES: TimeSigDef[] = [
 
 const CATEGORIES: Category[] = ['Einfach', 'Zusammengesetzt', 'Asymmetrisch', 'Sonderform'];
 const CATEGORY_COLORS: Record<Category, string> = {
-  'Einfach':           '#405116',
-  'Zusammengesetzt':   '#1e3a5f',
-  'Asymmetrisch':      '#7a3f1e',
-  'Sonderform':        '#4a2f6a',
+  'Einfach':           'var(--color-green-800)',
+  'Zusammengesetzt':   'var(--color-blue-900)',
+  'Asymmetrisch':      'var(--color-orange-800)',
+  'Sonderform':        'var(--color-purple-900)',
 };
 
 // ── Beat Visualizer (animated) ───────────────────────────────────────────────
@@ -89,7 +89,7 @@ interface BeatVizProps {
   color?: string;
 }
 
-function BeatVisualizer({ groups, activeBeat, denominator, color = '#405116' }: BeatVizProps) {
+function BeatVisualizer({ groups, activeBeat, denominator, color = 'var(--color-green-800)' }: BeatVizProps) {
   const slots: { groupIdx: number; posInGroup: number; isAccent: boolean }[] = [];
   groups.forEach((size, gi) => {
     for (let p = 0; p < size; p++) {
@@ -144,7 +144,7 @@ function ConductPattern({ pattern }: { pattern: string }) {
     <div className="flex items-center gap-1 text-sm font-mono text-gray-600 bg-gray-100 rounded-lg px-3 py-1.5">
       <span className="text-[10px] text-gray-400 mr-1">Dirigiermuster:</span>
       {steps.map((s, i) => (
-        <span key={i} className="text-[#405116] font-bold">{s}</span>
+        <span key={i} className="text-green-800 font-bold">{s}</span>
       ))}
     </div>
   );
@@ -280,7 +280,7 @@ export function TimeSignatureEngine({ onSendToMetronome }: Props) {
                 ? 'text-white border-transparent'
                 : 'bg-white text-gray-500 border-gray-200 hover:border-gray-400'
             )}
-            style={activeCategory === cat ? { background: cat === 'Alle' ? '#405116' : CATEGORY_COLORS[cat as Category] } : {}}
+            style={activeCategory === cat ? { background: cat === 'Alle' ? 'var(--color-green-800)' : CATEGORY_COLORS[cat as Category] } : {}}
           >
             {cat}
           </button>
@@ -358,7 +358,7 @@ export function TimeSignatureEngine({ onSendToMetronome }: Props) {
             <input
               type="range" min={40} max={240} value={bpm}
               onChange={e => setBpm(Number(e.target.value))}
-              className="w-24 accent-[#BDD18C] h-1.5"
+              className="w-24 accent-green-300 h-1.5"
             />
             <span className="text-xs font-mono text-gray-600 w-12">{bpm} BPM</span>
           </div>
@@ -383,7 +383,7 @@ export function TimeSignatureEngine({ onSendToMetronome }: Props) {
           {onSendToMetronome && (
             <button
               onClick={() => onSendToMetronome(selected.id)}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium border border-gray-200 bg-white text-gray-600 hover:border-[#BDD18C] transition-all"
+              className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium border border-gray-200 bg-white text-gray-600 hover:border-green-300 transition-all"
             >
               🎵 Im Metronom öffnen
             </button>

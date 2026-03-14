@@ -30,8 +30,8 @@ self.addEventListener('push', (event) => {
     // Simplified options for debugging - removed icon/badge (potential size issue)
     const options = {
         body: data.body,
-        icon: data.icon || '/logo.png',
-        badge: data.badge || '/logo.png',
+        icon: data.icon || '/logo_red.png',
+        badge: data.badge || '/logo_red.png',
         data: data.data || { url: '/' },
         tag: data.tag,
         requireInteraction: true

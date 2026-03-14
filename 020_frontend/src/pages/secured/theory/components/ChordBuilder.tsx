@@ -8,7 +8,7 @@ import {
 import { cn } from '@/lib/utils';
 
 const QUALITY_COLORS: Record<ChordQuality, { bg: string; text: string; border: string }> = {
-  'major':       { bg: '#BDD18C', text: '#405116', border: '#405116/20' },
+  'major':       { bg: 'var(--color-green-300)', text: 'var(--color-green-800)', border: '#405116/20' },
   'minor':       { bg: '#93c5fd', text: '#1e40af', border: '#1e40af/20' },
   'diminished':  { bg: '#fca5a5', text: '#991b1b', border: '#991b1b/20' },
   'augmented':   { bg: '#fdba74', text: '#92400e', border: '#92400e/20' },
@@ -85,7 +85,7 @@ function MiniKeyboard({ activeNotes, activeColor }: MiniKeyboardProps) {
                 x={x} y={0}
                 width={blackKeyW} height={blackKeyH}
                 rx="2"
-                fill={isActive ? '#405116' : '#1f2937'}
+                fill={isActive ? 'var(--color-green-800)' : '#1f2937'}
                 stroke="none"
               />
             );
@@ -118,8 +118,8 @@ export function ChordBuilder() {
               className={cn(
                 'w-9 h-8 rounded-md text-sm font-medium border transition-all',
                 root === n.value
-                  ? 'border-[#405116]/30 font-bold'
-                  : 'bg-white text-gray-600 border-gray-200 hover:border-[#BDD18C]'
+                  ? 'border-green-800/30 font-bold'
+                  : 'bg-white text-gray-600 border-gray-200 hover:border-green-300'
               )}
               style={root === n.value ? { backgroundColor: colors.bg, color: colors.text } : {}}
             >
@@ -172,7 +172,7 @@ export function ChordBuilder() {
             <div
               key={i}
               className="flex flex-col items-center rounded-xl py-3 px-2"
-              style={{ backgroundColor: i === 0 ? colors.bg : '#f9fafb', border: `1.5px solid ${i === 0 ? colors.bg : '#e5e7eb'}` }}
+              style={{ backgroundColor: i === 0 ? colors.bg : '#f9fafb', border: `1.5px solid ${i === 0 ? colors.bg : 'var(--color-gray-200)'}` }}
             >
               <div className="text-[9px] font-medium text-gray-400 mb-1">{tone.degree}</div>
               <div className="text-xl font-bold" style={{ color: i === 0 ? colors.text : '#1f2937' }}>

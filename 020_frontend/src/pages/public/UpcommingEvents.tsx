@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { Calendar, MapPin, Music2, Clock } from 'lucide-react';
+import { Calendar, MapPin, Clock } from 'lucide-react';
 import { eventService } from '@/services/eventService';
 import { formatTime, getCategoryLabel } from '@/lib/utils';
 import type { Event } from '@/types';
@@ -22,13 +22,13 @@ export function UpcommingEvents() {
 
     if (isLoading) {
         return (
-            <div className="py-16 md:py-24 bg-[hsl(var(--background))]">
+            <div className="py-16 md:py-24 bg-background">
                 <div className="container-app">
                     <div className="text-center mb-12">
-                        <h1 className="text-3xl md:text-5xl font-bold text-[hsl(var(--musig-primary))] mb-4">
+                        <h1 className="text-3xl md:text-5xl font-bold text-brand-primary mb-4">
                             Kommende Termine
                         </h1>
-                        <p className="text-lg text-[hsl(var(--muted-foreground))]">
+                        <p className="text-lg text-muted-foreground">
                             Wir laden die Termine für Sie...
                         </p>
                     </div>
@@ -43,16 +43,13 @@ export function UpcommingEvents() {
     }
 
     return (
-        <div className="py-16 md:py-24 bg-[hsl(var(--background))]">
+        <div className="py-16 md:py-24 bg-background">
             <div className="container-app">
                 <div className="text-center mb-12 md:mb-16">
-                    <Music2 className="h-16 w-16 text-[hsl(var(--musig-primary))] mx-auto mb-6 opacity-80" />
-                    <h1 className="text-3xl md:text-5xl font-bold text-[hsl(var(--musig-primary))] mb-4">
+                    <h1 className="text-4xl md:text-5xl lg:text-6xl font-black text-brand-primary mb-6 tracking-tight">
                         Kommende Termine
                     </h1>
-                    <p className="text-lg md:text-xl text-[hsl(var(--muted-foreground))] max-w-2xl mx-auto px-4">
-                        Hier finden Sie alle unsere geplanten Auftritte, Proben und Veranstaltungen.
-                    </p>
+                    <div className="h-1.5 w-24 bg-brand-primary mx-auto rounded-full opacity-20" />
                 </div>
 
                 {upcomingEvents.length > 0 ? (
@@ -63,11 +60,11 @@ export function UpcommingEvents() {
                     </div>
                 ) : (
                     <div className="text-center py-16 bg-white rounded-2xl border border-dashed border-[hsl(var(--border))] mx-4 md:mx-auto max-w-2xl">
-                        <Calendar className="h-16 w-16 text-[hsl(var(--muted-foreground))] mx-auto mb-4 opacity-50" />
-                        <p className="text-[hsl(var(--muted-foreground))] text-xl font-medium">
+                        <Calendar className="h-16 w-16 text-muted-foreground mx-auto mb-4 opacity-50" />
+                        <p className="text-muted-foreground text-xl font-medium">
                             Aktuell keine geplanten Termine.
                         </p>
-                        <p className="text-[hsl(var(--muted-foreground))]/80 mt-2">
+                        <p className="text-muted-foreground/80 mt-2">
                             Schauen Sie bald wieder vorbei für neue Informationen!
                         </p>
                     </div>
@@ -85,7 +82,7 @@ function DetailedEventCard({ event }: { event: Event }) {
         month: 'long',
         day: 'numeric',
     });
-    
+
     const categoryVariant: Record<string, 'default' | 'secondary' | 'outline'> = {
         rehearsal: 'secondary',
         performance: 'default',
@@ -93,18 +90,18 @@ function DetailedEventCard({ event }: { event: Event }) {
     };
 
     return (
-        <Card className="overflow-hidden hover:shadow-md transition-all border-l-4 border-l-[hsl(var(--musig-primary))]">
+        <Card className="overflow-hidden hover:shadow-md transition-all border-l-4 border-l-[hsl(var(--musig-primary))] shadow-sm">
             <CardContent className="p-0">
                 <div className="flex flex-col md:flex-row">
                     {/* Date Block */}
-                    <div className="bg-[hsl(var(--musig-primary))]/5 md:w-40 flex flex-col items-center justify-center p-6 border-b md:border-b-0 md:border-r border-[hsl(var(--border))]">
-                        <span className="text-sm font-semibold text-[hsl(var(--musig-primary))] uppercase tracking-wider">
+                    <div className="bg-brand-primary/5 md:w-40 flex flex-col items-center justify-center p-6 border-b md:border-b-0 md:border-r border-[hsl(var(--border))]">
+                        <span className="text-sm font-semibold text-brand-primary uppercase tracking-wider">
                             {eventDate.toLocaleDateString('de-CH', { month: 'short' })}
                         </span>
-                        <span className="text-4xl font-bold text-[hsl(var(--musig-primary))] my-1">
+                        <span className="text-4xl font-bold text-brand-primary my-1">
                             {eventDate.getDate()}
                         </span>
-                        <span className="text-sm text-[hsl(var(--muted-foreground))]">
+                        <span className="text-sm text-muted-foreground">
                             {eventDate.getFullYear()}
                         </span>
                     </div>
@@ -112,7 +109,7 @@ function DetailedEventCard({ event }: { event: Event }) {
                     {/* Content */}
                     <div className="flex-1 p-6">
                         <div className="flex flex-wrap items-center justify-between gap-4 mb-4">
-                            <h3 className="text-2xl font-bold text-[hsl(var(--foreground))]">
+                            <h3 className="text-2xl font-bold text-foreground">
                                 {event.title}
                             </h3>
                             <Badge variant={categoryVariant[event.category] as any}>
@@ -120,18 +117,18 @@ function DetailedEventCard({ event }: { event: Event }) {
                             </Badge>
                         </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-[hsl(var(--muted-foreground))]">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-muted-foreground">
                             <div className="flex items-center gap-2">
-                                <Calendar className="h-4 w-4 text-[hsl(var(--musig-primary))]" />
+                                <Calendar className="h-4 w-4 text-brand-primary" />
                                 <span>{formattedDate}</span>
                             </div>
                             <div className="flex items-center gap-2">
-                                <Clock className="h-4 w-4 text-[hsl(var(--musig-primary))]" />
+                                <Clock className="h-4 w-4 text-brand-primary" />
                                 <span>{formatTime(event.startTime)} {event.endTime ? `- ${formatTime(event.endTime)}` : ''} Uhr</span>
                             </div>
                             {event.location && (
                                 <div className="flex items-center gap-2 md:col-span-2">
-                                    <MapPin className="h-4 w-4 text-[hsl(var(--musig-primary))]" />
+                                    <MapPin className="h-4 w-4 text-brand-primary" />
                                     <span>{event.location}</span>
                                 </div>
                             )}
@@ -139,7 +136,7 @@ function DetailedEventCard({ event }: { event: Event }) {
 
                         {event.description && (
                             <div className="mt-6 pt-6 border-t border-[hsl(var(--border))]">
-                                <p className="text-[hsl(var(--foreground))] leading-relaxed">
+                                <p className="text-foreground leading-relaxed">
                                     {event.description}
                                 </p>
                             </div>

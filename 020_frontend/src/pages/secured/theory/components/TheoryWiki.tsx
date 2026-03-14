@@ -48,14 +48,14 @@ export function TheoryWiki() {
             </thead>
             <tbody>
               {TRANSPOSITION_TABLE.map((row, i) => (
-                <tr key={i} className="border-t border-gray-100 hover:bg-gray-50/50">
-                  <td className="px-4 py-2.5 font-medium text-[#405116]">{row.instrument}</td>
+                <tr key={i} className="border-b transition-colors hover:bg-muted/50 even:bg-muted/30">
+                  <td className="px-4 py-2.5 font-medium text-green-800">{row.instrument}</td>
                   <td className="px-4 py-2.5 font-bold">{row.written}</td>
                   <td className="px-4 py-2.5 font-bold">{row.concert}</td>
                   <td className="px-4 py-2.5 text-gray-500 text-xs">{row.offset}</td>
                 </tr>
               ))}
-              <tr className="border-t border-gray-100 bg-[#BDD18C]/10">
+              <tr className="border-t border-gray-100 bg-green-300/10">
                 <td className="px-4 py-2.5 font-medium text-gray-700">C (Klavier, Flöte)</td>
                 <td className="px-4 py-2.5 font-bold">C</td>
                 <td className="px-4 py-2.5 font-bold">C</td>
@@ -87,8 +87,8 @@ export function TheoryWiki() {
             </thead>
             <tbody>
               {CIRCLE_ROWS.map((row, i) => (
-                <tr key={i} className="border-t border-gray-100 hover:bg-gray-50/50">
-                  <td className="px-3 py-2 font-bold text-[#405116]">{row.key}-Dur</td>
+                <tr key={i} className="border-b transition-colors hover:bg-muted/50 even:bg-muted/30">
+                  <td className="px-3 py-2 font-bold text-green-800">{row.key}-Dur</td>
                   <td className="px-3 py-2 font-mono text-center">
                     {row.sharps === 0 ? '—' : row.sharps > 0
                       ? `${row.sharps} ♯`
@@ -120,12 +120,12 @@ export function TheoryWiki() {
             </thead>
             <tbody>
               {CHORD_FORMULAS.map((row, i) => (
-                <tr key={i} className="border-t border-gray-100 hover:bg-gray-50/50">
+                <tr key={i} className="border-b transition-colors hover:bg-muted/50 even:bg-muted/30">
                   <td className="px-4 py-2.5 font-medium">
                     {row.name}
                     <span className="ml-1.5 text-xs font-mono text-gray-400">{row.symbol}</span>
                   </td>
-                  <td className="px-4 py-2.5 font-mono text-xs text-[#405116]">{row.formula}</td>
+                  <td className="px-4 py-2.5 font-mono text-xs text-green-800">{row.formula}</td>
                   <td className="px-4 py-2.5 text-xs text-gray-500">{row.semitones}</td>
                   <td className="px-4 py-2.5 font-medium text-gray-700">{row.example}</td>
                 </tr>

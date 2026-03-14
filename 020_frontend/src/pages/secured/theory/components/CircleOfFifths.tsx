@@ -61,13 +61,13 @@ export function CircleOfFifths({ selectedKey, onSelect }: Props) {
 
           // Colour logic
           const outerFill = isSelected
-            ? '#405116'
-            : isHovered ? '#BDD18C' : '#f3f4f6';
+            ? 'var(--color-green-800)'
+            : isHovered ? 'var(--color-green-300)' : '#f3f4f6';
           const innerFill = isSelected
-            ? '#BDD18C'
+            ? 'var(--color-green-300)'
             : isHovered ? '#e9f0da' : '#fafafa';
-          const outerText = isSelected ? '#fff' : isHovered ? '#405116' : '#374151';
-          const innerText = isSelected ? '#405116' : '#6b7280';
+          const outerText = isSelected ? '#fff' : isHovered ? 'var(--color-green-800)' : '#374151';
+          const innerText = isSelected ? 'var(--color-green-800)' : '#6b7280';
 
           const outerLabel = labelPos(R_OUTER - 18, mid);
           const innerLabel = labelPos(R_MID - 18, mid);
@@ -122,7 +122,7 @@ export function CircleOfFifths({ selectedKey, onSelect }: Props) {
               <text
                 x={sigLabel.x} y={sigLabel.y + 0}
                 textAnchor="middle" dominantBaseline="middle"
-                fontSize="7" fill="#9ca3af"
+                fontSize="7" fill="var(--color-gray-400)"
                 style={{ pointerEvents: 'none' }}
               >
                 {entry.signature}
@@ -132,15 +132,15 @@ export function CircleOfFifths({ selectedKey, onSelect }: Props) {
         })}
 
         {/* Centre circle */}
-        <circle cx={CX} cy={CY} r={R_CENTER} fill="white" stroke="#e5e7eb" strokeWidth="1.5" />
-        <text x={CX} y={CY - 6} textAnchor="middle" fontSize="11" fontWeight="700" fill="#405116">
+        <circle cx={CX} cy={CY} r={R_CENTER} fill="white" stroke="var(--color-gray-200)" strokeWidth="1.5" />
+        <text x={CX} y={CY - 6} textAnchor="middle" fontSize="11" fontWeight="700" fill="var(--color-green-800)">
           {selectedKey
             ? toGerman(mode === 'major'
               ? (CIRCLE_DATA.find(e => e.major === selectedKey || e.minor === selectedKey)?.major ?? selectedKey)
               : (CIRCLE_DATA.find(e => e.major === selectedKey || e.minor === selectedKey)?.minor?.toUpperCase() ?? selectedKey))
             : '5°'}
         </text>
-        <text x={CX} y={CY + 7} textAnchor="middle" fontSize="8" fill="#9ca3af">
+        <text x={CX} y={CY + 7} textAnchor="middle" fontSize="8" fill="var(--color-gray-400)">
           {selectedKey ? (mode === 'major' ? 'Dur' : 'Moll') : 'Klick!'}
         </text>
       </svg>
@@ -152,8 +152,8 @@ export function CircleOfFifths({ selectedKey, onSelect }: Props) {
         const sigs = entry.sharps;
         return (
           <div className="text-xs text-center text-gray-500 bg-gray-50 rounded-lg px-4 py-2">
-            <strong className="text-[#405116]">{entry.majorDE}-Dur</strong> · Relative Moll:{' '}
-            <strong className="text-[#405116]">{entry.minorDE}-Moll</strong>
+            <strong className="text-green-800">{entry.majorDE}-Dur</strong> · Relative Moll:{' '}
+            <strong className="text-green-800">{entry.minorDE}-Moll</strong>
             {' · '}
             {sigs === 0 ? 'keine Vorzeichen' : sigs > 0 ? `${sigs} Kreuz${sigs > 1 ? 'e' : ''}` : `${-sigs} B${-sigs > 1 ? 's' : ''}`}
           </div>

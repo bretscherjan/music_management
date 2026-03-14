@@ -132,7 +132,7 @@ const AuditLogPage: React.FC = () => {
                                 </tr>
                             ) : (
                                 data?.logs.map((log: AuditLog) => (
-                                    <tr key={log.id} className="hover:bg-gray-50 transition-colors">
+                                    <tr key={log.id} className="transition-colors border-b hover:bg-muted/50 even:bg-muted/30">
                                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                             <div className="flex items-center">
                                                 <Calendar className="w-4 h-4 mr-2 text-gray-400" />

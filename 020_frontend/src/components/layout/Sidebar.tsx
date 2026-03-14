@@ -63,7 +63,7 @@ export function Sidebar() {
                 to="/member/settings"
                 className="pt-4 pb-2 flex flex-col items-center justify-center border-b border-gray-100 mx-4 mb-2 hover:bg-gray-50 transition-colors rounded-b-lg"
             >
-                <div className="h-9 w-9 rounded-full bg-[#BDD18C] flex items-center justify-center text-[#405116] font-bold text-sm shadow-sm mb-1">
+                <div className="h-9 w-9 rounded-full bg-brand-primary/10 flex items-center justify-center text-brand-primary font-bold text-sm shadow-sm mb-1">
                     {user?.firstName?.[0]}{user?.lastName?.[0]}
                 </div>
                 <span className="text-[10px] text-gray-500 font-medium truncate max-w-full">
@@ -84,7 +84,7 @@ export function Sidebar() {
                                 className={cn(
                                     "flex flex-col items-center justify-center gap-1 p-2 rounded-xl transition-all duration-200 group",
                                     isActive
-                                        ? "bg-[#BDD18C] text-[#405116] shadow-sm"
+                                        ? "bg-brand-primary/10 text-brand-primary shadow-sm"
                                         : "text-gray-500 hover:text-gray-900 hover:bg-gray-100"
                                 )}
                             >
@@ -120,7 +120,7 @@ export function Sidebar() {
                                     className={cn(
                                         "flex flex-col items-center justify-center gap-1 p-2 rounded-xl transition-all duration-200 group",
                                         isActive
-                                            ? "bg-[#BDD18C] text-[#405116] shadow-sm"
+                                            ? "bg-brand-primary/10 text-brand-primary shadow-sm"
                                             : "text-gray-500 hover:text-gray-900 hover:bg-gray-100"
                                     )}
                                 >

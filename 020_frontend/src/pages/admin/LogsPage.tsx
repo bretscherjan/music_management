@@ -249,13 +249,13 @@ export function LogsPage() {
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {displayedEntries.map((e, i) => (
+                                    {displayedEntries.map((e) => (
                                         <tr
                                             key={e.id}
                                             className={`border-b transition-colors ${
                                                 e.level === 'ERROR' ? 'bg-red-50/60 hover:bg-red-100/60' :
                                                 e.level === 'WARN'  ? 'bg-amber-50/40 hover:bg-amber-100/40' :
-                                                i % 2 === 0 ? 'bg-white hover:bg-blue-50/40' : 'bg-slate-50/60 hover:bg-blue-50/40'
+                                                'hover:bg-muted/50 even:bg-muted/30'
                                             }`}
                                         >
                                             <td className="px-4 py-2 font-mono text-xs text-slate-500 whitespace-nowrap align-top">

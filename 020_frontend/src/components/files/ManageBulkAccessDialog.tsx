@@ -196,7 +196,7 @@ export function ManageBulkAccessDialog({ open, onOpenChange, selectedFileIds, se
                                     {allowedUsers.map(uid => {
                                         const u = users.find((user: any) => user.id === uid);
                                         return u ? (
-                                            <div key={uid} className="bg-green-100 text-green-800 text-xs px-2 py-1 rounded flex items-center gap-1">
+                                            <div key={uid} className="bg-success/10 text-brand-primary text-xs px-2 py-1 rounded flex items-center gap-1">
                                                 {u.firstName} {u.lastName}
                                                 <button onClick={() => setAllowedUsers(allowedUsers.filter(id => id !== uid))}>x</button>
                                             </div>

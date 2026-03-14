@@ -198,7 +198,7 @@ function EventListItem({ event }: { event: Event }) {
                                         {getCategoryLabel(event.category)}
                                     </Badge>
                                     {status && (
-                                        <Badge variant="outline" className={`ml-auto ${status === 'yes' ? 'text-green-600 border-green-200 bg-green-50' : status === 'no' ? 'text-red-600 border-red-200 bg-red-50' : 'text-yellow-600 border-yellow-200 bg-yellow-50'}`}>
+                                        <Badge variant="outline" className={`ml-auto ${status === 'yes' ? 'text-success border-success/20 bg-success/5' : status === 'no' ? 'text-red-600 border-red-200 bg-red-50' : 'text-yellow-600 border-yellow-200 bg-yellow-50'}`}>
                                             {status === 'yes' ? 'Zugesagt' : status === 'no' ? 'Abgesagt' : 'Vielleicht'}
                                         </Badge>
                                     )}

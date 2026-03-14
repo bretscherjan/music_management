@@ -421,7 +421,7 @@ export function FileListPage() {
                                                         {getFileIcon(file.mimetype)}
                                                     </span>
                                                     <div className="min-w-0 flex-1">
-                                                        <p className="font-medium truncate group-hover:text-primary transition-colors">{file.originalName}</p>
+                                                        <p className="font-medium truncate transition-colors">{file.originalName}</p>
                                                         <div className="flex gap-2 text-xs text-muted-foreground">
                                                             <span>{formatFileSize(file.size)}</span>
                                                             {file.visibility !== 'all' && (

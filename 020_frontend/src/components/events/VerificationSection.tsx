@@ -171,7 +171,7 @@ export function VerificationSection({ eventId, eventDate }: VerificationSectionP
                                                             <div className="text-xs text-muted-foreground flex items-center gap-1">
                                                                 Selbst:
                                                                 <span className={
-                                                                    selfStatus === 'yes' ? 'text-green-600 font-bold' :
+                                                                    selfStatus === 'yes' ? 'text-success font-bold' :
                                                                         selfStatus === 'no' ? 'text-red-600' :
                                                                             'text-gray-500'
                                                                 }>
@@ -189,7 +189,7 @@ export function VerificationSection({ eventId, eventDate }: VerificationSectionP
                                                         <button
                                                             onClick={() => handleStatusChange(item.user.id, 'PRESENT')}
                                                             className={`flex items-center gap-1 px-3 py-1.5 rounded-md transition-all text-xs font-medium ${currentStatus === 'PRESENT'
-                                                                ? 'bg-white text-green-700 shadow-sm ring-1 ring-green-200'
+                                                                ? 'bg-white text-success shadow-sm ring-1 ring-success/20'
                                                                 : 'text-gray-500 hover:bg-gray-200'
                                                                 }`}
                                                             title="Anwesend"

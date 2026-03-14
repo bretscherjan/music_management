@@ -63,8 +63,8 @@ export function TranspositionCalculator() {
               className={cn(
                 'w-9 h-8 rounded-md text-sm font-medium border transition-all',
                 value === n.value
-                  ? 'bg-green-300 text-green-800 border-green-800/30 font-bold'
-                  : 'bg-white text-gray-600 border-gray-200 hover:border-green-300'
+                  ? 'bg-brand-primary/50 text-brand-primary border-brand-primary/30 font-bold'
+                  : 'bg-white text-gray-600 border-gray-200 hover:border-brand-primary/50'
               )}
             >
               {n.label}
@@ -85,7 +85,7 @@ export function TranspositionCalculator() {
           className={cn(
             'flex-1 flex items-center justify-center gap-1.5 px-3 py-2 transition-all',
             mode === 'written'
-              ? 'bg-green-800 text-white'
+              ? 'bg-brand-primary text-white'
               : 'bg-white text-gray-500 hover:bg-gray-50'
           )}
         >
@@ -97,7 +97,7 @@ export function TranspositionCalculator() {
           className={cn(
             'flex-1 flex items-center justify-center gap-1.5 px-3 py-2 transition-all border-l border-gray-200',
             mode === 'sounding'
-              ? 'bg-green-800 text-white'
+              ? 'bg-brand-primary text-white'
               : 'bg-white text-gray-500 hover:bg-gray-50'
           )}
         >
@@ -126,8 +126,8 @@ export function TranspositionCalculator() {
                   className={cn(
                     'px-2.5 py-1.5 rounded-lg text-sm font-semibold border transition-all',
                     sourceInstrument === inst
-                      ? 'bg-green-800 text-white border-green-800'
-                      : 'bg-white text-gray-600 border-gray-200 hover:border-green-300'
+                      ? 'bg-brand-primary text-white border-brand-primary'
+                      : 'bg-white text-gray-600 border-gray-200 hover:border-brand-primary/50'
                   )}
                 >
                   {INSTRUMENTS[inst].label}
@@ -155,7 +155,7 @@ export function TranspositionCalculator() {
 
       {/* Concert Pitch Banner – only shown in "written" mode */}
       {mode === 'written' && (
-        <div className="flex items-center gap-3 bg-green-800 text-white rounded-xl px-4 py-3">
+        <div className="flex items-center gap-3 bg-brand-primary text-white rounded-xl px-4 py-3">
           <Music className="h-4 w-4 shrink-0 opacity-70" />
           <div>
             <div className="text-xs opacity-70">Klingender Ton (Concert Pitch)</div>
@@ -175,14 +175,14 @@ export function TranspositionCalculator() {
               className={cn(
                 'flex flex-col rounded-xl border p-3 transition-all',
                 isSource
-                  ? 'border-green-300 bg-green-300/10'
+                  ? 'border-brand-primary/50 bg-brand-primary/10'
                   : 'border-gray-100 bg-gray-50/50'
               )}
             >
               <div className="flex items-center gap-1.5 mb-2">
                 <span className="text-xs font-semibold text-gray-600">{r.label}</span>
                 {isSource && (
-                  <span className="text-[9px] bg-green-300 text-green-800 px-1.5 py-0.5 rounded-full font-medium ml-auto">
+                  <span className="text-[9px] bg-brand-primary/50 text-brand-primary px-1.5 py-0.5 rounded-full font-medium ml-auto">
                     ich
                   </span>
                 )}
@@ -208,12 +208,12 @@ export function TranspositionCalculator() {
               </strong>
             </span>
             <ArrowRight className="h-3.5 w-3.5 shrink-0" />
-            <span>klingt als <strong className="text-green-800">{toGerman(concertPC)}</strong></span>
+            <span>klingt als <strong className="text-brand-primary">{toGerman(concertPC)}</strong></span>
           </>
         ) : (
           <>
             <span className="font-medium text-gray-600">
-              Klingend: <strong className="text-green-800">{toGerman(soundingNote)}</strong>
+              Klingend: <strong className="text-brand-primary">{toGerman(soundingNote)}</strong>
             </span>
             <ArrowLeft className="h-3.5 w-3.5 shrink-0" />
             <span>jedes Instrument muss entsprechend <strong>notieren</strong></span>

@@ -138,8 +138,8 @@ export function LogsPage() {
                 </div>
                 <div className="flex items-center gap-2">
                     {isToday && liveCount > 0 && (
-                        <span className="inline-flex items-center gap-1 text-xs font-semibold text-green-700 bg-green-100 rounded-full px-2.5 py-1">
-                            <span className="h-1.5 w-1.5 rounded-full bg-green-500 animate-pulse" />
+                        <span className="inline-flex items-center gap-1 text-xs font-semibold text-success bg-success/10 rounded-full px-2.5 py-1">
+                            <span className="h-1.5 w-1.5 rounded-full bg-success/50 animate-pulse" />
                             {liveCount} live
                         </span>
                     )}
@@ -173,7 +173,7 @@ export function LogsPage() {
                         className="text-sm border rounded-lg px-3 py-1.5 bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                     {isToday ? (
-                        <span className="inline-flex items-center gap-1 text-xs text-green-600 font-medium">
+                        <span className="inline-flex items-center gap-1 text-xs text-success font-medium">
                             <Wifi className="h-3.5 w-3.5" /> Live
                         </span>
                     ) : (

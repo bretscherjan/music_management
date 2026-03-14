@@ -287,8 +287,8 @@ const actionConfig = {
     yes: {
         icon: CheckCircle,
         label: 'Ja',
-        bg: 'bg-green-500 hover:bg-green-600 active:bg-green-700',
-        activeBg: 'bg-green-600',
+        bg: 'bg-success/50 hover:bg-success active:bg-success',
+        activeBg: 'bg-success',
         text: 'text-white',
     },
     no: {

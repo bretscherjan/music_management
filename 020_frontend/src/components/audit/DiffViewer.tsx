@@ -70,7 +70,7 @@ const DiffViewer: React.FC<DiffViewerProps> = ({ oldValue, newValue, onClose }) 
                                     {format(vOld)}
                                 </div>
                                 <div className="col-span-1 text-center text-gray-400">→</div>
-                                <div className={`col-span-4 break-words ${isAdded ? 'bg-green-50 text-green-700 p-1 rounded' : isChanged ? 'bg-yellow-50 text-yellow-700 p-1 rounded' : 'text-gray-600'}`}>
+                                <div className={`col-span-4 break-words ${isAdded ? 'bg-success/5 text-success p-1 rounded' : isChanged ? 'bg-yellow-50 text-yellow-700 p-1 rounded' : 'text-gray-600'}`}>
                                     {format(vNew)}
                                 </div>
                             </div>

@@ -101,10 +101,10 @@ const TRANSPOSE_OFFSETS: Record<TransposeKey, number> = {
 };
 
 const TRANSPOSE_LABELS: Record<TransposeKey, string> = {
-  C: 'Klingend (C)',
-  B: 'In B (Klarinette / Trompete)',
-  Es: 'In Es (Altsaxophon)',
-  F: 'In F (Horn)',
+  C: 'in C',
+  B: 'in B',
+  Es: 'in Es',
+  F: 'in F',
 };
 
 // ── Tone Generator ───────────────────────────────────────────────────────────
@@ -271,7 +271,7 @@ export function Tuner() {
   const centsVal = displayNoteInfo?.cents ?? 0;
   const needleAngle = Math.max(-90, Math.min(90, (centsVal / 50) * 90));
   const isInTune = Math.abs(centsVal) <= 5;
-  const needleColor = isInTune ? 'var(--color-green-800)' : Math.abs(centsVal) <= 20 ? 'var(--color-green-300)' : 'var(--color-red-500)';
+  const needleColor = isInTune ? 'var(--color-brand-primary)' : Math.abs(centsVal) <= 20 ? 'var(--color-brand-primary/50)' : 'var(--color-red-500)';
 
   return (
     <div className="flex flex-col gap-6">
@@ -285,8 +285,8 @@ export function Tuner() {
             className={cn(
               'px-3 py-1.5 rounded-lg text-sm font-medium transition-all border',
               transpose === key
-                ? 'bg-green-300 text-green-800 border-green-800/30 shadow-sm'
-                : 'bg-white text-gray-600 border-gray-200 hover:border-green-300'
+                ? 'bg-brand-primary/50 text-brand-primary border-brand-primary/30 shadow-sm'
+                : 'bg-white text-gray-600 border-gray-200 hover:border-brand-primary/50'
             )}
           >
             {TRANSPOSE_LABELS[key]}
@@ -302,7 +302,7 @@ export function Tuner() {
             {/* Background arc */}
             <path d="M 10 100 A 90 90 0 0 1 190 100" fill="none" stroke="var(--color-gray-200)" strokeWidth="12" strokeLinecap="round" />
             {/* In-tune zone (green) */}
-            <path d="M 88 14 A 90 90 0 0 1 112 14" fill="none" stroke="var(--color-green-300)" strokeWidth="12" strokeLinecap="round" opacity="0.7" />
+            <path d="M 88 14 A 90 90 0 0 1 112 14" fill="none" stroke="var(--color-brand-primary/50)" strokeWidth="12" strokeLinecap="round" opacity="0.7" />
             {/* Tick marks */}
             {[-50, -25, 0, 25, 50].map((c) => {
               const ang = ((c / 50) * 90 * Math.PI) / 180;
@@ -313,7 +313,7 @@ export function Tuner() {
               return (
                 <g key={c}>
                   <line x1={cx} y1={cy} x2={cx2} y2={cy2}
-                    stroke={c === 0 ? 'var(--color-green-800)' : 'var(--color-gray-400)'} strokeWidth={c === 0 ? 2 : 1} />
+                    stroke={c === 0 ? 'var(--color-brand-primary)' : 'var(--color-gray-400)'} strokeWidth={c === 0 ? 2 : 1} />
                   <text x={100 + 62 * Math.sin(ang)} y={100 - 62 * Math.cos(ang)}
                     textAnchor="middle" dominantBaseline="middle" fontSize="7" fill="var(--color-gray-400)">
                     {c > 0 ? `+${c}` : c}
@@ -337,13 +337,13 @@ export function Tuner() {
         <div className="flex flex-col items-center gap-1 min-h-[80px] justify-center">
           {displayNoteInfo ? (
             <>
-              <div className={cn('text-7xl font-bold tracking-tight transition-colors', isInTune ? 'text-green-800' : 'text-gray-800')}>
+              <div className={cn('text-7xl font-bold tracking-tight transition-colors', isInTune ? 'text-brand-primary' : 'text-gray-800')}>
                 {displayNoteInfo.note}
                 <span className="text-3xl text-gray-400 font-normal ml-1">{displayNoteInfo.octave}</span>
               </div>
               <div className="text-sm text-gray-500">
                 {frequency?.toFixed(1)} Hz
-                <span className={cn('ml-3 font-medium', isInTune ? 'text-green-800' : Math.abs(centsVal) <= 20 ? 'text-yellow-600' : 'text-red-500')}>
+                <span className={cn('ml-3 font-medium', isInTune ? 'text-brand-primary' : Math.abs(centsVal) <= 20 ? 'text-yellow-600' : 'text-red-500')}>
                   {centsVal > 0 ? `+${centsVal}` : centsVal} Cent
                 </span>
               </div>
@@ -361,7 +361,7 @@ export function Tuner() {
             'gap-2 px-8 transition-all',
             listening
               ? 'bg-red-500 hover:bg-red-600 text-white'
-              : 'bg-green-800 hover:bg-green-800/90 text-white'
+              : 'bg-brand-primary hover:bg-brand-primary/90 text-white'
           )}
         >
           {listening ? <MicOff className="h-5 w-5" /> : <Mic className="h-5 w-5" />}
@@ -382,7 +382,7 @@ export function Tuner() {
           <Volume2 className="h-4 w-4" />
           Tongeber
           {transpose !== 'C' && (
-            <span className="text-xs font-normal text-green-800 bg-green-300/20 px-2 py-0.5 rounded-full">
+            <span className="text-xs font-normal text-brand-primary bg-brand-primary/20 px-2 py-0.5 rounded-full">
               In {transpose} – klingend
             </span>
           )}
@@ -449,11 +449,11 @@ function ToneKeyboard({ transpose, tonePlayer }: ToneKeyboardProps) {
                     'relative flex-1 h-16 border border-gray-300 rounded-b-md flex flex-col items-center justify-end pb-1',
                     'text-[9px] font-medium transition-all',
                     isActive
-                      ? 'bg-green-300 border-green-800 z-10'
-                      : 'bg-white hover:bg-gray-50 active:bg-green-300/30'
+                      ? 'bg-brand-primary/50 border-brand-primary z-10'
+                      : 'bg-white hover:bg-gray-50 active:bg-brand-primary/30'
                   )}
                 >
-                  <span className={cn(isActive ? 'text-green-800' : 'text-gray-500')}>
+                  <span className={cn(isActive ? 'text-brand-primary' : 'text-gray-500')}>
                     {row.writtenNote.replace(/[0-9]/, '')}
                   </span>
                 </button>
@@ -478,7 +478,7 @@ function ToneKeyboard({ transpose, tonePlayer }: ToneKeyboardProps) {
                       'absolute top-0 h-10 rounded-b-md z-20 pointer-events-auto',
                       'text-[8px] font-medium transition-all',
                       isActive
-                        ? 'bg-green-800 border-green-800'
+                        ? 'bg-brand-primary border-brand-primary'
                         : 'bg-gray-800 hover:bg-gray-700'
                     )}
                   />

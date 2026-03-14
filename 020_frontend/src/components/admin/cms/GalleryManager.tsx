@@ -64,7 +64,7 @@ export function GalleryManager() {
                                 <span className="bg-black/50 backdrop-blur-md text-white text-[10px] px-1.5 py-0.5 rounded font-mono">
                                     Pos: {image.position}
                                 </span>
-                                <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium backdrop-blur-md ${image.active ? 'bg-green-500/80 text-white' : 'bg-red-500/80 text-white'}`}>
+                                <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium backdrop-blur-md ${image.active ? 'bg-success/80 text-white' : 'bg-red-500/80 text-white'}`}>
                                     {image.active ? 'Aktiv' : 'Inaktiv'}
                                 </span>
                             </div>

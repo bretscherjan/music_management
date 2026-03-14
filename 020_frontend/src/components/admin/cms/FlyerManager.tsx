@@ -83,14 +83,14 @@ export function FlyerManager() {
                                 <TableCell className="text-xs font-mono">{flyer.position}</TableCell>
                                 <TableCell>
                                     {flyer.showOnHomePage ? (
-                                        <CheckCircle2 className="h-4 w-4 text-green-600" />
+                                        <CheckCircle2 className="h-4 w-4 text-success" />
                                     ) : (
                                         <XCircle className="h-4 w-4 text-muted-foreground opacity-30" />
                                     )}
                                 </TableCell>
                                 <TableCell>
                                     {flyer.active ? (
-                                        <div className="flex items-center text-green-600 text-xs">
+                                        <div className="flex items-center text-success text-xs">
                                             <CheckCircle2 className="h-3 w-3 mr-1" /> Aktiv
                                         </div>
                                     ) : (

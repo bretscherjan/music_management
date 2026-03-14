@@ -11,7 +11,7 @@ interface FingeringDisplayProps {
 
 function KeyBadge({ keyCode }: { keyCode: string }) {
   return (
-    <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-green-300/30 text-green-800 text-xs font-medium border border-green-300/50">
+    <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-brand-primary/30 text-brand-primary text-xs font-medium border border-brand-primary/50">
       {labelKey(keyCode)}
     </span>
   );
@@ -67,7 +67,7 @@ export function FingeringDisplay({ fingering, note }: FingeringDisplayProps) {
         <div>
           <button
             onClick={() => setShowAlts(v => !v)}
-            className="flex items-center gap-1 text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5 hover:text-green-800 transition-colors"
+            className="flex items-center gap-1 text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5 hover:text-brand-primary transition-colors"
           >
             {showAlts ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
             Alternativen ({fingering.alternatives.length})
@@ -75,7 +75,7 @@ export function FingeringDisplay({ fingering, note }: FingeringDisplayProps) {
           {showAlts && (
             <div className="space-y-3">
               {fingering.alternatives.map((alt, i) => (
-                <div key={i} className="pl-3 border-l-2 border-green-300">
+                <div key={i} className="pl-3 border-l-2 border-brand-primary/50">
                   {alt.description && (
                     <p className="text-xs text-gray-500 mb-1">{alt.description}</p>
                   )}
@@ -94,7 +94,7 @@ export function FingeringDisplay({ fingering, note }: FingeringDisplayProps) {
             onClick={() => setShowTrils(v => !v)}
             className={cn(
               'flex items-center gap-1 text-xs font-semibold uppercase tracking-wide mb-1.5 transition-colors',
-              showTrils ? 'text-green-800' : 'text-gray-500 hover:text-green-800'
+              showTrils ? 'text-brand-primary' : 'text-gray-500 hover:text-brand-primary'
             )}
           >
             {showTrils ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}

@@ -61,13 +61,13 @@ export function CircleOfFifths({ selectedKey, onSelect }: Props) {
 
           // Colour logic
           const outerFill = isSelected
-            ? 'var(--color-green-800)'
-            : isHovered ? 'var(--color-green-300)' : '#f3f4f6';
+            ? 'var(--color-brand-primary)'
+            : isHovered ? '#d9ebf9' : '#e4eef880';
           const innerFill = isSelected
-            ? 'var(--color-green-300)'
-            : isHovered ? '#e9f0da' : '#fafafa';
-          const outerText = isSelected ? '#fff' : isHovered ? 'var(--color-green-800)' : '#374151';
-          const innerText = isSelected ? 'var(--color-green-800)' : '#6b7280';
+            ? '#d9ebf9'
+            : isHovered ? '#d9ebf9' : '#fafafa';
+          const outerText = isSelected ? '#fff' : '#374151';
+          const innerText = isSelected ? 'var(--color-brand-primary)' : '#6b7280';
 
           const outerLabel = labelPos(R_OUTER - 18, mid);
           const innerLabel = labelPos(R_MID - 18, mid);
@@ -133,7 +133,7 @@ export function CircleOfFifths({ selectedKey, onSelect }: Props) {
 
         {/* Centre circle */}
         <circle cx={CX} cy={CY} r={R_CENTER} fill="white" stroke="var(--color-gray-200)" strokeWidth="1.5" />
-        <text x={CX} y={CY - 6} textAnchor="middle" fontSize="11" fontWeight="700" fill="var(--color-green-800)">
+        <text x={CX} y={CY - 6} textAnchor="middle" fontSize="11" fontWeight="700" fill="#0091ffff">
           {selectedKey
             ? toGerman(mode === 'major'
               ? (CIRCLE_DATA.find(e => e.major === selectedKey || e.minor === selectedKey)?.major ?? selectedKey)
@@ -152,8 +152,8 @@ export function CircleOfFifths({ selectedKey, onSelect }: Props) {
         const sigs = entry.sharps;
         return (
           <div className="text-xs text-center text-gray-500 bg-gray-50 rounded-lg px-4 py-2">
-            <strong className="text-green-800">{entry.majorDE}-Dur</strong> · Relative Moll:{' '}
-            <strong className="text-green-800">{entry.minorDE}-Moll</strong>
+            <strong className="text-brand-primary">{entry.majorDE}-Dur</strong> · Relative Moll:{' '}
+            <strong className="text-brand-primary">{entry.minorDE}-Moll</strong>
             {' · '}
             {sigs === 0 ? 'keine Vorzeichen' : sigs > 0 ? `${sigs} Kreuz${sigs > 1 ? 'e' : ''}` : `${-sigs} B${-sigs > 1 ? 's' : ''}`}
           </div>

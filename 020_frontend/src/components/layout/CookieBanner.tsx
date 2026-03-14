@@ -13,7 +13,7 @@ function CookieMonster({ eating }: { eating: boolean }) {
     return (
         <div className="relative w-11 h-11 shrink-0">
             {/* Grüner runder Kopf */}
-            <div className="w-11 h-11 rounded-full bg-green-500 relative overflow-hidden shadow-md">
+            <div className="w-11 h-11 rounded-full bg-success/50 relative overflow-hidden shadow-md">
                 {/* Linkes Auge */}
                 <div className="absolute top-1 left-1.5 w-4 h-4 rounded-full bg-white shadow-sm">
                     <div className="absolute inset-0.5 rounded-full bg-slate-900">

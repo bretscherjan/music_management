@@ -373,7 +373,7 @@ export function WorkspacePage() {
                         {/* Connection status */}
                         <div
                             className={`flex items-center gap-1.5 px-2 py-1 rounded text-xs ${isConnected
-                                ? 'bg-green-100 text-green-700'
+                                ? 'bg-success/10 text-success'
                                 : 'bg-red-100 text-red-700'
                                 }`}
                         >

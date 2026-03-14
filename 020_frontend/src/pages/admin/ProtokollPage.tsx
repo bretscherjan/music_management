@@ -212,8 +212,8 @@ export function ProtokollPage() {
         <div className="max-w-4xl mx-auto space-y-6">
             {/* Header */}
             <div className="flex items-center gap-3">
-                <div className="p-2 bg-green-300/20 rounded-xl">
-                    <ClipboardList className="h-7 w-7 text-green-800" />
+                <div className="p-2 bg-brand-primary/20 rounded-xl">
+                    <ClipboardList className="h-7 w-7 text-brand-primary" />
                 </div>
                 <div>
                     <h1 className="text-2xl font-bold text-gray-900">Protokoll</h1>
@@ -239,9 +239,9 @@ export function ProtokollPage() {
                             {i > 0 && <div className="w-8 h-px bg-gray-300" />}
                             <div
                                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${isCurrent
-                                    ? 'bg-green-300 text-green-800'
+                                    ? 'bg-brand-primary/50 text-brand-primary'
                                     : isDone
-                                        ? 'bg-green-100 text-green-800'
+                                        ? 'bg-success/10 text-brand-primary'
                                         : 'bg-gray-100 text-gray-400'
                                     }`}
                             >
@@ -288,7 +288,7 @@ export function ProtokollPage() {
                                 onDragLeave={() => setIsDragOver(false)}
                                 onDrop={handleDrop}
                                 className={`border-2 border-dashed rounded-xl p-8 text-center transition-colors ${isDragOver
-                                    ? 'border-green-300 bg-green-300/5'
+                                    ? 'border-brand-primary/50 bg-brand-primary/50/5'
                                     : 'border-gray-200 hover:border-gray-300'
                                     }`}
                             >
@@ -380,7 +380,7 @@ export function ProtokollPage() {
             {/* ═══ STEP 2: Transcribing ═══ */}
             {step === 'transcribing' && (
                 <div className="bg-white rounded-2xl shadow-sm border p-8 text-center space-y-6">
-                    <Loader2 className="h-12 w-12 animate-spin mx-auto text-green-300" />
+                    <Loader2 className="h-12 w-12 animate-spin mx-auto text-brand-primary/50" />
                     <div>
                         <h2 className="text-lg font-semibold text-gray-800 mb-1">
                             Transkribiere Audio…
@@ -389,7 +389,7 @@ export function ProtokollPage() {
                     </div>
                     <div className="w-full bg-gray-100 rounded-full h-4 overflow-hidden">
                         <div
-                            className="h-full bg-green-300 transition-all duration-300 rounded-full"
+                            className="h-full bg-brand-primary/50 transition-all duration-300 rounded-full"
                             style={{ width: `${progress}%` }}
                         />
                     </div>
@@ -421,7 +421,7 @@ export function ProtokollPage() {
                             <button
                                 onClick={() => setActiveTab('raw')}
                                 className={`flex-1 py-3 text-sm font-medium transition-colors ${activeTab === 'raw'
-                                    ? 'text-green-800 border-b-2 border-green-300 bg-green-300/5'
+                                    ? 'text-brand-primary border-b-2 border-brand-primary/50 bg-brand-primary/50/5'
                                     : 'text-gray-500 hover:text-gray-700'
                                     }`}
                             >
@@ -430,7 +430,7 @@ export function ProtokollPage() {
                             <button
                                 onClick={() => setActiveTab('protocol')}
                                 className={`flex-1 py-3 text-sm font-medium transition-colors ${activeTab === 'protocol'
-                                    ? 'text-green-800 border-b-2 border-green-300 bg-green-300/5'
+                                    ? 'text-brand-primary border-b-2 border-brand-primary/50 bg-brand-primary/50/5'
                                     : 'text-gray-500 hover:text-gray-700'
                                     }`}
                             >

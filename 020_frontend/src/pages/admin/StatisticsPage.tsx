@@ -198,7 +198,7 @@ export function StatisticsPage() {
                                         />
                                         <Legend />
                                         <Bar dataKey="rehearsal" stackId="a" fill="#3b82f6" name="Proben" radius={[0, 4, 4, 0]} />
-                                        <Bar dataKey="performance" stackId="a" fill="#10b981" name="Auftritte" radius={[0, 4, 4, 0]} />
+                                        <Bar dataKey="performance" stackId="a" fill="var(--color-success)" name="Auftritte" radius={[0, 4, 4, 0]} />
                                     </BarChart>
                                 </ResponsiveContainer>
                             </CardContent>
@@ -333,7 +333,7 @@ export function StatisticsPage() {
                                             <XAxis type="number" />
                                             <YAxis dataKey="name" type="category" width={150} />
                                             <RechartsTooltip />
-                                            <Bar dataKey="count" fill="#10b981" name="Anwesenheiten" radius={[0, 4, 4, 0]} />
+                                            <Bar dataKey="count" fill="var(--color-success)" name="Anwesenheiten" radius={[0, 4, 4, 0]} />
                                         </BarChart>
                                     </ResponsiveContainer>
                                 ) : (

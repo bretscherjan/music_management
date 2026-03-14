@@ -120,7 +120,7 @@ export function SettingsPage() {
                                 </Button>
 
                                 {saveSuccess && (
-                                    <div className="flex items-center gap-1 text-sm text-green-600">
+                                    <div className="flex items-center gap-1 text-sm text-success">
                                         <CheckCircle className="h-4 w-4" />
                                         Gespeichert
                                     </div>

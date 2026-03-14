@@ -8,13 +8,13 @@ import {
 import { cn } from '@/lib/utils';
 
 const QUALITY_COLORS: Record<ChordQuality, { bg: string; text: string; border: string }> = {
-  'major':       { bg: 'var(--color-green-300)', text: 'var(--color-green-800)', border: '#405116/20' },
-  'minor':       { bg: '#93c5fd', text: '#1e40af', border: '#1e40af/20' },
-  'diminished':  { bg: '#fca5a5', text: '#991b1b', border: '#991b1b/20' },
-  'augmented':   { bg: '#fdba74', text: '#92400e', border: '#92400e/20' },
-  'dominant7':   { bg: '#c4b5fd', text: '#4c1d95', border: '#4c1d95/20' },
-  'major7':      { bg: '#86efac', text: '#14532d', border: '#14532d/20' },
-  'minor7':      { bg: '#a5b4fc', text: '#312e81', border: '#312e81/20' },
+  'major': { bg: '#e60004', text: '#540001ff', border: '#e60004/20' },
+  'minor': { bg: '#93c5fd', text: '#1e40af', border: '#1e40af/20' },
+  'diminished': { bg: '#fca5a5', text: '#991b1b', border: '#991b1b/20' },
+  'augmented': { bg: '#fdba74', text: '#92400e', border: '#92400e/20' },
+  'dominant7': { bg: '#c4b5fd', text: '#4c1d95', border: '#4c1d95/20' },
+  'major7': { bg: '#86efac', text: '#14532d', border: '#14532d/20' },
+  'minor7': { bg: '#a5b4fc', text: '#312e81', border: '#312e81/20' },
   'diminished7': { bg: '#f9a8d4', text: '#831843', border: '#831843/20' },
 };
 
@@ -85,7 +85,7 @@ function MiniKeyboard({ activeNotes, activeColor }: MiniKeyboardProps) {
                 x={x} y={0}
                 width={blackKeyW} height={blackKeyH}
                 rx="2"
-                fill={isActive ? 'var(--color-green-800)' : '#1f2937'}
+                fill={isActive ? 'var(--color-brand-primary)' : '#1f2937'}
                 stroke="none"
               />
             );
@@ -118,8 +118,8 @@ export function ChordBuilder() {
               className={cn(
                 'w-9 h-8 rounded-md text-sm font-medium border transition-all',
                 root === n.value
-                  ? 'border-green-800/30 font-bold'
-                  : 'bg-white text-gray-600 border-gray-200 hover:border-green-300'
+                  ? 'border-brand-primary/30 font-bold'
+                  : 'bg-white text-gray-600 border-gray-200 hover:border-brand-primary/50'
               )}
               style={root === n.value ? { backgroundColor: colors.bg, color: colors.text } : {}}
             >

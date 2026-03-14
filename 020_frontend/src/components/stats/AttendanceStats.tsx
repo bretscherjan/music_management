@@ -39,13 +39,13 @@ export function AttendanceStats() {
     });
 
     const getRateColor = (rate: number) => {
-        if (rate >= 80) return 'text-green-600';
+        if (rate >= 80) return 'text-success';
         if (rate >= 50) return 'text-yellow-600';
         return 'text-red-600';
     };
 
     const getRateIcon = (rate: number) => {
-        if (rate >= 80) return <TrendingUp className="h-4 w-4 text-green-600" />;
+        if (rate >= 80) return <TrendingUp className="h-4 w-4 text-success" />;
         if (rate >= 50) return <Minus className="h-4 w-4 text-yellow-600" />;
         return <TrendingDown className="h-4 w-4 text-red-600" />;
     };
@@ -85,7 +85,7 @@ export function AttendanceStats() {
                                     <TableHead>Register</TableHead>
                                     <TableHead className="text-center">Rate</TableHead>
                                     <TableHead className="text-right">Termine</TableHead>
-                                    <TableHead className="text-right text-green-600">Ja</TableHead>
+                                    <TableHead className="text-right text-success">Ja</TableHead>
                                     <TableHead className="text-right text-red-600">Nein</TableHead>
                                     <TableHead className="text-right text-yellow-600">Vielleicht</TableHead>
                                 </TableRow>

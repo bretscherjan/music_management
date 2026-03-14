@@ -84,7 +84,7 @@ export function SponsorManager() {
                                     ) : '-'}
                                 </TableCell>
                                 <TableCell>
-                                    <span className={`px-2 py-1 rounded-full text-xs ${sponsor.active ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                                    <span className={`px-2 py-1 rounded-full text-xs ${sponsor.active ? 'bg-success/10 text-success' : 'bg-red-100 text-red-700'}`}>
                                         {sponsor.active ? 'Aktiv' : 'Inaktiv'}
                                     </span>
                                 </TableCell>

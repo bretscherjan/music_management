@@ -51,7 +51,7 @@ export function NoteSelector({ notes, selected, onChange, clef = 'treble' }: Not
       }
       // Colour: selected = brand dark green, others = light gray
       if (note === selected) {
-        sn.setStyle({ fillStyle: 'var(--color-green-800)', strokeStyle: 'var(--color-green-800)' });
+        sn.setStyle({ fillStyle: 'var(--color-brand-primary)', strokeStyle: 'var(--color-brand-primary)' });
       } else {
         sn.setStyle({ fillStyle: 'var(--color-gray-400)', strokeStyle: 'var(--color-gray-400)' });
       }
@@ -113,7 +113,7 @@ export function NoteSelector({ notes, selected, onChange, clef = 'treble' }: Not
       />
       {selected && (
         <p className="text-center text-xs text-gray-500 pb-2">
-          Ausgewählt: <span className="font-semibold text-green-800">{selected}</span>
+          Ausgewählt: <span className="font-semibold text-brand-primary">{selected}</span>
         </p>
       )}
     </div>

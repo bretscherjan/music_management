@@ -41,6 +41,8 @@ export const FolderContent = ({ folderId }: FolderContentProps) => {
     const queryClient = useQueryClient();
     const navigate = useNavigate();
     const [editMode, setEditMode] = useState(false);
+    const [editedName, setEditedName] = useState('');
+    const [editedDescription, setEditedDescription] = useState<string | undefined>('');
 
     const deleteFolderMutation = useMutation({
         mutationFn: (id: number) => musicFolderService.delete(id),
@@ -74,8 +76,12 @@ export const FolderContent = ({ folderId }: FolderContentProps) => {
 
     // Sync items when folder loads
     useMemo(() => {
-        if (folder?.items) {
-            setItems(folder.items);
+        if (folder) {
+            if (folder.items) {
+                setItems(folder.items);
+            }
+            setEditedName(folder.name);
+            setEditedDescription(folder.description);
         }
     }, [folder]);
 
@@ -116,9 +122,27 @@ export const FolderContent = ({ folderId }: FolderContentProps) => {
         }
     };
 
-    const handleSave = () => {
-        const sheetIds = items.map(i => i.sheetMusicId);
-        updateItemsMutation.mutate(sheetIds);
+    const handleSave = async () => {
+        if (!folder) return;
+        try {
+            // Save items order/selection
+            const sheetIds = items.map(i => i.sheetMusicId);
+            await updateItemsMutation.mutateAsync(sheetIds);
+
+            // Save folder name/description if changed
+            if (editedName !== folder.name || editedDescription !== folder.description) {
+                await musicFolderService.update(folderId, {
+                    name: editedName,
+                    description: editedDescription
+                });
+                queryClient.invalidateQueries({ queryKey: ['musicFolders'] });
+                queryClient.invalidateQueries({ queryKey: ['musicFolder', folderId] });
+            }
+
+            setEditMode(false);
+        } catch (error) {
+            // Error handling already done in mutations, but just in case
+        }
     };
 
     const handleAddItem = (sheet: any) => {
@@ -186,9 +210,30 @@ export const FolderContent = ({ folderId }: FolderContentProps) => {
             {/* Header */}
             {/* Header */}
             <div className="bg-white border-b p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-sm z-10 sticky top-0">
-                <div>
-                    <h1 className="text-xl sm:text-2xl font-bold text-gray-800 break-all">{folder.name}</h1>
-                    {folder.description && <p className="text-gray-500 mt-1 text-sm">{folder.description}</p>}
+                <div className="flex-1 min-w-0">
+                    {editMode ? (
+                        <div className="space-y-2">
+                            <input
+                                type="text"
+                                value={editedName}
+                                onChange={(e) => setEditedName(e.target.value)}
+                                className="text-xl sm:text-2xl font-bold text-gray-800 bg-gray-50 border rounded px-2 py-1 w-full focus:outline-none focus:ring-2 focus:ring-primary/50"
+                                placeholder="Name der Mappe"
+                            />
+                            <input
+                                type="text"
+                                value={editedDescription || ''}
+                                onChange={(e) => setEditedDescription(e.target.value)}
+                                className="text-sm text-gray-500 bg-gray-50 border rounded px-2 py-1 w-full focus:outline-none focus:ring-2 focus:ring-primary/50"
+                                placeholder="Beschreibung (optional)"
+                            />
+                        </div>
+                    ) : (
+                        <>
+                            <h1 className="text-xl sm:text-2xl font-bold text-gray-800 break-all">{folder.name}</h1>
+                            {folder.description && <p className="text-gray-500 mt-1 text-sm">{folder.description}</p>}
+                        </>
+                    )}
                 </div>
                 <div className="flex flex-wrap gap-2">
                     {isAdmin && !editMode && (
@@ -257,7 +302,11 @@ export const FolderContent = ({ folderId }: FolderContentProps) => {
                             </Button>
                             <Button variant="ghost" size="icon" onClick={() => {
                                 setEditMode(false);
-                                setItems(folder.items || []); // Reset
+                                if (folder) {
+                                    setItems(folder.items || []); // Reset items
+                                    setEditedName(folder.name); // Reset name
+                                    setEditedDescription(folder.description); // Reset description
+                                }
                             }}>
                                 <X className="h-4 w-4" />
                             </Button>
@@ -284,6 +333,7 @@ export const FolderContent = ({ folderId }: FolderContentProps) => {
                             {isAdmin && (
                                 <Button
                                     variant="destructive"
+                                    size="sm"
                                     className="hidden sm:flex"
                                     onClick={() => {
                                         if (confirm('Möchten Sie diese Mappe wirklich löschen?')) {

@@ -262,7 +262,7 @@ interface AttendanceButtonProps {
 
 function AttendanceButton({ status, isActive, onClick, disabled }: AttendanceButtonProps) {
     const config = {
-        yes: { icon: CheckCircle, label: 'Ja', activeClass: 'bg-green-600 hover:bg-green-700' },
+        yes: { icon: CheckCircle, label: 'Ja', activeClass: 'bg-success hover:bg-success' },
         no: { icon: XCircle, label: 'Nein', activeClass: 'bg-red-600 hover:bg-red-700' },
         maybe: { icon: HelpCircle, label: 'Vielleicht', activeClass: 'bg-yellow-600 hover:bg-yellow-700' },
     };
@@ -296,7 +296,7 @@ function AttendanceRow({ attendance, isAdmin, onStatusChange, onCommentChange, d
     const [editComment, setEditComment] = useState(attendance.comment || '');
 
     const statusConfig: Record<string, { icon: typeof CheckCircle; color: string }> = {
-        yes: { icon: CheckCircle, color: 'text-green-600' },
+        yes: { icon: CheckCircle, color: 'text-success' },
         no: { icon: XCircle, color: 'text-red-600' },
         maybe: { icon: HelpCircle, color: 'text-yellow-600' },
         pending: { icon: Clock, color: 'text-gray-400' },
@@ -335,7 +335,7 @@ function AttendanceRow({ attendance, isAdmin, onStatusChange, onCommentChange, d
                             onClick={() => onStatusChange('yes')}
                             disabled={disabled}
                         >
-                            <CheckCircle className="h-4 w-4 text-green-600" />
+                            <CheckCircle className="h-4 w-4 text-success" />
                         </Button>
                         <Button
                             variant="ghost"

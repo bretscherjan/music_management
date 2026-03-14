@@ -148,7 +148,7 @@ const AuditLogPage: React.FC = () => {
                                         <td className="px-6 py-4 whitespace-nowrap text-sm">
                                             <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full 
                                                 ${log.action.includes('DELETE') ? 'bg-red-100 text-red-800' :
-                                                    log.action.includes('CREATE') ? 'bg-green-100 text-green-800' :
+                                                    log.action.includes('CREATE') ? 'bg-success/10 text-brand-primary' :
                                                         'bg-blue-100 text-blue-800'}`}>
                                                 {log.action}
                                             </span>

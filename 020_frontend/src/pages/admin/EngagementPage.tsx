@@ -376,12 +376,12 @@ export function EngagementPage() {
             {/* ── Online jetzt ──────────────────────────────────────── */}
             <section className="space-y-3">
                 <div className="flex items-center gap-2">
-                    <Wifi className="h-5 w-5 text-green-500" />
+                    <Wifi className="h-5 w-5 text-success0" />
                     <h2 className="text-xl font-semibold">Online jetzt</h2>
                     <span className="text-xs text-slate-400">(Live via WebSocket – verschwindet bei Tab-Wechsel / Fenster minimieren)</span>
                     {!loadingOnline && (
-                        <span className="ml-2 inline-flex items-center gap-1 text-sm font-semibold text-green-700 bg-green-100 rounded-full px-2 py-0.5">
-                            <span className="h-2 w-2 rounded-full bg-green-500 animate-pulse" />
+                        <span className="ml-2 inline-flex items-center gap-1 text-sm font-semibold text-success bg-success/10 rounded-full px-2 py-0.5">
+                            <span className="h-2 w-2 rounded-full bg-success/50 animate-pulse" />
                             {onlineUsers.length} online
                         </span>
                     )}
@@ -408,8 +408,8 @@ export function EngagementPage() {
                                     {onlineUsers.map(u => (
                                         <TableRow key={u.id}>
                                             <TableCell>
-                                                <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-green-700 bg-green-100 rounded-full px-2 py-0.5">
-                                                    <span className="h-1.5 w-1.5 rounded-full bg-green-500 animate-pulse" />
+                                                <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-success bg-success/10 rounded-full px-2 py-0.5">
+                                                    <span className="h-1.5 w-1.5 rounded-full bg-success/50 animate-pulse" />
                                                     Aktiv
                                                 </span>
                                             </TableCell>
@@ -472,7 +472,7 @@ export function EngagementPage() {
                                         <YAxis allowDecimals={false} tick={{ fontSize: 10 }} />
                                         <RTooltip formatter={(v?: number) => [v ?? 0, 'Aktionen']} />
                                         <Bar dataKey="count" radius={[3, 3, 0, 0]} name="Aktionen">
-                                            {peakData?.weekdays.map((d, i) => <Cell key={i} fill={d.count === maxPeakWeekday && d.count > 0 ? '#047857' : '#10b981'} />)}
+                                            {peakData?.weekdays.map((d, i) => <Cell key={i} fill={d.count === maxPeakWeekday && d.count > 0 ? 'var(--color-blue-700)' : 'var(--color-success)'} />)}
                                         </Bar>
                                     </BarChart>
                                 </ResponsiveContainer>}
@@ -693,8 +693,8 @@ export function EngagementPage() {
                                                                 if (onlineEntry) {
                                                                     return (
                                                                         <div className="flex flex-col">
-                                                                            <span className="inline-flex items-center gap-1 text-xs font-semibold text-green-700 bg-green-100 rounded-full px-2 py-0.5 w-fit">
-                                                                                <span className="h-1.5 w-1.5 rounded-full bg-green-500 animate-pulse" /> Online
+                                                                            <span className="inline-flex items-center gap-1 text-xs font-semibold text-success bg-success/10 rounded-full px-2 py-0.5 w-fit">
+                                                                                <span className="h-1.5 w-1.5 rounded-full bg-success/50 animate-pulse" /> Online
                                                                             </span>
                                                                             <span className="text-slate-400 text-xs mt-0.5">
                                                                                 {formatDistanceToNow(onlineEntry.lastSeen, { addSuffix: true, locale: de })}
@@ -792,15 +792,15 @@ export function EngagementPage() {
                                                             const onlineEntry = onlineUsers.find(ou => ou.id === u.id);
                                                             if (onlineEntry) {
                                                                 return (
-                                                                    <span className="inline-flex items-center gap-1 text-xs font-semibold text-green-700 bg-green-100 rounded-full px-2 py-0.5">
-                                                                        <span className="h-1.5 w-1.5 rounded-full bg-green-500 animate-pulse" /> Online
+                                                                    <span className="inline-flex items-center gap-1 text-xs font-semibold text-success bg-success/10 rounded-full px-2 py-0.5">
+                                                                        <span className="h-1.5 w-1.5 rounded-full bg-success/50 animate-pulse" /> Online
                                                                     </span>
                                                                 );
                                                             }
                                                             if (u.isActive !== undefined) {
                                                                 return u.isActive
-                                                                    ? <span className="inline-flex items-center gap-1 text-xs font-semibold text-green-700 bg-green-100 rounded-full px-2 py-0.5">
-                                                                        <span className="h-1.5 w-1.5 rounded-full bg-green-500" /> Aktiv
+                                                                    ? <span className="inline-flex items-center gap-1 text-xs font-semibold text-success bg-success/10 rounded-full px-2 py-0.5">
+                                                                        <span className="h-1.5 w-1.5 rounded-full bg-success/50" /> Aktiv
                                                                     </span>
                                                                     : <span className="inline-flex items-center gap-1 text-xs font-semibold text-slate-600 bg-slate-100 rounded-full px-2 py-0.5">
                                                                         <span className="h-1.5 w-1.5 rounded-full bg-slate-400" /> Inaktiv
@@ -815,7 +815,7 @@ export function EngagementPage() {
                                                             if (onlineEntry) {
                                                                 return (
                                                                     <div className="flex flex-col">
-                                                                        <span className="text-green-600 text-xs font-medium">Gerade aktiv</span>
+                                                                        <span className="text-success text-xs font-medium">Gerade aktiv</span>
                                                                         <span className="text-slate-400 text-xs">
                                                                             {formatDistanceToNow(onlineEntry.lastSeen, { addSuffix: true, locale: de })}
                                                                         </span>

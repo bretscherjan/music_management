@@ -47,10 +47,10 @@ export function ForgotPasswordPage() {
                     <CardContent>
                         {isSubmitted ? (
                             <div className="text-center space-y-4 py-4 animate-in fade-in zoom-in duration-300">
-                                <div className="mx-auto w-12 h-12 bg-green-100 text-green-600 rounded-full flex items-center justify-center mb-2">
+                                <div className="mx-auto w-12 h-12 bg-success/10 text-success rounded-full flex items-center justify-center mb-2">
                                     <CheckCircle className="w-6 h-6" />
                                 </div>
-                                <h3 className="text-lg font-medium text-green-800">E-Mail versendet!</h3>
+                                <h3 className="text-lg font-medium text-brand-primary">E-Mail versendet!</h3>
                                 <p className="text-sm text-muted-foreground">
                                     Falls ein Konto für <strong>{email}</strong> existiert, haben wir dir Anweisungen zum Zurücksetzen gesendet.
                                 </p>

@@ -124,7 +124,7 @@ export function ReminderStatus() {
 
                     {status.upcoming.length === 0 ? (
                         <div className="text-sm text-muted-foreground py-2 flex items-center gap-2">
-                            <CheckCircle2 className="h-4 w-4 text-green-500" />
+                            <CheckCircle2 className="h-4 w-4 text-success0" />
                             Keine ausstehenden Erinnerungen.
                         </div>
                     ) : (

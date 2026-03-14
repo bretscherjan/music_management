@@ -128,11 +128,11 @@ export function ContactPage() {
                             </h2>
 
                             {status === 'success' ? (
-                                <div className="bg-green-500/10 border border-green-500/20 rounded-xl p-8 text-center">
-                                    <div className="w-16 h-16 bg-green-500/20 text-green-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <div className="bg-success/10 border border-success/20 rounded-xl p-8 text-center">
+                                    <div className="w-16 h-16 bg-success/20 text-success0 rounded-full flex items-center justify-center mx-auto mb-4">
                                         <Mail className="h-8 w-8" />
                                     </div>
-                                    <h3 className="text-2xl font-bold text-green-500 mb-2">Nachricht gesendet!</h3>
+                                    <h3 className="text-2xl font-bold text-success0 mb-2">Nachricht gesendet!</h3>
                                     <p className="text-muted-foreground mb-6">
                                         Vielen Dank für deine Nachricht. Wir werden uns so schnell wie möglich bei dir melden.
                                     </p>

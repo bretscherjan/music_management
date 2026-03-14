@@ -22,8 +22,8 @@ const CHORD_FORMULAS = [
 ];
 
 const TRANSPOSITION_TABLE = [
-  { instrument: 'Bb (B)', written: 'C', concert: 'B (Bb)', offset: '−2 HT (Grosse Sekunde abwärts)' },
-  { instrument: 'Es (Eb)', written: 'C', concert: 'Es (Eb)', offset: '+9 HT (Kleine Sexte aufwärts, oder Grosse Terz abwärts)' },
+  { instrument: 'Bb', written: 'C', concert: 'B', offset: '−2 HT (Grosse Sekunde abwärts)' },
+  { instrument: 'Es', written: 'C', concert: 'Es', offset: '+9 HT (Kleine Sexte aufwärts, oder Grosse Terz abwärts)' },
   { instrument: 'F', written: 'C', concert: 'F', offset: '−7 HT (Reine Quinte abwärts)' },
 ];
 
@@ -49,14 +49,14 @@ export function TheoryWiki() {
             <tbody>
               {TRANSPOSITION_TABLE.map((row, i) => (
                 <tr key={i} className="border-b transition-colors hover:bg-muted/50 even:bg-muted/30">
-                  <td className="px-4 py-2.5 font-medium text-green-800">{row.instrument}</td>
+                  <td className="px-4 py-2.5 font-medium text-brand-primary">{row.instrument}</td>
                   <td className="px-4 py-2.5 font-bold">{row.written}</td>
                   <td className="px-4 py-2.5 font-bold">{row.concert}</td>
                   <td className="px-4 py-2.5 text-gray-500 text-xs">{row.offset}</td>
                 </tr>
               ))}
-              <tr className="border-t border-gray-100 bg-green-300/10">
-                <td className="px-4 py-2.5 font-medium text-gray-700">C (Klavier, Flöte)</td>
+              <tr className="border-t border-gray-100 bg-brand-primary/10">
+                <td className="px-4 py-2.5 font-medium text-gray-700">C</td>
                 <td className="px-4 py-2.5 font-bold">C</td>
                 <td className="px-4 py-2.5 font-bold">C</td>
                 <td className="px-4 py-2.5 text-gray-500 text-xs">Keine Transposition</td>
@@ -88,7 +88,7 @@ export function TheoryWiki() {
             <tbody>
               {CIRCLE_ROWS.map((row, i) => (
                 <tr key={i} className="border-b transition-colors hover:bg-muted/50 even:bg-muted/30">
-                  <td className="px-3 py-2 font-bold text-green-800">{row.key}-Dur</td>
+                  <td className="px-3 py-2 font-bold text-brand-primary">{row.key}-Dur</td>
                   <td className="px-3 py-2 font-mono text-center">
                     {row.sharps === 0 ? '—' : row.sharps > 0
                       ? `${row.sharps} ♯`
@@ -125,7 +125,7 @@ export function TheoryWiki() {
                     {row.name}
                     <span className="ml-1.5 text-xs font-mono text-gray-400">{row.symbol}</span>
                   </td>
-                  <td className="px-4 py-2.5 font-mono text-xs text-green-800">{row.formula}</td>
+                  <td className="px-4 py-2.5 font-mono text-xs text-brand-primary">{row.formula}</td>
                   <td className="px-4 py-2.5 text-xs text-gray-500">{row.semitones}</td>
                   <td className="px-4 py-2.5 font-medium text-gray-700">{row.example}</td>
                 </tr>

@@ -68,7 +68,7 @@ export function SqlConsole() {
         }
 
         return (
-            <div className="p-4 border rounded-md bg-muted/50 flex items-center text-green-600">
+            <div className="p-4 border rounded-md bg-muted/50 flex items-center text-success">
                 <CheckCircle2 className="h-5 w-5 mr-2" />
                 Erfolgreich ausgeführt. Ergebnis: {JSON.stringify(result)}
             </div>

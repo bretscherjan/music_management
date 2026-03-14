@@ -95,10 +95,10 @@ export function ResetPasswordPage() {
                     <CardContent>
                         {isSuccess ? (
                             <div className="text-center space-y-4 py-4 animate-in fade-in zoom-in duration-300">
-                                <div className="mx-auto w-12 h-12 bg-green-100 text-green-600 rounded-full flex items-center justify-center mb-2">
+                                <div className="mx-auto w-12 h-12 bg-success/10 text-success rounded-full flex items-center justify-center mb-2">
                                     <CheckCircle className="w-6 h-6" />
                                 </div>
-                                <h3 className="text-lg font-medium text-green-800">Passwort geändert!</h3>
+                                <h3 className="text-lg font-medium text-brand-primary">Passwort geändert!</h3>
                                 <p className="text-sm text-muted-foreground">
                                     Dein Passwort wurde erfolgreich aktualisiert. Du wirst gleich zum Login weitergeleitet...
                                 </p>

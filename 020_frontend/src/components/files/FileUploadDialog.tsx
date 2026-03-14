@@ -196,7 +196,7 @@ export function FileUploadDialog({ open, onOpenChange, currentFolderId, currentF
                                         <Loader2 className="h-4 w-4 animate-spin text-primary shrink-0" />
                                     )}
                                     {entry.status === 'success' && (
-                                        <CheckCircle2 className="h-4 w-4 text-green-500 shrink-0" />
+                                        <CheckCircle2 className="h-4 w-4 text-success0 shrink-0" />
                                     )}
                                     {entry.status === 'error' && (
                                         <AlertCircle className="h-4 w-4 text-destructive shrink-0" />
@@ -311,7 +311,7 @@ export function FileUploadDialog({ open, onOpenChange, currentFolderId, currentF
                                         {allowedUsers.map(uid => {
                                             const u = users.find((user: any) => user.id === uid);
                                             return u ? (
-                                                <div key={uid} className="bg-green-100 text-green-800 text-[10px] px-1.5 py-0.5 rounded flex items-center gap-1">
+                                                <div key={uid} className="bg-success/10 text-brand-primary text-[10px] px-1.5 py-0.5 rounded flex items-center gap-1">
                                                     {u.firstName} {u.lastName}
                                                     <button type="button" onClick={() => setAllowedUsers(allowedUsers.filter(id => id !== uid))}>x</button>
                                                 </div>

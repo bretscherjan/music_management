@@ -152,18 +152,18 @@ export function StatisticsPage() {
             <div className="flex space-x-1 rounded-xl bg-slate-100 p-1 w-fit">
                 <button
                     onClick={() => setActiveTab('repertoire')}
-                    className={`w-full rounded-lg py-2.5 px-4 text-sm font-medium leading-5 ring-white ring-opacity-60 ring-offset-2 ring-offset-blue-400 focus:outline-none focus:ring-2 ${activeTab === 'repertoire'
-                        ? 'bg-white text-blue-700 shadow'
-                        : 'text-blue-100 hover:bg-white/[0.12] hover:text-white text-slate-600 hover:text-slate-800'
+                    className={`w-full rounded-lg py-2.5 px-4 text-sm font-medium leading-5 ring-white ring-opacity-60 ring-offset-2 ring-offset-primary/30 focus:outline-none focus:ring-2 ${activeTab === 'repertoire'
+                        ? 'bg-white text-primary shadow'
+                        : 'text-slate-600 hover:bg-white/[0.12] hover:text-slate-800'
                         }`}
                 >
                     Repertoire
                 </button>
                 <button
                     onClick={() => setActiveTab('attendance')}
-                    className={`w-full rounded-lg py-2.5 px-4 text-sm font-medium leading-5 ring-white ring-opacity-60 ring-offset-2 ring-offset-blue-400 focus:outline-none focus:ring-2 ${activeTab === 'attendance'
-                        ? 'bg-white text-blue-700 shadow'
-                        : 'text-blue-100 hover:bg-white/[0.12] hover:text-white text-slate-600 hover:text-slate-800'
+                    className={`w-full rounded-lg py-2.5 px-4 text-sm font-medium leading-5 ring-white ring-opacity-60 ring-offset-2 ring-offset-primary/30 focus:outline-none focus:ring-2 ${activeTab === 'attendance'
+                        ? 'bg-white text-primary shadow'
+                        : 'text-slate-600 hover:bg-white/[0.12] hover:text-slate-800'
                         }`}
                 >
                     Anwesenheit

@@ -3,93 +3,137 @@
 
 @custom-variant dark (&:is(.dark *));
 
+html {
+  scroll-behavior: smooth;
+}
+
+/* Keyframe Animations */
+@keyframes floatY {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-14px); }
+}
+
+@keyframes pulseGlow {
+  0%, 100% { opacity: 0.12; transform: scale(1); }
+  50% { opacity: 0.22; transform: scale(1.06); }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+
+.animate-float {
+  animation: floatY 7s ease-in-out infinite;
+}
+
+.animate-float-slow {
+  animation: floatY 10s ease-in-out infinite;
+}
+
+.animate-pulse-glow {
+  animation: pulseGlow 5s ease-in-out infinite;
+}
+
 /* CSS Variables - Warm Yellow & Signal Red Edition */
 :root,
 .theme-public {
   /* Brand Colors (Space-separated HSL) */
-  --musig-red: 359 100% 45%;
-  /* #E60004 Signalrot */
-  --musig-black: 0 0% 0%;
-  /* #000000 Schwarz */
-  --musig-yellow-bright: 40 95% 49%;
-  /* Sehr helles Gelb für Tint-Hintergründe */
+  --musig-red: 359 100% 45%;    /* #E60004 Signalrot */
+  --musig-yellow: 45 88% 62%;    /* #F2C94C Warmes Gelb */
+  --musig-charcoal: 240 2% 10%; /* #1A1A1B Anthrazit */
+  --musig-cream: 30 20% 99%;    /* #FDFCFB Notenpapier-Creme */
+  --musig-surface: 36 12% 95%;  /* #F5F3F0 Sanftes Grau-Beige */
 
-  /* Semantic Brand Aliases for Components */
+  /* Semantic Brand Aliases */
   --brand-primary: var(--musig-red);
-  --brand-secondary: var(--musig-yellow-bright);
+  --brand-secondary: var(--musig-charcoal);
+  --brand-yellow: var(--musig-yellow);
+  --brand-red: var(--musig-red);
 
   /* Shadcn UI Variables */
-  --background: 0 0% 100%;
-  --foreground: 0 0% 0%;
+  --background: var(--musig-cream);
+  --foreground: var(--musig-charcoal);
 
-  --card: 0 0% 100%;
-  --card-foreground: 0 0% 0%;
+  --card: var(--musig-surface);
+  --card-foreground: var(--musig-charcoal);
 
-  --popover: 0 0% 100%;
-  --popover-foreground: 0 0% 0%;
+  --popover: var(--musig-cream);
+  --popover-foreground: var(--musig-charcoal);
 
-  --primary: var(--musig-yellow-bright);
-  --primary-foreground: 0 0% 0%;
+  --primary: var(--musig-red);
+  --primary-foreground: 0 0% 100%;
 
-  --secondary: var(--musig-red);
-  --secondary-foreground: 0 0% 100%;
+  --secondary: var(--musig-surface);
+  --secondary-foreground: var(--musig-charcoal);
 
-  --muted: 0 0% 96%;
-  --muted-foreground: 0 0% 35%;
+  --muted: var(--musig-surface);
+  --muted-foreground: 240 2% 40%;
 
-  --accent: var(--musig-red);
-  --accent-foreground: 0 0% 100%;
+  --accent: var(--musig-surface);
+  --accent-foreground: var(--musig-red);
 
   --destructive: 0 94% 60% / 0.2;
-  --destructive-foreground: 0 0% 100%;
+  --destructive-foreground: var(--musig-red);
 
-  --border: 0 0% 88%;
-  --input: 0 0% 88%;
+  --border: 0 0% 90%;
+  --input: 0 0% 90%;
   --ring: var(--musig-red);
   
-  --success: 206 72% 57%; /* Babyblau als "Erfolg/Info" Farbe ausserhalb des regulären Rot/Gelb Themas */
+  --success: 142 76% 36%;
   --success-foreground: 0 0% 100%;
   --radius: 0.375rem;
 
   /* Status & Charts */
-  --success: 142 76% 36%;
   --warning: 38 92% 50%;
   --chart-1: var(--musig-red);
-  --chart-2: var(--musig-yellow-bright);
-  --chart-3: 0 0% 0%;
+  --chart-2: var(--musig-charcoal);
+  --chart-3: 30 20% 80%;
   --chart-4: 0 0% 60%;
   --chart-5: 0 0% 80%;
 
   /* Sidebar */
-  --sidebar: var(--musig-yellow-bright);
-  --sidebar-foreground: 0 0% 0%;
-  --sidebar-primary: 0 0% 0%;
+  --sidebar: var(--musig-cream);
+  --sidebar-foreground: var(--musig-charcoal);
+  --sidebar-primary: var(--musig-red);
   --sidebar-primary-foreground: 0 0% 100%;
-  --sidebar-accent: var(--musig-red);
-  --sidebar-accent-foreground: 0 0% 100%;
-  --sidebar-border: 0 0% 88%;
+  --sidebar-accent: var(--musig-surface);
+  --sidebar-accent-foreground: var(--musig-red);
+  --sidebar-border: 0 0% 92%;
   --sidebar-ring: var(--musig-red);
 }
 
 .theme-member {
-  /* Member Area Colors - Space-separated HSL */
-  --musig-red: 350 80% 65%;
-  /* Helles Rot (Kontrast im Member-Bereich) */
+  /* Member Area Colors - warm neutrals, consistent with brand */
+  --brand-primary: var(--musig-red);
+  --brand-secondary: var(--musig-charcoal);
+  --brand-yellow: var(--musig-yellow);
+  --brand-red: var(--musig-red);
 
-  --brand-primary: 206 72% 57%;
-  /* Babyblau / Stahlblau */
-  --brand-secondary: 350 80% 65%;
-  /* Helles Rot */
+  --background: 30 15% 97%;           /* Sehr helles Warmgrau – leicht vom Public-Theme abgehoben */
+  --foreground: var(--musig-charcoal);
 
-  --primary: 206 72% 57%;
-  /* Babyblau / Stahlblau */
+  --card: 0 0% 100%;
+  --card-foreground: var(--musig-charcoal);
+
+  --popover: 0 0% 100%;
+  --popover-foreground: var(--musig-charcoal);
+
+  --primary: var(--musig-red);
   --primary-foreground: 0 0% 100%;
 
-  --sidebar: 0 0% 98%;
-  --sidebar-accent: 206 72% 57%;
+  --secondary: var(--musig-surface);
+  --secondary-foreground: var(--musig-charcoal);
 
-  /* Babyblau active state */
-  --ring: 206 72% 57%;
+  --muted: var(--musig-surface);
+  --muted-foreground: 240 2% 40%;
+
+  --accent: 45 88% 95%;               /* Zartes Gelb als Akzent */
+  --accent-foreground: 35 70% 25%;
+
+  --border: 30 10% 88%;
+  --input: 30 10% 88%;
+  --ring: var(--musig-red);
 }
 
 .dark {
@@ -135,9 +179,12 @@ body {
   font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   background-color: hsl(var(--background));
   color: hsl(var(--foreground));
+  line-height: 1.6;
   margin: 0;
   min-height: 100vh;
   overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 /* Utility classes */
@@ -160,6 +207,28 @@ body {
 .active-scale:active {
   transform: scale(0.98);
   transition: transform 0.1s;
+}
+
+.brand-gradient {
+  background: linear-gradient(135deg, hsl(var(--brand-primary) / 0.1) 0%, hsl(var(--brand-yellow) / 0.1) 100%);
+}
+
+.brand-border-gradient {
+  border-image: linear-gradient(to right, hsl(var(--brand-red)), hsl(var(--brand-yellow))) 1;
+}
+
+.brand-glow {
+  box-shadow: 0 0 20px -5px hsl(var(--brand-red) / 0.15);
+}
+
+.hover-lift {
+  transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.hover-lift:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 24px -8px hsl(var(--brand-red) / 0.12);
+  border-color: hsl(var(--brand-red) / 0.1);
 }
 
 /* Swipeable card styles */
@@ -212,6 +281,8 @@ body {
   --color-popover-foreground: hsl(var(--popover-foreground));
   --color-brand-primary: hsl(var(--brand-primary));
   --color-brand-secondary: hsl(var(--brand-secondary));
+  --color-brand-yellow: hsl(var(--brand-yellow));
+  --color-brand-red: hsl(var(--brand-red));
   --color-primary: hsl(var(--primary));
   --color-primary-foreground: hsl(var(--primary-foreground));
   --color-secondary: hsl(var(--secondary));

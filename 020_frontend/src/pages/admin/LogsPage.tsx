@@ -132,7 +132,7 @@ export function LogsPage() {
             <div className="flex items-center justify-between flex-wrap gap-3">
                 <div>
                     <h1 className="text-3xl font-bold tracking-tight flex items-center gap-2">
-                        <Activity className="h-8 w-8 text-blue-600" /> System-Logs
+                        <Activity className="h-8 w-8 text-primary" /> System-Logs
                     </h1>
                     <p className="text-gray-500 mt-1 text-sm">Täglich rotiert · 30 Tage DSGVO-konform aufbewahrt</p>
                 </div>
@@ -155,7 +155,7 @@ export function LogsPage() {
             {/* Stats */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 <StatCard label="Gesamt (Buffer)"  value={stats?.total ?? 0} color="bg-slate-50 border-slate-200 text-slate-700" />
-                <StatCard label="INFO"             value={stats?.INFO  ?? 0} color="bg-blue-50 border-blue-200 text-blue-700" />
+                <StatCard label="INFO"             value={stats?.INFO  ?? 0} color="bg-slate-50 border-slate-200 text-slate-600" />
                 <StatCard label="WARN"             value={stats?.WARN  ?? 0} color="bg-amber-50 border-amber-200 text-amber-700" />
                 <StatCard label="ERROR"            value={stats?.ERROR ?? 0} color="bg-red-50 border-red-200 text-red-700" />
             </div>
@@ -170,7 +170,7 @@ export function LogsPage() {
                         value={selectedDate}
                         max={todayISO()}
                         onChange={e => setSelectedDate(e.target.value || todayISO())}
-                        className="text-sm border rounded-lg px-3 py-1.5 bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="text-sm border rounded-lg px-3 py-1.5 bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary"
                     />
                     {isToday ? (
                         <span className="inline-flex items-center gap-1 text-xs text-success font-medium">

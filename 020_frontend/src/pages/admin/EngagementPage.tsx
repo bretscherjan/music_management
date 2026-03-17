@@ -343,7 +343,7 @@ export function EngagementPage() {
             {/* Header */}
             <div>
                 <h1 className="text-3xl font-bold tracking-tight flex items-center gap-2">
-                    <Activity className="h-8 w-8 text-blue-600" /> Engagement & Aktivität
+                    <Activity className="h-8 w-8 text-primary" /> Engagement & Aktivität
                 </h1>
                 <p className="text-gray-500 mt-1">In-House Analytics – DSGVO-konform, direkt aus der Datenbank.</p>
             </div>
@@ -472,7 +472,7 @@ export function EngagementPage() {
                                         <YAxis allowDecimals={false} tick={{ fontSize: 10 }} />
                                         <RTooltip formatter={(v?: number) => [v ?? 0, 'Aktionen']} />
                                         <Bar dataKey="count" radius={[3, 3, 0, 0]} name="Aktionen">
-                                            {peakData?.weekdays.map((d, i) => <Cell key={i} fill={d.count === maxPeakWeekday && d.count > 0 ? 'var(--color-blue-700)' : 'var(--color-success)'} />)}
+                                            {peakData?.weekdays.map((d, i) => <Cell key={i} fill={d.count === maxPeakWeekday && d.count > 0 ? 'var(--color-primary)' : 'var(--color-success)'} />)}
                                         </Bar>
                                     </BarChart>
                                 </ResponsiveContainer>}
@@ -843,7 +843,7 @@ export function EngagementPage() {
                                                         {u.daysInactive !== undefined ? <InactiveBadge days={u.daysInactive} /> : '–'}
                                                     </td>
                                                     <td className="px-4 py-2.5 text-right font-bold">{u.total ?? '–'}</td>
-                                                    <td className="px-4 py-2.5 text-right text-blue-600">{u.logins ?? '–'}</td>
+                                                    <td className="px-4 py-2.5 text-right text-primary">{u.logins ?? '–'}</td>
                                                     <td className="px-4 py-2.5 text-right text-emerald-600">{u.fileDownloads ?? '–'}</td>
                                                     <td className="px-4 py-2.5 text-right text-amber-600">{u.attendanceUpdates ?? '–'}</td>
                                                 </tr>

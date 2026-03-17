@@ -64,13 +64,13 @@ export function LoginPage() {
     return (
         <div className="min-h-screen flex flex-col bg-background">
             {/* Header */}
-            <header className="border-b bg-white">
+            <header className="border-b bg-card">
                 <div className="container-app flex items-center justify-between h-16">
                     <Link to="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
-                        <img src="/logo_red.png" alt="Musig Elgg Logo" className="h-12 w-auto" />
+                        <img src="/musig.png" alt="Musig Elgg Logo" className="h-12 w-auto" />
                         <div className="flex flex-col">
-                            <span className="text-xl font-bold text-brand-primary">
-                                Musig Elgg
+                            <span className="text-xl font-bold text-brand-secondary">
+                                Elgg
                             </span>
                         </div>
                     </Link>
@@ -86,8 +86,8 @@ export function LoginPage() {
 
             {/* Login Form */}
             <div className="flex-1 flex items-center justify-center p-4">
-                <Card className="w-full max-w-md shadow-xl border-2 border-[hsl(var(--border))]">
-                    <CardHeader className="text-center space-y-4 bg-gradient-to-br from-brand-primary/5 to-brand-secondary/5">
+                <Card className="w-full max-w-md shadow-xl border-border/10 rounded-[2rem] overflow-hidden">
+                    <CardHeader className="text-center space-y-4 bg-muted/30">
                         <div className="flex justify-center">
                             <img src="/logo_red.png" alt="Musig Elgg Logo" className="h-24 w-auto" />
                         </div>
@@ -101,7 +101,7 @@ export function LoginPage() {
                     <CardContent className="pt-6">
                         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
                             {error && (
-                                <div className="flex items-center gap-2 p-3 rounded-md bg-destructive/10 text-destructive text-sm border border-destructive/20">
+                                <div className="flex items-center gap-2 p-3 rounded-md bg-destructive/30 text-primary/80 text-sm border border-destructive/90">
                                     <AlertCircle className="h-4 w-4 flex-shrink-0" />
                                     <span>{error}</span>
                                 </div>
@@ -161,7 +161,7 @@ export function LoginPage() {
 
                             <Button
                                 type="submit"
-                                className="w-full bg-brand-primary hover:bg-brand-primary/90"
+                                className="w-full bg-brand-primary hover:bg-brand-primary/90 text-white rounded-xl"
                                 size="lg"
                                 disabled={isLoading}
                             >
@@ -180,7 +180,7 @@ export function LoginPage() {
             </div>
 
             {/* Footer */}
-            <footer className="border-t py-4 text-center text-sm text-muted-foreground bg-white">
+            <footer className="border-t py-6 text-center text-sm text-muted-foreground bg-card">
                 <div className="container-app">
                     © {new Date().getFullYear()} Musig Elgg – Alle Rechte vorbehalten
                 </div>

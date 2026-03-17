@@ -7,14 +7,14 @@ const path = require('path');
 
 // ─── Brand colours ────────────────────────────────────────────────────────────
 const BRAND = {
-    primary:   '#1e3a5f',   // deep navy  – document title, table header bg
-    accent:    '#2563eb',   // blue-600   – section headings
-    altRow:    '#f0f5fb',   // faint blue – alternating table rows
-    border:    '#d1dce8',   // light blue-gray border
-    textDark:  '#1e293b',   // slate-900  – body text
-    textMid:   '#475569',   // slate-600  – subtitles
-    textLight: '#94a3b8',   // slate-400  – footer / meta
-    // Semantic status colours (kept from original attendance stats)
+    primary:   '#E60004',   // Signal-Rot  – Dokumenttitel, Tabellenkopf-Hintergrund
+    accent:    '#2D2A27',   // Warmes Dunkelgrau – Abschnittstitel
+    altRow:    '#FDF8F2',   // Warmes Creme – alternierende Tabellenzeilen
+    border:    '#E0DAD3',   // Warmes Hellgrau – Tabellenlinien
+    textDark:  '#1A1A1B',   // Anthrazit – Fliesstext
+    textMid:   '#5A5856',   // Mittleres Warmgrau – Untertitel
+    textLight: '#9A9694',   // Helles Warmgrau – Footer / Metadaten
+    // Semantic status colours
     green:     '#16a34a',
     amber:     '#d97706',
     red:       '#dc2626',

@@ -5,6 +5,7 @@ import { AuthProvider } from '@/context/AuthContext';
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { PublicLayout } from '@/components/layout/PublicLayout';
+import { ScrollToTop } from '@/components/layout/ScrollToTop';
 import { Toaster } from 'sonner';
 
 // Public Pages
@@ -53,6 +54,7 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
+        <ScrollToTop />
         <AuthProvider>
           <Routes>
             <Route element={<PublicLayout />}>

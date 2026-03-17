@@ -90,11 +90,11 @@ export function VerificationSection({ eventId, eventDate }: VerificationSectionP
 
 
     return (
-        <Card className="border-blue-200 bg-blue-50/30">
+        <Card className="border-border bg-muted/20">
             <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">
                     <CardTitle className="text-xl flex items-center gap-2">
-                        <CheckCircle2 className="h-5 w-5 text-blue-600" />
+                        <CheckCircle2 className="h-5 w-5 text-black" />
                         Anwesenheitskontrolle ({formatDate(eventDate)})
                     </CardTitle>
                     {hasChanges && (
@@ -136,7 +136,7 @@ export function VerificationSection({ eventId, eventDate }: VerificationSectionP
                                         <Button
                                             variant="ghost"
                                             size="sm"
-                                            className="text-xs text-blue-600 hover:text-blue-800 hover:bg-blue-50"
+                                            className="text-xs text-primary hover:text-primary/80 hover:bg-primary/5"
                                             onClick={(e) => {
                                                 e.stopPropagation();
                                                 handleMarkAllPresent(registerName, items);

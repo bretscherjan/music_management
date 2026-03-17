@@ -40,42 +40,46 @@ export function GalleryPage() {
     }
 
     return (
-        <div className="min-h-screen bg-white pb-20 pt-24 md:pt-32">
+        <div className="min-h-screen bg-background pb-20 pt-24 md:pt-32">
             <div className="container-app">
-                <header className="mb-12 md:mb-20 text-center">
-                    <h1 className="text-4xl md:text-5xl lg:text-6xl font-black text-brand-primary mb-6 tracking-tight">
-                        Galerie
+                <header className="mb-20 text-center px-4">
+                    <h1 className="text-4xl md:text-6xl font-extrabold text-foreground mb-6 tracking-tighter">
+                        Unsere Galerie
                     </h1>
-                    <div className="h-1.5 w-24 bg-brand-primary mx-auto rounded-full opacity-20" />
+                    <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+                        Ein kleiner Einblick in unser Vereinsleben, unsere Proben und unsere Auftritte.
+                    </p>
                 </header>
 
                 {images.length > 0 ? (
-                    <div className="columns-1 sm:columns-2 lg:columns-3 xl:columns-4 gap-4 px-4 md:px-0 space-y-4">
+                    <div className="columns-1 sm:columns-2 lg:columns-3 xl:columns-4 gap-6 px-4 md:px-0 space-y-6">
                         {images.map((image, index) => (
                             <div
                                 key={image.id}
-                                className="relative break-inside-avoid rounded-xl overflow-hidden cursor-zoom-in group border-2 border-transparent hover:border-primary/20 transition-all shadow-sm hover:shadow-xl bg-muted"
+                                className="relative break-inside-avoid rounded-[2rem] overflow-hidden cursor-zoom-in group border-border/10 hover:border-brand-primary/20 transition-all duration-500 shadow-sm hover:shadow-2xl bg-card"
                                 onClick={() => openLightbox(index)}
                             >
                                 <img
                                     src={getMediaUrl(`/uploads/cms/gallery/${image.filename}`)}
                                     alt={image.title || 'Galeriebild'}
-                                    className="w-full h-auto object-cover transition-transform duration-700 group-hover:scale-105"
+                                    className="w-full h-auto object-cover transition-transform duration-700 group-hover:scale-110"
                                     loading="lazy"
                                 />
-                                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-end p-6">
-                                    {image.title && <h3 className="text-white font-bold text-lg mb-1 drop-shadow-md">{image.title}</h3>}
-                                    {image.description && <p className="text-white/80 text-sm line-clamp-2 drop-shadow-md">{image.description}</p>}
-                                    <div className="absolute top-4 right-4 bg-white/20 backdrop-blur-md rounded-full p-2 text-white">
-                                        <Maximize2 className="h-4 w-4" />
+                                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-end p-8">
+                                    {image.title && <h3 className="text-white font-black text-xl mb-1 drop-shadow-lg transform translate-y-4 group-hover:translate-y-0 transition-transform duration-500">{image.title}</h3>}
+                                    {image.description && <p className="text-white/80 text-sm line-clamp-2 drop-shadow-lg transform translate-y-4 group-hover:translate-y-0 transition-transform duration-500 delay-75">{image.description}</p>}
+                                    <div className="absolute top-6 right-6 bg-white/20 backdrop-blur-xl rounded-2xl p-3 text-white transform scale-90 group-hover:scale-100 transition-transform duration-500">
+                                        <Maximize2 className="h-5 w-5" />
                                     </div>
                                 </div>
                             </div>
                         ))}
                     </div>
                 ) : (
-                    <div className="text-center py-32 opacity-50">
-                        <p className="text-xl">Aktuell sind keine Bilder verfügbar.</p>
+                    <div className="text-center py-32 bg-card rounded-[3rem] border border-dashed border-border/20 mx-4 md:mx-auto max-w-2xl shadow-inner">
+                        <Loader2 className="h-12 w-12 text-muted-foreground opacity-20 mx-auto mb-6" />
+                        <p className="text-xl font-bold text-foreground">Aktuell sind keine Bilder verfügbar.</p>
+                        <p className="text-muted-foreground mt-2">Schauen Sie bald wieder vorbei.</p>
                     </div>
                 )}
             </div>

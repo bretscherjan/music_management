@@ -8,14 +8,14 @@ import {
 import { cn } from '@/lib/utils';
 
 const QUALITY_COLORS: Record<ChordQuality, { bg: string; text: string; border: string }> = {
-  'major': { bg: '#e60004', text: '#540001ff', border: '#e60004/20' },
-  'minor': { bg: '#93c5fd', text: '#1e40af', border: '#1e40af/20' },
-  'diminished': { bg: '#fca5a5', text: '#991b1b', border: '#991b1b/20' },
-  'augmented': { bg: '#fdba74', text: '#92400e', border: '#92400e/20' },
-  'dominant7': { bg: '#c4b5fd', text: '#4c1d95', border: '#4c1d95/20' },
-  'major7': { bg: '#86efac', text: '#14532d', border: '#14532d/20' },
-  'minor7': { bg: '#a5b4fc', text: '#312e81', border: '#312e81/20' },
-  'diminished7': { bg: '#f9a8d4', text: '#831843', border: '#831843/20' },
+  'major': { bg: 'hsl(var(--brand-red))', text: 'white', border: 'hsl(var(--brand-red))' },
+  'minor': { bg: 'hsl(var(--brand-yellow))', text: 'hsl(var(--foreground))', border: 'hsl(var(--brand-yellow))' },
+  'diminished': { bg: 'hsl(var(--muted))', text: 'hsl(var(--brand-red))', border: 'hsl(var(--brand-red) / 0.5)' },
+  'augmented': { bg: 'hsl(var(--brand-red) / 0.1)', text: 'hsl(var(--brand-red))', border: 'hsl(var(--brand-red))' },
+  'dominant7': { bg: 'hsl(var(--brand-red) / 0.2)', text: 'hsl(var(--brand-red))', border: 'hsl(var(--brand-red))' },
+  'major7': { bg: 'hsl(var(--brand-red) / 0.3)', text: 'hsl(var(--brand-red))', border: 'hsl(var(--brand-red))' },
+  'minor7': { bg: 'hsl(var(--brand-yellow) / 0.5)', text: 'hsl(var(--foreground))', border: 'hsl(var(--brand-yellow))' },
+  'diminished7': { bg: 'hsl(var(--foreground))', text: 'white', border: 'hsl(var(--foreground))' },
 };
 
 // Piano key geometry for chord visualisation
@@ -66,8 +66,8 @@ function MiniKeyboard({ activeNotes, activeColor }: MiniKeyboardProps) {
                 x={x} y={0}
                 width={whiteKeyW - 1} height={whiteKeyH}
                 rx="2"
-                fill={isActive ? activeColor : '#fff'}
-                stroke="#d1d5db"
+                fill={isActive ? activeColor : 'var(--color-card)'}
+                stroke="var(--color-border)"
                 strokeWidth="0.8"
                 opacity={isActive ? 1 : 0.9}
               />
@@ -85,7 +85,7 @@ function MiniKeyboard({ activeNotes, activeColor }: MiniKeyboardProps) {
                 x={x} y={0}
                 width={blackKeyW} height={blackKeyH}
                 rx="2"
-                fill={isActive ? 'var(--color-brand-primary)' : '#1f2937'}
+                fill={isActive ? activeColor : 'hsl(var(--foreground))'}
                 stroke="none"
               />
             );
@@ -109,19 +109,19 @@ export function ChordBuilder() {
     <div className="flex flex-col gap-4">
       {/* Root selector */}
       <div className="flex flex-col gap-1.5">
-        <label className="text-xs font-medium text-gray-600">Grundton</label>
+        <label className="text-xs font-medium text-muted-foreground">Grundton</label>
         <div className="flex flex-wrap gap-1">
           {CHROMATIC_NOTES.map(n => (
             <button
               key={n.value}
               onClick={() => setRoot(n.value)}
               className={cn(
-                'w-9 h-8 rounded-md text-sm font-medium border transition-all',
+                'w-9 h-8 rounded-md text-sm font-bold border transition-all',
                 root === n.value
-                  ? 'border-brand-primary/30 font-bold'
-                  : 'bg-white text-gray-600 border-gray-200 hover:border-brand-primary/50'
+                  ? 'shadow-sm grayscale-0'
+                  : 'bg-white text-muted-foreground border-border/50 hover:border-brand-red grayscale opacity-70'
               )}
-              style={root === n.value ? { backgroundColor: colors.bg, color: colors.text } : {}}
+              style={root === n.value ? { backgroundColor: colors.bg, color: colors.text, borderColor: colors.border } : {}}
             >
               {n.label}
             </button>
@@ -131,17 +131,17 @@ export function ChordBuilder() {
 
       {/* Quality selector */}
       <div className="flex flex-col gap-1.5">
-        <label className="text-xs font-medium text-gray-600">Akkord-Typ</label>
+        <label className="text-xs font-medium text-muted-foreground">Akkord-Typ</label>
         <div className="flex flex-wrap gap-1.5">
           {(Object.keys(CHORD_QUALITIES) as ChordQuality[]).map(q => (
             <button
               key={q}
               onClick={() => setQuality(q)}
               className={cn(
-                'px-2.5 py-1.5 text-xs font-medium rounded-lg border transition-all',
+                'px-3 py-1.5 text-[11px] font-bold rounded-lg border transition-all',
                 quality === q
-                  ? 'border-transparent font-bold'
-                  : 'bg-white text-gray-500 border-gray-200 hover:border-gray-300'
+                  ? 'border-transparent shadow-sm'
+                  : 'bg-white text-muted-foreground border-border/50 hover:border-brand-red'
               )}
               style={quality === q ? { backgroundColor: QUALITY_COLORS[q].bg, color: QUALITY_COLORS[q].text } : {}}
             >
@@ -160,10 +160,10 @@ export function ChordBuilder() {
           <span className="text-3xl font-bold" style={{ color: colors.text }}>
             {chordInfo.notes[0]}
           </span>
-          <span className="text-sm font-semibold text-gray-600">
+          <span className="text-sm font-semibold text-muted-foreground">
             {CHORD_QUALITIES[quality]}
           </span>
-          <span className="text-xs text-gray-400 font-mono">{chordInfo.symbol}</span>
+          <span className="text-xs text-muted-foreground font-mono">{chordInfo.symbol}</span>
         </div>
 
         {/* Chord tones breakdown */}
@@ -171,14 +171,18 @@ export function ChordBuilder() {
           {chordInfo.tones.map((tone, i) => (
             <div
               key={i}
-              className="flex flex-col items-center rounded-xl py-3 px-2"
-              style={{ backgroundColor: i === 0 ? colors.bg : '#f9fafb', border: `1.5px solid ${i === 0 ? colors.bg : 'var(--color-gray-200)'}` }}
+              className="flex flex-col items-center rounded-xl py-3 px-2 border transition-all"
+              style={{ 
+                backgroundColor: i === 0 ? colors.bg : 'white', 
+                borderColor: i === 0 ? colors.border : 'hsl(var(--border))',
+                boxShadow: i === 0 ? '0 4px 12px -2px rgba(0,0,0,0.1)' : 'none'
+              }}
             >
-              <div className="text-[9px] font-medium text-gray-400 mb-1">{tone.degree}</div>
-              <div className="text-xl font-bold" style={{ color: i === 0 ? colors.text : '#1f2937' }}>
+              <div className="text-[9px] font-bold text-muted-foreground mb-1 uppercase tracking-tighter">{tone.degree}</div>
+              <div className="text-xl font-black" style={{ color: i === 0 ? colors.text : 'hsl(var(--foreground))' }}>
                 {tone.note}
               </div>
-              <div className="text-[9px] text-gray-400 mt-0.5 font-mono">{tone.interval}</div>
+              <div className="text-[9px] text-muted-foreground mt-0.5 font-bold">{tone.interval}</div>
             </div>
           ))}
         </div>
@@ -192,8 +196,8 @@ export function ChordBuilder() {
       </div>
 
       {/* Formula */}
-      <div className="text-xs text-gray-400 bg-gray-50 rounded-lg px-3 py-2">
-        <strong className="text-gray-600">Formel:</strong>{' '}
+      <div className="text-xs text-muted-foreground bg-muted/40 rounded-lg px-3 py-2">
+        <strong className="text-foreground">Formel:</strong>{' '}
         {chordInfo.tones.map(t => `+${t.semitones} HT`).join(' · ')}
       </div>
     </div>

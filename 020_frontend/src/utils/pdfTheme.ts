@@ -5,28 +5,28 @@
 
 // ─── Brand colours ────────────────────────────────────────────────────────────
 export const BRAND = {
-    primary: 'var(--color-brand-primary/50)',
-    accent: '#1c471eff',
-    altRow: '#f0f5fb',
-    border: '#d1dce8',
-    textDark: '#1e293b',
-    textMid: '#475569',
-    textLight: '#94a3b8',
-    green: '#16a34a',
-    amber: '#d97706',
-    red: '#dc2626',
+    primary:   '#E60004',   // Signal-Rot  – Dokumenttitel, Tabellenkopf-Hintergrund
+    accent:    '#2D2A27',   // Warmes Dunkelgrau – Abschnittstitel (guter Kontrast auf Weiss)
+    altRow:    '#FDF8F2',   // Warmes Creme – alternierende Tabellenzeilen
+    border:    '#E0DAD3',   // Warmes Hellgrau – Tabellenlinien
+    textDark:  '#1A1A1B',   // Anthrazit – Fliesstext
+    textMid:   '#5A5856',   // Mittleres Warmgrau – Untertitel
+    textLight: '#9A9694',   // Helles Warmgrau – Footer / Metadaten
+    green:     '#16a34a',
+    amber:     '#d97706',
+    red:       '#dc2626',
 } as const;
 
 // RGB tuples for jsPDF (autotable expects number arrays)
 export const BRAND_RGB = {
-    primary: [30, 58, 95] as [number, number, number],
-    accent: [37, 99, 235] as [number, number, number],
-    altRow: [240, 245, 251] as [number, number, number],
-    border: [209, 220, 232] as [number, number, number],
-    textDark: [30, 41, 59] as [number, number, number],
-    textMid: [71, 85, 105] as [number, number, number],
-    textLight: [148, 163, 184] as [number, number, number],
-    white: [255, 255, 255] as [number, number, number],
+    primary:   [230, 0, 4]     as [number, number, number],  // #E60004 Signal-Rot
+    accent:    [45, 42, 39]    as [number, number, number],  // #2D2A27 Warmes Dunkelgrau
+    altRow:    [253, 248, 242] as [number, number, number],  // #FDF8F2 Warmes Creme
+    border:    [224, 218, 211] as [number, number, number],  // #E0DAD3 Warmes Hellgrau
+    textDark:  [26, 26, 27]    as [number, number, number],  // #1A1A1B Anthrazit
+    textMid:   [90, 88, 86]    as [number, number, number],  // #5A5856 Mittleres Warmgrau
+    textLight: [154, 150, 148] as [number, number, number],  // #9A9694 Helles Warmgrau
+    white:     [255, 255, 255] as [number, number, number],
 } as const;
 
 // ─── PDF options (4 checkboxes) ───────────────────────────────────────────────

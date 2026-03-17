@@ -166,7 +166,7 @@ export function FilePreviewDialog({
                 {/* Left: File Info */}
                 <div className="flex items-center gap-3 overflow-hidden">
                     <div className="p-2 rounded-lg bg-white/10 hidden sm:block">
-                        <FileIcon className="w-5 h-5 text-blue-400" />
+                        <FileIcon className="w-5 h-5 text-white/60" />
                     </div>
                     <div className="flex flex-col min-w-0">
                         <span className="font-medium text-sm truncate max-w-[200px] sm:max-w-md lg:max-w-xl" title={currentFile.originalName}>
@@ -269,8 +269,8 @@ export function FilePreviewDialog({
                     </div>
                 ) : !isPreviewable(currentFile.mimetype) ? (
                     <div className="max-w-md w-full p-8 rounded-2xl bg-zinc-900/50 backdrop-blur-md border border-white/10 flex flex-col items-center text-center gap-6">
-                        <div className="p-4 rounded-full bg-blue-500/10">
-                            <FileIcon className="w-10 h-10 text-blue-500" />
+                        <div className="p-4 rounded-full bg-primary/10">
+                            <FileIcon className="w-10 h-10 text-primary" />
                         </div>
                         <div className="space-y-2">
                             <h3 className="text-lg font-semibold text-white">Dateityp nicht unterstützt</h3>
@@ -301,7 +301,7 @@ export function FilePreviewDialog({
                         ) : isAudioFile(currentFile.mimetype) && fileUrl ? (
                             <div className="flex-1 w-full h-full flex flex-col items-center justify-center gap-6 p-8">
                                 <div className="p-6 rounded-full bg-white/10">
-                                    <Music className="w-16 h-16 text-blue-400" />
+                                    <Music className="w-16 h-16 text-brand-yellow" />
                                 </div>
                                 <span className="text-white text-sm font-medium max-w-md text-center truncate">
                                     {currentFile.originalName}

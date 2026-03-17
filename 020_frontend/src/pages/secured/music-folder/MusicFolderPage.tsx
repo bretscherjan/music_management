@@ -89,13 +89,13 @@ const FolderList = ({
                         className={cn(
                             "flex items-center gap-2 px-3 py-2 rounded-md text-sm transition-colors",
                             Number(currentId) === folder.id
-                                ? "bg-blue-100 text-blue-900 font-medium"
+                                ? "bg-primary/10 text-primary font-medium"
                                 : "hover:bg-gray-100 text-gray-700"
                         )}
                     >
                         <Folder className={cn(
                             "h-4 w-4 flex-shrink-0",
-                            Number(currentId) === folder.id ? "fill-blue-400" : "text-gray-400"
+                            Number(currentId) === folder.id ? "text-primary" : "text-gray-400"
                         )} />
                         <span className="truncate">{folder.name}</span>
                         {folder._count?.items ? (

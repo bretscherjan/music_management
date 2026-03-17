@@ -74,10 +74,10 @@ const TIME_SIGNATURES: TimeSigDef[] = [
 
 const CATEGORIES: Category[] = ['Einfach', 'Zusammengesetzt', 'Asymmetrisch', 'Sonderform'];
 const CATEGORY_COLORS: Record<Category, string> = {
-  'Einfach':           'var(--color-brand-primary)',
-  'Zusammengesetzt':   'var(--color-blue-900)',
-  'Asymmetrisch':      'var(--color-orange-800)',
-  'Sonderform':        'var(--color-purple-900)',
+  'Einfach':           'hsl(var(--brand-red))',
+  'Zusammengesetzt':   'hsl(var(--brand-red))',
+  'Asymmetrisch':      'hsl(var(--brand-yellow))',
+  'Sonderform':        'hsl(var(--foreground))',
 };
 
 // ── Beat Visualizer (animated) ───────────────────────────────────────────────
@@ -105,7 +105,7 @@ function BeatVisualizer({ groups, activeBeat, denominator, color = 'var(--color-
           <div key={i} className="flex flex-col items-center gap-0.5">
             {/* Accent marker */}
             {s.isAccent && (
-              <div className="text-[9px] text-gray-400 font-bold leading-none">›</div>
+              <div className="text-[9px] text-muted-foreground font-bold leading-none">›</div>
             )}
             {/* Beat dot */}
             <motion.div
@@ -118,18 +118,18 @@ function BeatVisualizer({ groups, activeBeat, denominator, color = 'var(--color-
               style={{
                 width: s.isAccent ? 20 : 14,
                 height: s.isAccent ? 20 : 14,
-                background: isActive ? color : s.isAccent ? `${color}80` : '#d1d5db',
-                boxShadow: isActive ? `0 0 8px ${color}60` : 'none',
+                background: isActive ? color : s.isAccent ? `${color}40` : 'hsl(var(--muted))',
+                boxShadow: isActive ? `0 0 12px ${color}` : 'none',
               }}
             />
             {/* Beat number */}
-            <div className="text-[9px] text-gray-400 leading-none">{i + 1}</div>
+            <div className="text-[9px] text-muted-foreground leading-none">{i + 1}</div>
           </div>
         );
       })}
 
       {/* Note value legend */}
-      <div className="ml-2 text-[10px] text-gray-400 self-end pb-4">
+      <div className="ml-2 text-[10px] text-muted-foreground self-end pb-4">
         ♩ = {denominator === 4 ? '¼' : denominator === 8 ? '⅛' : '½'}
       </div>
     </div>
@@ -141,10 +141,10 @@ function BeatVisualizer({ groups, activeBeat, denominator, color = 'var(--color-
 function ConductPattern({ pattern }: { pattern: string }) {
   const steps = pattern.split(' ');
   return (
-    <div className="flex items-center gap-1 text-sm font-mono text-gray-600 bg-gray-100 rounded-lg px-3 py-1.5">
-      <span className="text-[10px] text-gray-400 mr-1">Dirigiermuster:</span>
+    <div className="flex items-center gap-1 text-sm font-mono text-foreground bg-muted/20 rounded-lg px-3 py-1.5">
+      <span className="text-[10px] text-muted-foreground mr-1">Dirigiermuster:</span>
       {steps.map((s, i) => (
-        <span key={i} className="text-brand-primary font-bold">{s}</span>
+        <span key={i} className="text-primary font-bold">{s}</span>
       ))}
     </div>
   );
@@ -264,7 +264,7 @@ export function TimeSignatureEngine({ onSendToMetronome }: Props) {
 
   return (
     <div className="flex flex-col gap-5">
-      <p className="text-xs text-gray-500">
+      <p className="text-xs text-muted-foreground">
         Taktarten analysieren, Betonungsmuster verstehen, animiert dirigieren.
       </p>
 
@@ -275,12 +275,12 @@ export function TimeSignatureEngine({ onSendToMetronome }: Props) {
             key={cat}
             onClick={() => setActiveCategory(cat)}
             className={cn(
-              'px-2.5 py-1 rounded-full text-xs font-medium border transition-all',
+              'px-3 py-1 rounded-full text-[11px] font-bold border transition-all',
               activeCategory === cat
                 ? 'text-white border-transparent'
-                : 'bg-white text-gray-500 border-gray-200 hover:border-gray-400'
+                : 'bg-white text-muted-foreground border-border/50 hover:border-brand-red hover:text-brand-red'
             )}
-            style={activeCategory === cat ? { background: cat === 'Alle' ? 'var(--color-brand-primary)' : CATEGORY_COLORS[cat as Category] } : {}}
+            style={activeCategory === cat ? { background: cat === 'Alle' ? 'hsl(var(--brand-red))' : CATEGORY_COLORS[cat as Category] } : {}}
           >
             {cat}
           </button>
@@ -295,11 +295,11 @@ export function TimeSignatureEngine({ onSendToMetronome }: Props) {
             onClick={() => selectTimeSig(ts)}
             className={cn(
               'px-3 py-1.5 rounded-lg text-sm font-semibold border transition-all',
-              selected.id === ts.id
-                ? 'text-white border-transparent shadow-sm'
-                : 'bg-white text-gray-600 border-gray-200 hover:border-gray-400'
-            )}
-            style={selected.id === ts.id ? { background: CATEGORY_COLORS[ts.category] } : {}}
+                selected.id === ts.id
+                  ? 'text-white border-transparent shadow-md'
+                  : 'bg-white text-muted-foreground border-border/50 hover:border-brand-red hover:text-brand-red'
+              )}
+              style={selected.id === ts.id ? { background: CATEGORY_COLORS[ts.category] } : {}}
           >
             {ts.label}
           </button>
@@ -313,10 +313,10 @@ export function TimeSignatureEngine({ onSendToMetronome }: Props) {
       >
         <div className="flex items-start justify-between">
           <div>
-            <div className="text-3xl font-bold font-mono leading-none">{selected.label}</div>
-            <div className="text-sm opacity-80 mt-1">{selected.description}</div>
+            <div className="text-4xl font-black font-mono leading-none tracking-tighter">{selected.label}</div>
+            <div className="text-xs font-bold opacity-80 mt-1 uppercase tracking-widest">{selected.description}</div>
           </div>
-          <div className="text-right text-xs opacity-70 space-y-0.5">
+          <div className="text-right text-[10px] font-bold opacity-70 space-y-0.5 uppercase tracking-wider">
             <div>Schlageinheit: {selected.beatUnit}</div>
             <div>Charakter: {selected.feel}</div>
             <div>Kategorie: {selected.category}</div>
@@ -339,7 +339,7 @@ export function TimeSignatureEngine({ onSendToMetronome }: Props) {
                   'px-3 py-1.5 rounded-lg text-xs font-medium border transition-all',
                   JSON.stringify(groups) === JSON.stringify(g)
                     ? 'text-white border-transparent'
-                    : 'bg-white text-gray-600 border-gray-200 hover:border-gray-400'
+                    : 'bg-card text-muted-foreground border-border/50 hover:border-primary/50'
                 )}
                 style={JSON.stringify(groups) === JSON.stringify(g) ? { background: categoryColor } : {}}
               >
@@ -351,16 +351,16 @@ export function TimeSignatureEngine({ onSendToMetronome }: Props) {
       )}
 
       {/* Beat visualizer */}
-      <div className="bg-gray-50 rounded-xl border border-gray-100 p-4 flex flex-col gap-4">
+      <div className="bg-muted/30 rounded-xl border border-border/50 p-4 flex flex-col gap-4">
         <div className="flex items-center justify-between">
-          <div className="text-xs font-medium text-gray-600">Betonungsmuster ({groups.join('+')})</div>
+          <div className="text-xs font-medium text-muted-foreground">Betonungsmuster ({groups.join('+')})</div>
           <div className="flex items-center gap-2">
             <input
               type="range" min={40} max={240} value={bpm}
               onChange={e => setBpm(Number(e.target.value))}
-              className="w-24 accent-brand-primary/50 h-1.5"
+              className="w-24 accent-primary/50 h-1.5"
             />
-            <span className="text-xs font-mono text-gray-600 w-12">{bpm} BPM</span>
+            <span className="text-xs font-mono text-muted-foreground w-12">{bpm} BPM</span>
           </div>
         </div>
 
@@ -383,7 +383,7 @@ export function TimeSignatureEngine({ onSendToMetronome }: Props) {
           {onSendToMetronome && (
             <button
               onClick={() => onSendToMetronome(selected.id)}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium border border-gray-200 bg-white text-gray-600 hover:border-brand-primary/50 transition-all"
+              className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium border border-border/50 bg-card text-muted-foreground hover:border-primary/50 transition-all"
             >
               🎵 Im Metronom öffnen
             </button>
@@ -392,35 +392,35 @@ export function TimeSignatureEngine({ onSendToMetronome }: Props) {
       </div>
 
       {/* Static reference table */}
-      <details className="bg-gray-50 rounded-xl border border-gray-100">
-        <summary className="px-4 py-3 text-xs font-semibold text-gray-600 cursor-pointer select-none flex items-center gap-2">
+      <details className="bg-muted/30 rounded-xl border border-border/50">
+        <summary className="px-4 py-3 text-xs font-semibold text-foreground cursor-pointer select-none flex items-center gap-2">
           <ChevronDown className="h-3.5 w-3.5" />
           Vollständige Taktarten-Referenztabelle
         </summary>
         <div className="px-4 pb-4 overflow-x-auto">
           <table className="text-xs w-full mt-2">
             <thead>
-              <tr className="border-b border-gray-200">
-                <th className="text-left py-1.5 pr-3 text-gray-500 font-medium">Takt</th>
-                <th className="text-left py-1.5 pr-3 text-gray-500 font-medium">Kategorie</th>
-                <th className="text-left py-1.5 pr-3 text-gray-500 font-medium">Gruppierung</th>
-                <th className="text-left py-1.5 pr-3 text-gray-500 font-medium">Dirigier-Schlag</th>
-                <th className="text-left py-1.5 text-gray-500 font-medium">Charakter / Anwendung</th>
+              <tr className="border-b border-border/50">
+                <th className="text-left py-1.5 pr-3 text-muted-foreground font-medium">Takt</th>
+                <th className="text-left py-1.5 pr-3 text-muted-foreground font-medium">Kategorie</th>
+                <th className="text-left py-1.5 pr-3 text-muted-foreground font-medium">Gruppierung</th>
+                <th className="text-left py-1.5 pr-3 text-muted-foreground font-medium">Dirigier-Schlag</th>
+                <th className="text-left py-1.5 text-muted-foreground font-medium">Charakter / Anwendung</th>
               </tr>
             </thead>
-            <tbody className="text-gray-700">
+            <tbody className="text-foreground">
               {TIME_SIGNATURES.map(ts => (
                 <tr
                   key={ts.id}
-                  className="border-b border-gray-100 hover:bg-gray-100/50 transition-colors cursor-pointer"
+                  className="border-b border-border/50 hover:bg-muted/50 transition-colors cursor-pointer"
                   onClick={() => selectTimeSig(ts)}
                 >
                   <td className="py-1.5 pr-3 font-bold font-mono"
                     style={{ color: CATEGORY_COLORS[ts.category] }}>{ts.label}</td>
                   <td className="py-1.5 pr-3">{ts.category}</td>
                   <td className="py-1.5 pr-3 font-mono">{ts.defaultGroups.join('+')}</td>
-                  <td className="py-1.5 pr-3 font-mono text-gray-500">{ts.dirPattern}</td>
-                  <td className="py-1.5 text-gray-500">{ts.description}</td>
+                  <td className="py-1.5 pr-3 font-mono text-muted-foreground">{ts.dirPattern}</td>
+                  <td className="py-1.5 text-muted-foreground">{ts.description}</td>
                 </tr>
               ))}
             </tbody>

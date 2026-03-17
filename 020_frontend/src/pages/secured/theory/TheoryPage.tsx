@@ -17,12 +17,24 @@ export function TheoryPage() {
     <div className="max-w-5xl mx-auto px-4 py-6 space-y-6">
 
       {/* ── Header ── */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Theorie-Engine</h1>
-          <p className="text-sm text-gray-500 mt-0.5">
-            Vom geschriebenen Ton zum klingenden — interaktiv berechnet.
-          </p>
+      <div className="relative overflow-hidden bg-white rounded-2xl border border-border/50 p-6 shadow-sm brand-glow">
+        <div className="absolute top-0 right-0 w-32 h-32 bg-brand-red/5 rounded-full -mr-16 -mt-16 blur-3xl" />
+        <div className="absolute bottom-0 left-0 w-24 h-24 bg-brand-yellow/5 rounded-full -ml-12 -mb-12 blur-2xl" />
+        
+        <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <div className="flex items-center gap-2">
+              <div className="w-1.5 h-6 bg-brand-red rounded-full shadow-[0_0_8px_rgba(230,0,4,0.3)]" />
+              <h1 className="text-xl font-extrabold text-brand-red tracking-tight">Theorie-Engine</h1>
+            </div>
+            <p className="text-xs font-medium text-muted-foreground mt-1 ml-3.5">
+              Vom geschriebenen Ton zum klingenden — interaktiv berechnet.
+            </p>
+          </div>
+          <div className="flex items-center gap-2 text-xs font-bold text-brand-red bg-brand-red/5 px-3 py-1.5 rounded-full border border-brand-red/10 hidden sm:flex">
+            <Music2 className="h-3.5 w-3.5" />
+            <span>Harmonielehre Interaktiv</span>
+          </div>
         </div>
       </div>
 
@@ -139,18 +151,21 @@ interface BentoCardProps {
 function BentoCard({ title, icon, children, className }: BentoCardProps) {
   return (
     <div className={cn(
-      'bg-white rounded-2xl border border-gray-100 shadow-sm p-5 flex flex-col gap-4',
+      'bg-white rounded-2xl border border-border/50 shadow-sm p-5 flex flex-col gap-4 hover-lift group relative overflow-hidden transition-all duration-300',
       className
     )}>
-      <div className="flex items-center gap-2 shrink-0">
+      {/* Subtle colorful corner accent */}
+      <div className="absolute top-0 right-0 w-20 h-20 bg-gradient-to-br from-brand-red/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+      
+      <div className="flex items-center gap-3 shrink-0 relative">
         {icon && (
-          <div className="p-1.5 rounded-lg bg-brand-primary/20 text-brand-primary">
+          <div className="p-2.5 rounded-xl bg-accent text-brand-red shadow-sm group-hover:scale-110 group-hover:bg-brand-red group-hover:text-white transition-all duration-300">
             {icon}
           </div>
         )}
-        <h2 className="font-semibold text-gray-800 text-sm">{title}</h2>
+        <h2 className="font-extrabold text-foreground text-sm tracking-tight group-hover:text-brand-red transition-colors">{title}</h2>
       </div>
-      <div className="flex-1 min-h-0">{children}</div>
+      <div className="flex-1 min-h-0 relative z-10">{children}</div>
     </div>
   );
 }

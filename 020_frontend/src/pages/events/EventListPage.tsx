@@ -178,7 +178,7 @@ function EventListItem({ event }: { event: Event }) {
                     <CardContent className="p-4 sm:p-6">
                         <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
                             {/* Date Badge */}
-                            <div className="flex-shrink-0 text-center bg-primary/20 rounded-lg p-2 w-16 flex flex-col items-center justify-center">
+                            <div className="flex-shrink-0 text-center bg-primary/80 rounded-lg p-2 w-16 flex flex-col items-center justify-center">
                                 <div className="text-xs text-secondary/80 uppercase font-semibold">
                                     {new Date(event.date).toLocaleDateString('de-CH', { weekday: 'short' })}
                                 </div>
@@ -225,20 +225,20 @@ function EventListItem({ event }: { event: Event }) {
 
                                     {/* Summary Badges */}
                                     <div className="flex gap-2 flex-wrap">
-                                        <Badge variant="success" className="gap-1">
-                                            <CheckCircle className="h-3 w-3" />
+                                        <Badge variant="success" className="gap-1 text-green-900/70">
+                                            <CheckCircle className="h-3 w-3 text-green-900/70" />
                                             {summary.yes}
                                         </Badge>
-                                        <Badge variant="destructive" className="gap-1">
-                                            <XCircle className="h-3 w-3" />
+                                        <Badge variant="destructive" className="gap-1 text-red-900/70">
+                                            <XCircle className="h-3 w-3 text-red-900/70" />
                                             {summary.no}
                                         </Badge>
-                                        <Badge variant="warning" className="gap-1">
-                                            <HelpCircle className="h-3 w-3" />
+                                        <Badge variant="warning" className="gap-1 text-yellow-900/70">
+                                            <HelpCircle className="h-3 w-3 text-yellow-900/70" />
                                             {summary.maybe}
                                         </Badge>
-                                        <Badge variant="outline" className="gap-1">
-                                            <Clock className="h-3 w-3" />
+                                        <Badge variant="outline" className="gap-1 text-black">
+                                            <Clock className="h-3 w-3 text-black" />
                                             {summary.pending ?? 0}
                                         </Badge>
                                     </div>

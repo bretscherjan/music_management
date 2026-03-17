@@ -210,7 +210,7 @@ export function Metronome({ initialTimeSig }: Props) {
                     'px-2.5 py-1 rounded-lg text-xs font-semibold border transition-all',
                     timeSig.id === ts.id
                       ? 'text-white border-transparent shadow-sm'
-                      : 'bg-white text-gray-600 border-gray-200 hover:border-gray-300'
+                      : 'bg-card text-muted-foreground border-border/50 hover:border-border'
                   )}
                   style={timeSig.id === ts.id ? { background: CATEGORY_COLOR[cat] } : {}}
                 >
@@ -235,7 +235,7 @@ export function Metronome({ initialTimeSig }: Props) {
                   'px-2.5 py-1 rounded-lg text-xs font-mono border transition-all',
                   JSON.stringify(groups) === JSON.stringify(g)
                     ? 'text-white border-transparent'
-                    : 'bg-white text-gray-500 border-gray-200 hover:border-gray-400'
+                    : 'bg-card text-muted-foreground border-border/50 hover:border-muted-foreground'
                 )}
                 style={JSON.stringify(groups) === JSON.stringify(g) ? { background: activeCatColor } : {}}
               >
@@ -270,21 +270,21 @@ export function Metronome({ initialTimeSig }: Props) {
       {/* ── BPM Display ── */}
       <div className="flex flex-col items-center gap-1">
         <div className="text-7xl font-bold tracking-tighter" style={{ color: bpmColor }}>{bpm}</div>
-        <div className="text-sm text-gray-400 font-medium">BPM</div>
-        <div className="text-xs text-gray-400">{tempoLabel(bpm)}</div>
+        <div className="text-sm text-muted-foreground font-medium">BPM</div>
+        <div className="text-xs text-muted-foreground">{tempoLabel(bpm)}</div>
       </div>
 
       {/* ── BPM Slider ── */}
       <div className="flex items-center gap-3">
-        <button onClick={() => setBpm(b => Math.max(20, b - 1))} className="w-9 h-9 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold text-lg transition-colors flex items-center justify-center">−</button>
-        <input type="range" min={20} max={300} value={bpm} onChange={e => setBpm(Number(e.target.value))} className="flex-1 accent-brand-primary/50 h-2" />
-        <button onClick={() => setBpm(b => Math.min(300, b + 1))} className="w-9 h-9 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold text-lg transition-colors flex items-center justify-center">+</button>
+        <button onClick={() => setBpm(b => Math.max(20, b - 1))} className="w-9 h-9 rounded-full bg-muted hover:bg-muted/80 text-foreground font-bold text-lg transition-colors flex items-center justify-center">−</button>
+        <input type="range" min={20} max={300} value={bpm} onChange={e => setBpm(Number(e.target.value))} className="flex-1 accent-primary/50 h-2" />
+        <button onClick={() => setBpm(b => Math.min(300, b + 1))} className="w-9 h-9 rounded-full bg-muted hover:bg-muted/80 text-foreground font-bold text-lg transition-colors flex items-center justify-center">+</button>
       </div>
 
       {/* ── BPM Presets ── */}
       <div className="flex flex-wrap gap-2 justify-center">
         {[60, 72, 80, 90, 96, 100, 108, 120, 132, 144, 160].map(b => (
-          <button key={b} onClick={() => setBpm(b)} className={cn('px-2.5 py-1 rounded-md text-xs font-medium border transition-all', bpm === b ? 'bg-brand-primary/50 text-brand-primary border-brand-primary/20' : 'bg-white text-gray-500 border-gray-200 hover:border-brand-primary/50')}>{b}</button>
+          <button key={b} onClick={() => setBpm(b)} className={cn('px-2.5 py-1 rounded-md text-xs font-medium border transition-all', bpm === b ? 'bg-primary/50 text-primary border-primary/20' : 'bg-card text-muted-foreground border-border/50 hover:border-primary/50')}>{b}</button>
         ))}
       </div>
 
@@ -299,13 +299,13 @@ export function Metronome({ initialTimeSig }: Props) {
           {isPlaying ? <Square className="h-5 w-5 fill-current" /> : <Play className="h-5 w-5 fill-current" />}
           {isPlaying ? 'Stopp' : 'Start'}
         </Button>
-        <Button onClick={handleTap} variant="outline" size="lg" className="gap-2 px-6 border-brand-primary/50 text-brand-primary hover:bg-brand-primary/10 active:scale-95 transition-all select-none">
+        <Button onClick={handleTap} variant="outline" size="lg" className="gap-2 px-6 border-primary/50 text-primary hover:bg-primary/10 active:scale-95 transition-all select-none">
           <Music className="h-4 w-4" />
           Tap Tempo
         </Button>
       </div>
 
-      <p className="text-xs text-gray-400 text-center">
+      <p className="text-xs text-muted-foreground text-center">
         Tippe mehrfach auf "Tap Tempo" um das BPM automatisch zu berechnen.
       </p>
     </div>

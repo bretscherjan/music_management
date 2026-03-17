@@ -144,20 +144,20 @@ export function AttendanceSection({ eventId }: AttendanceSectionProps) {
 
                     {/* Summary Badges */}
                     <div className="flex gap-2 flex-wrap">
-                        <Badge variant="success" className="gap-1">
-                            <CheckCircle className="h-3 w-3" />
+                        <Badge variant="success" className="gap-1 text-green-900/70">
+                            <CheckCircle className="h-3 w-3 text-green-900/70" />
                             {summary.yes}
                         </Badge>
-                        <Badge variant="destructive" className="gap-1">
-                            <XCircle className="h-3 w-3" />
+                        <Badge variant="destructive" className="gap-1 text-red-900/70">
+                            <XCircle className="h-3 w-3 text-red-900/70" />
                             {summary.no}
                         </Badge>
-                        <Badge variant="warning" className="gap-1">
-                            <HelpCircle className="h-3 w-3" />
+                        <Badge variant="warning" className="gap-1 text-yellow-900/70">
+                            <HelpCircle className="h-3 w-3 text-yellow-900/70" />
                             {summary.maybe}
                         </Badge>
-                        <Badge variant="outline" className="gap-1">
-                            <Clock className="h-3 w-3" />
+                        <Badge variant="outline" className="gap-1 text-black">
+                            <Clock className="h-3 w-3 text-black" />
                             {summary.pending ?? 0}
                         </Badge>
                     </div>
@@ -172,7 +172,7 @@ export function AttendanceSection({ eventId }: AttendanceSectionProps) {
                     </Alert>
                 )}
                 {/* My Attendance */}
-                <div className="p-4 rounded-lg bg-primary/5 border border-primary/20 space-y-4">
+                <div className="p-4 rounded-lg bg-gray-100 border border-primary/20 space-y-4">
                     <div>
                         <h4 className="font-medium mb-3 flex items-center justify-between">
                             Meine Zusage
@@ -363,7 +363,7 @@ function AttendanceRow({ attendance, isAdmin, onStatusChange, onCommentChange, d
                             disabled={disabled}
                             title="Kommentar bearbeiten"
                         >
-                            <Edit2 className="h-4 w-4 text-blue-600" />
+                            <Edit2 className="h-4 w-4 text-muted-foreground" />
                         </Button>
                     </div>
                 )}

@@ -19,14 +19,14 @@ export function Navbar() {
     const closeMenu = () => setIsMobileMenuOpen(false);
 
     return (
-        <header className="bg-white border-b border-[hsl(var(--border))] sticky top-0 z-50 shadow-sm">
+        <header className="bg-background border-b border-border sticky top-0 z-50 shadow-sm">
             <div className="container-app">
                 <div className="flex items-center justify-between h-20">
                     {/* Logo */}
                     <Link to="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity" onClick={closeMenu}>
-                        <img src="/public/musig.png" alt="Musig Elgg Logo" className="h-14 w-auto" />
+                        <img src="/musig.png" alt="Musig Elgg Logo" className="h-14 w-auto" />
                         <div className="flex flex-col">
-                            <span className="text-2xl font-bold text-foreground">Elgg</span>
+                            <span className="text-2xl font-bold text-foreground tracking-tight">Elgg</span>
                         </div>
                     </Link>
 
@@ -90,7 +90,7 @@ export function Navbar() {
 
                     {/* Mobile Menu Button */}
                     <button
-                        className="md:hidden p-2 text-brand-primary hover:bg-[hsl(var(--muted))] rounded-md transition-colors"
+                        className="md:hidden p-2 text-brand-primary hover:bg-muted rounded-xl transition-colors"
                         onClick={toggleMenu}
                         aria-label="Menu"
                     >
@@ -105,7 +105,7 @@ export function Navbar() {
 
             {/* Mobile Navigation Dropdown */}
             {isMobileMenuOpen && (
-                <div className="md:hidden border-t border-[hsl(var(--border))] bg-white absolute w-full left-0 shadow-lg animate-in slide-in-from-top-2 duration-200">
+                <div className="md:hidden border-t border-border bg-background absolute w-full left-0 shadow-lg animate-in slide-in-from-top-2 duration-200">
                     <div className="container-app py-4 flex flex-col gap-2">
                         <Link
                             to="/"

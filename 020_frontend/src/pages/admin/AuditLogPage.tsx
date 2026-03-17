@@ -63,7 +63,7 @@ const AuditLogPage: React.FC = () => {
     return (
         <div className="container mx-auto px-4 py-8">
             <div className="flex items-center mb-6">
-                <History className="w-8 h-8 text-blue-600 mr-3" />
+                <History className="w-8 h-8 text-primary mr-3" />
                 <h1 className="text-2xl font-bold text-gray-800">Audit Log</h1>
             </div>
 
@@ -75,7 +75,7 @@ const AuditLogPage: React.FC = () => {
                         <input
                             type="text"
                             placeholder="Suche nach ID..."
-                            className="pl-10 pr-4 py-2 w-full border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                            className="pl-10 pr-4 py-2 w-full border rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
                         />
@@ -149,7 +149,7 @@ const AuditLogPage: React.FC = () => {
                                             <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full 
                                                 ${log.action.includes('DELETE') ? 'bg-red-100 text-red-800' :
                                                     log.action.includes('CREATE') ? 'bg-success/10 text-brand-primary' :
-                                                        'bg-blue-100 text-blue-800'}`}>
+                                                        'bg-muted text-foreground/70'}`}>
                                                 {log.action}
                                             </span>
                                         </td>
@@ -162,7 +162,7 @@ const AuditLogPage: React.FC = () => {
                                         <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                             <button
                                                 onClick={() => setSelectedLog(log)}
-                                                className="text-blue-600 hover:text-blue-900 flex items-center justify-end w-full"
+                                                className="text-primary hover:text-primary/70 flex items-center justify-end w-full"
                                             >
                                                 <Eye className="w-4 h-4 mr-1" /> Anzeigen
                                             </button>

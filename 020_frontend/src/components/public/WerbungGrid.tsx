@@ -25,20 +25,22 @@ export function WerbungGrid() {
     if (promos.length === 0) return null;
 
     return (
-        <section className="py-20 bg-zinc-50/50">
+        <section className="py-24 bg-card">
             <div className="container-app">
-                <div className="text-center mb-12">
-                    <h2 className="text-3xl md:text-4xl font-bold text-brand-primary mb-4">
-                        Aktuelles
+                <div className="text-center mb-16 px-4">
+                    <h2 className="text-3xl md:text-5xl font-bold text-foreground mb-4">
+                        Aktuelles & Highlights
                     </h2>
-                    <div className="h-1 w-20 bg-brand-primary mx-auto rounded-full opacity-20" />
+                    <p className="text-muted-foreground max-w-2xl mx-auto text-lg">
+                        Bleiben Sie auf dem Laufenden mit unseren neuesten Flyern und Programmen.
+                    </p>
                 </div>
 
-                <div className="flex flex-wrap justify-center gap-8 max-w-6xl mx-auto px-4">
+                <div className="flex flex-wrap justify-center gap-10 max-w-6xl mx-auto px-4">
                     {promos.map((promo) => (
-                        <div key={promo.id} className="w-full md:max-w-[calc(50%-1rem)] lg:max-w-[calc(33.333%-1.5rem)] flex flex-col">
-                            <Card className="overflow-hidden border-2 border-primary/5 hover:border-primary/20 transition-all shadow-sm hover:shadow-xl group bg-white flex flex-col h-full">
-                                <div className="relative w-full aspect-[3/4] bg-zinc-100 overflow-hidden flex items-center justify-center">
+                        <div key={promo.id} className="w-full md:max-w-[calc(50%-1.25rem)] lg:max-w-[calc(33.333%-1.75rem)] flex flex-col">
+                            <Card className="overflow-hidden border-border/10 hover:border-brand-primary/20 transition-all shadow-sm hover:shadow-2xl group bg-background flex flex-col h-full rounded-3xl">
+                                <div className="relative w-full aspect-[3/4] bg-muted/30 overflow-hidden flex items-center justify-center">
                                     {promo.filename.toLowerCase().endsWith('.pdf') ? (
                                         <iframe
                                             src={`${getMediaUrl(`/uploads/cms/flyers/${promo.filename}`)}#toolbar=0`}
@@ -54,21 +56,21 @@ export function WerbungGrid() {
                                     )}
                                 </div>
 
-                                <CardContent className="p-6 w-full flex-grow flex flex-col text-left">
-                                    <h3 className="text-lg font-bold text-brand-primary mb-2 line-clamp-1">
+                                <CardContent className="p-8 w-full flex-grow flex flex-col text-center md:text-left">
+                                    <h3 className="text-xl font-bold text-foreground mb-3 group-hover:text-brand-primary transition-colors line-clamp-1">
                                         {promo.title}
                                     </h3>
                                     {promo.description && (
-                                        <p className="text-sm text-muted-foreground line-clamp-3 mb-4">
+                                        <p className="text-sm text-muted-foreground/80 line-clamp-3 mb-6 leading-relaxed">
                                             {promo.description}
                                         </p>
                                     )}
-                                    <div className="mt-auto pt-4 flex items-center gap-3">
+                                    <div className="mt-auto pt-6 flex items-center gap-3">
                                         <Button
                                             variant="secondary"
                                             size="sm"
                                             asChild
-                                            className="flex-1"
+                                            className="flex-1 rounded-xl bg-brand-primary/10 text-brand-primary hover:bg-brand-primary/20 border-none h-11"
                                         >
                                             <a href={getMediaUrl(`/uploads/cms/flyers/${promo.filename}`)} target="_blank" rel="noopener noreferrer">
                                                 <ExternalLink className="h-4 w-4 mr-2" /> Ansehen
@@ -78,7 +80,7 @@ export function WerbungGrid() {
                                             variant="outline"
                                             size="icon"
                                             asChild
-                                            className="shrink-0"
+                                            className="shrink-0 rounded-xl h-11 w-11 border-border/20"
                                         >
                                             <a href={getMediaUrl(`/uploads/cms/flyers/${promo.filename}`)} download={promo.filename}>
                                                 <Download className="h-4 w-4" />
@@ -89,9 +91,6 @@ export function WerbungGrid() {
                             </Card>
                         </div>
                     ))}
-
-                    {/* Centering spacer for grid if 1 or 2 items (using grid-cols-1 md:grid-cols-2 lg:grid-cols-3) */}
-                    {/* CSS handles the layout, but for exact centering we wrap with max-width and mx-auto */}
                 </div>
             </div>
         </section>

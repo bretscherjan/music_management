@@ -16,15 +16,15 @@ interface ClefDef {
 }
 
 const CLEFS: ClefDef[] = [
-  { id: 'treble', vexClef: 'treble', label: 'Violinschlüssel', instrument: 'Flöte, Klarinette, Trompete', octaveShift: 0, group: 'G-Schlüssel', color: 'var(--color-brand-primary)' },
-  { id: 'treble8vb', vexClef: 'treble', vexClefAnnotation: '8vb', label: 'Violin-8vb', instrument: 'Tenor (Gesang), Gitarre', octaveShift: -1, group: 'G-Schlüssel', color: '#6b7f2e' },
-  { id: 'bass', vexClef: 'bass', label: 'Bassschlüssel', instrument: 'Tuba, Posaune, E-Bass', octaveShift: 0, group: 'F-Schlüssel', color: 'var(--color-blue-900)' },
-  { id: 'baritone', vexClef: 'baritone-f', label: 'Baritonschlüssel', instrument: 'Historische Notation', octaveShift: 0, group: 'F-Schlüssel', color: '#2e5f7a' },
-  { id: 'subbass', vexClef: 'subbass', label: 'Subbassschlüssel', instrument: 'Sehr tiefe Register', octaveShift: 0, group: 'F-Schlüssel', color: '#1a2f4a' },
-  { id: 'alto', vexClef: 'alto', label: 'Altschlüssel', instrument: 'Bratsche, Altposaune', octaveShift: 0, group: 'C-Schlüssel', color: 'var(--color-orange-800)' },
-  { id: 'tenor', vexClef: 'tenor', label: 'Tenorschlüssel', instrument: 'Cello, Fagott, Tenorposaune', octaveShift: 0, group: 'C-Schlüssel', color: '#9a5a2e' },
-  { id: 'soprano', vexClef: 'soprano', label: 'Sopranschlüssel', instrument: 'Historischer Gesang', octaveShift: 0, group: 'C-Schlüssel', color: '#5a3a7a' },
-  { id: 'mezzo-soprano', vexClef: 'mezzo-soprano', label: 'Mezzosopranschlüssel', instrument: 'Transpositionshilfe', octaveShift: 0, group: 'C-Schlüssel', color: '#7a4a8a' },
+  { id: 'treble', vexClef: 'treble', label: 'Violinschlüssel', instrument: 'Flöte, Klarinette, Trompete', octaveShift: 0, group: 'G-Schlüssel', color: 'hsl(var(--brand-red))' },
+  { id: 'treble8vb', vexClef: 'treble', vexClefAnnotation: '8vb', label: 'Violin-8vb', instrument: 'Tenor (Gesang), Gitarre', octaveShift: -1, group: 'G-Schlüssel', color: 'hsl(var(--foreground))' },
+  { id: 'bass', vexClef: 'bass', label: 'Bassschlüssel', instrument: 'Tuba, Posaune, E-Bass', octaveShift: 0, group: 'F-Schlüssel', color: 'hsl(var(--brand-red))' },
+  { id: 'baritone', vexClef: 'baritone-f', label: 'Baritonschlüssel', instrument: 'Historische Notation', octaveShift: 0, group: 'F-Schlüssel', color: 'var(--color-indigo-700)' },
+  { id: 'subbass', vexClef: 'subbass', label: 'Subbassschlüssel', instrument: 'Sehr tiefe Register', octaveShift: 0, group: 'F-Schlüssel', color: 'var(--color-slate-700)' },
+  { id: 'alto', vexClef: 'alto', label: 'Altschlüssel', instrument: 'Bratsche, Altposaune', octaveShift: 0, group: 'C-Schlüssel', color: 'var(--color-orange-700)' },
+  { id: 'tenor', vexClef: 'tenor', label: 'Tenorschlüssel', instrument: 'Cello, Fagott, Tenorposaune', octaveShift: 0, group: 'C-Schlüssel', color: 'var(--color-amber-700)' },
+  { id: 'soprano', vexClef: 'soprano', label: 'Sopranschlüssel', instrument: 'Historischer Gesang', octaveShift: 0, group: 'C-Schlüssel', color: 'var(--color-purple-700)' },
+  { id: 'mezzo-soprano', vexClef: 'mezzo-soprano', label: 'Mezzosopranschlüssel', instrument: 'Transpositionshilfe', octaveShift: 0, group: 'C-Schlüssel', color: 'var(--color-pink-700)' },
 ];
 
 const VEX_NOTE_NAMES = ['c', 'c#', 'd', 'eb', 'e', 'f', 'f#', 'g', 'ab', 'a', 'bb', 'b'];
@@ -132,7 +132,7 @@ function ClefStaff({ clefDef, noteIndex, octave }: StaffProps) {
         svgEl.style.display = 'block';
       }
     } catch {
-      el.innerHTML = `<div class="text-xs text-gray-400 py-6 text-center">– (Note außerhalb des Bereichs) –</div>`;
+      el.innerHTML = `<div class="text-xs text-muted-foreground py-6 text-center">– (Note außerhalb des Bereichs) –</div>`;
     }
   }, [clefDef, noteIndex, octave]);
 
@@ -164,14 +164,14 @@ export function ClefMapper() {
 
   return (
     <div className="flex flex-col gap-5">
-      <p className="text-xs text-gray-500">
+      <p className="text-xs text-muted-foreground">
         Wähle eine Note – sieh, wo sie in jedem Notenschlüssel auf dem Notensystem liegt.
       </p>
 
       {/* Note + Octave picker */}
       <div className="flex flex-wrap gap-3 items-end">
         <div className="flex flex-col gap-1.5">
-          <label className="text-xs font-medium text-gray-600">Note</label>
+          <label className="text-xs font-medium text-muted-foreground">Note</label>
           <div className="flex flex-wrap gap-1">
             {NOTE_LABELS.map((n, i) => (
               <button
@@ -179,16 +179,16 @@ export function ClefMapper() {
                 onClick={() => setNoteIndex(i)}
                 className={cn(
                   'w-9 h-8 rounded-md text-sm font-medium border transition-all',
-                  noteIndex === i
-                    ? 'bg-brand-primary/50 text-brand-primary border-brand-primary/30 font-bold'
-                    : 'bg-white text-gray-600 border-gray-200 hover:border-brand-primary/50'
+                noteIndex === i
+                    ? 'bg-brand-red text-white border-brand-red shadow-sm'
+                    : 'bg-white text-muted-foreground border-border/50 hover:border-brand-red hover:text-brand-red'
                 )}
               >{n}</button>
             ))}
           </div>
         </div>
         <div className="flex flex-col gap-1.5">
-          <label className="text-xs font-medium text-gray-600">Oktave</label>
+          <label className="text-xs font-medium text-muted-foreground">Oktave</label>
           <div className="flex gap-1">
             {OCTAVES.map(o => (
               <button
@@ -196,9 +196,9 @@ export function ClefMapper() {
                 onClick={() => setOctave(o)}
                 className={cn(
                   'w-9 h-8 rounded-md text-sm font-medium border transition-all',
-                  octave === o
-                    ? 'bg-brand-primary text-white border-brand-primary'
-                    : 'bg-white text-gray-600 border-gray-200 hover:border-brand-primary/50'
+                octave === o
+                    ? 'bg-brand-red text-white border-brand-red shadow-sm'
+                    : 'bg-white text-muted-foreground border-border/50 hover:border-brand-red hover:text-brand-red'
                 )}
               >{o}</button>
             ))}
@@ -213,20 +213,20 @@ export function ClefMapper() {
             key={g}
             onClick={() => toggleGroup(g)}
             className={cn(
-              'px-2.5 py-1 rounded-full text-xs font-medium border transition-all',
+              'px-3 py-1 rounded-full text-[11px] font-bold border transition-all',
               activeGroups.has(g)
-                ? 'bg-brand-primary/10 text-brand-primary border-brand-primary/20'
-                : 'bg-white text-gray-400 border-gray-200 hover:border-brand-primary/50'
+                ? 'bg-brand-red/10 text-brand-red border-brand-red/20 shadow-sm'
+                : 'bg-white text-muted-foreground border-border/50 hover:border-brand-red hover:text-brand-red'
             )}
           >{g}</button>
         ))}
       </div>
 
       {/* Selected note badge */}
-      <div className="inline-flex items-center gap-2 bg-brand-primary text-white rounded-xl px-4 py-2 self-start">
+      <div className="inline-flex items-center gap-2 bg-brand-red text-white rounded-xl px-4 py-2 self-start shadow-md border border-brand-red">
         <span className="text-xs opacity-70">Gewählte Note:</span>
         <span className="text-xl font-bold">
-          {noteName}<sub className="text-sm font-normal opacity-80">{octave}</sub>
+          {noteName}<sub className="text-sm font-black opacity-80">{octave}</sub>
         </span>
       </div>
 
@@ -235,12 +235,12 @@ export function ClefMapper() {
         {visibleClefs.map(clef => (
           <div
             key={clef.id}
-            className="bg-gray-50 rounded-xl border border-gray-100 p-3 flex flex-col gap-1 min-w-0"
+            className="bg-muted/30 rounded-xl border border-border/50 p-3 flex flex-col gap-1 min-w-0"
           >
             <div className="flex items-center gap-2 flex-wrap">
               <div className="w-2 h-2 rounded-full shrink-0" style={{ background: clef.color }} />
-              <span className="text-xs font-semibold text-gray-700">{clef.label}</span>
-              <span className="text-[10px] text-gray-400 ml-auto bg-gray-200 px-1.5 py-0.5 rounded-full">
+              <span className="text-xs font-semibold text-foreground">{clef.label}</span>
+              <span className="text-[10px] text-muted-foreground ml-auto bg-muted px-1.5 py-0.5 rounded-full">
                 {clef.group}
               </span>
             </div>
@@ -248,40 +248,40 @@ export function ClefMapper() {
             <div className="w-full min-w-0">
               <ClefStaff clefDef={clef} noteIndex={noteIndex} octave={octave} />
             </div>
-            <div className="text-[10px] text-gray-400">{clef.instrument}</div>
+            <div className="text-[10px] text-muted-foreground">{clef.instrument}</div>
           </div>
         ))}
       </div>
 
 
       {/* Static clef reference */}
-      <details className="bg-gray-50 rounded-xl border border-gray-100">
-        <summary className="px-4 py-3 text-xs font-semibold text-gray-600 cursor-pointer select-none">
+      <details className="bg-muted/30 rounded-xl border border-border/50 shadow-sm">
+        <summary className="px-4 py-3 text-xs font-semibold text-foreground cursor-pointer select-none">
           Alle Schlüssel – Kurzreferenz
         </summary>
         {/* ── Cross-clef comparison table ── */}
-        <div className="bg-gray-50 rounded-xl border border-gray-100 overflow-hidden">
-          <div className="px-4 py-3 border-b border-gray-200 flex items-center gap-2">
-            <span className="text-xs font-semibold text-gray-700">Schlüssel-Vergleich</span>
-            <span className="text-[10px] text-gray-400">
+        <div className="overflow-hidden">
+          <div className="px-4 py-3 border-b border-border/50 flex items-center gap-2">
+            <span className="text-xs font-semibold text-foreground">Schlüssel-Vergleich</span>
+            <span className="text-[10px] text-muted-foreground">
               Wo liegt dieselbe Note in jedem Schlüssel?
             </span>
           </div>
           <div className="overflow-x-auto">
             <table className="text-xs w-full">
               <thead>
-                <tr className="border-b transition-colors hover:bg-muted/50 even:bg-muted/30">
-                  <th className="text-left px-3 py-2 font-medium text-gray-500 whitespace-nowrap">Note</th>
-                  <th className="text-left px-3 py-2 font-medium whitespace-nowrap" style={{ color: 'var(--color-brand-primary)' }}>
+                <tr className="border-b border-border/50">
+                  <th className="text-left px-3 py-2 font-medium text-muted-foreground whitespace-nowrap">Note</th>
+                  <th className="text-left px-3 py-2 font-medium whitespace-nowrap" style={{ color: 'var(--color-primary)' }}>
                     Violine (G)
                   </th>
-                  <th className="text-left px-3 py-2 font-medium whitespace-nowrap" style={{ color: 'var(--color-blue-900)' }}>
+                  <th className="text-left px-3 py-2 font-medium whitespace-nowrap" style={{ color: 'var(--color-blue-700)' }}>
                     Bass (F)
                   </th>
-                  <th className="text-left px-3 py-2 font-medium whitespace-nowrap" style={{ color: 'var(--color-orange-800)' }}>
+                  <th className="text-left px-3 py-2 font-medium whitespace-nowrap" style={{ color: 'var(--color-orange-700)' }}>
                     Alt (C/3)
                   </th>
-                  <th className="text-left px-3 py-2 font-medium whitespace-nowrap" style={{ color: '#9a5a2e' }}>
+                  <th className="text-left px-3 py-2 font-medium whitespace-nowrap" style={{ color: 'var(--color-amber-700)' }}>
                     Tenor (C/4)
                   </th>
                 </tr>
@@ -294,9 +294,9 @@ export function ClefMapper() {
                     <tr
                       key={n}
                       className={cn(
-                        'border-b border-gray-100 transition-colors',
-                        isSelected ? 'bg-brand-primary/20' : isC ? 'bg-white' : 'bg-gray-50/50',
-                        'hover:bg-brand-primary/10 cursor-pointer'
+                        'border-b border-border/50 transition-colors',
+                        isSelected ? 'bg-primary/20' : isC ? 'bg-card' : 'bg-muted/20',
+                        'hover:bg-primary/10 cursor-pointer'
                       )}
                       onClick={() => {
                         const match = n.match(/^([A-G]b?)(\d)$/);
@@ -308,19 +308,19 @@ export function ClefMapper() {
                     >
                       <td className="px-3 py-1.5 font-bold font-mono">
                         {n}
-                        {isSelected && <span className="ml-1 text-brand-primary">◀</span>}
+                        {isSelected && <span className="ml-1 text-primary">◀</span>}
                       </td>
-                      <td className="px-3 py-1.5 text-gray-600">{CLEF_POSITIONS.violin[n] ?? '—'}</td>
-                      <td className="px-3 py-1.5 text-gray-600">{CLEF_POSITIONS.bass[n] ?? '—'}</td>
-                      <td className="px-3 py-1.5 text-gray-600">{CLEF_POSITIONS.alto[n] ?? '—'}</td>
-                      <td className="px-3 py-1.5 text-gray-600">{CLEF_POSITIONS.tenor[n] ?? '—'}</td>
+                      <td className="px-3 py-1.5 text-muted-foreground">{CLEF_POSITIONS.violin[n] ?? '—'}</td>
+                      <td className="px-3 py-1.5 text-muted-foreground">{CLEF_POSITIONS.bass[n] ?? '—'}</td>
+                      <td className="px-3 py-1.5 text-muted-foreground">{CLEF_POSITIONS.alto[n] ?? '—'}</td>
+                      <td className="px-3 py-1.5 text-muted-foreground">{CLEF_POSITIONS.tenor[n] ?? '—'}</td>
                     </tr>
                   );
                 })}
               </tbody>
             </table>
           </div>
-          <div className="px-4 py-2 text-[10px] text-gray-400">
+          <div className="px-4 py-2 text-[10px] text-muted-foreground">
             HL = Hilfslinie · R. = Raum · Klick auf Zeile → Note auswählen
           </div>
         </div>

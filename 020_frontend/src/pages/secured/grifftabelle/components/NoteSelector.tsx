@@ -49,11 +49,11 @@ export function NoteSelector({ notes, selected, onChange, clef = 'treble' }: Not
       } else if (note.includes('b')) {
         sn.addModifier(new Accidental('b'));
       }
-      // Colour: selected = brand dark green, others = light gray
+      // Colour: selected = brand color, others = muted foreground
       if (note === selected) {
-        sn.setStyle({ fillStyle: 'var(--color-brand-primary)', strokeStyle: 'var(--color-brand-primary)' });
+        sn.setStyle({ fillStyle: 'var(--color-primary)', strokeStyle: 'var(--color-primary)' });
       } else {
-        sn.setStyle({ fillStyle: 'var(--color-gray-400)', strokeStyle: 'var(--color-gray-400)' });
+        sn.setStyle({ fillStyle: 'var(--color-muted-foreground)', strokeStyle: 'var(--color-muted-foreground)' });
       }
       return { note, sn };
     });
@@ -104,7 +104,7 @@ export function NoteSelector({ notes, selected, onChange, clef = 'treble' }: Not
   if (notes.length === 0) return null;
 
   return (
-    <div ref={scrollRef} className="overflow-x-auto rounded-lg border border-gray-100 bg-white">
+    <div ref={scrollRef} className="overflow-x-auto rounded-lg border border-border/50 bg-card">
       <div
         ref={containerRef}
         onClick={handleClick}
@@ -112,8 +112,8 @@ export function NoteSelector({ notes, selected, onChange, clef = 'treble' }: Not
         title="Ton durch Klicken auf die Note auswählen"
       />
       {selected && (
-        <p className="text-center text-xs text-gray-500 pb-2">
-          Ausgewählt: <span className="font-semibold text-brand-primary">{selected}</span>
+        <p className="text-center text-xs text-muted-foreground pb-2">
+          Ausgewählt: <span className="font-semibold text-primary">{selected}</span>
         </p>
       )}
     </div>

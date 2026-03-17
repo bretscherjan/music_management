@@ -11,7 +11,7 @@ interface FingeringDisplayProps {
 
 function KeyBadge({ keyCode }: { keyCode: string }) {
   return (
-    <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-brand-primary/30 text-brand-primary text-xs font-medium border border-brand-primary/50">
+    <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-primary/20 text-primary text-xs font-medium border border-primary/30">
       {labelKey(keyCode)}
     </span>
   );
@@ -19,7 +19,7 @@ function KeyBadge({ keyCode }: { keyCode: string }) {
 
 function FingeringList({ keys }: { keys: string[] }) {
   if (keys.length === 0) {
-    return <p className="text-sm text-gray-400 italic">Alle Löcher offen</p>;
+    return <p className="text-sm text-muted-foreground italic">Alle Löcher offen</p>;
   }
   return (
     <div className="flex flex-wrap gap-1.5">
@@ -36,7 +36,7 @@ export function FingeringDisplay({ fingering, note }: FingeringDisplayProps) {
 
   if (!note) {
     return (
-      <div className="flex flex-col items-center justify-center h-32 text-gray-400 text-sm gap-2">
+      <div className="flex flex-col items-center justify-center h-32 text-muted-foreground text-sm gap-2">
         <Music className="h-8 w-8 opacity-30" />
         <span>Wähle einen Ton aus</span>
       </div>
@@ -45,7 +45,7 @@ export function FingeringDisplay({ fingering, note }: FingeringDisplayProps) {
 
   if (!fingering) {
     return (
-      <div className="flex flex-col items-center justify-center h-32 text-gray-400 text-sm gap-2">
+      <div className="flex flex-col items-center justify-center h-32 text-muted-foreground text-sm gap-2">
         <Music className="h-8 w-8 opacity-30" />
         <span>Kein Griff für {note} gefunden</span>
       </div>
@@ -56,7 +56,7 @@ export function FingeringDisplay({ fingering, note }: FingeringDisplayProps) {
     <div className="space-y-4">
       {/* Standard fingering */}
       <div>
-        <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
+        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1.5">
           Standardgriff
         </p>
         <FingeringList keys={fingering.standard} />
@@ -67,7 +67,7 @@ export function FingeringDisplay({ fingering, note }: FingeringDisplayProps) {
         <div>
           <button
             onClick={() => setShowAlts(v => !v)}
-            className="flex items-center gap-1 text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5 hover:text-brand-primary transition-colors"
+            className="flex items-center gap-1 text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1.5 hover:text-primary transition-colors"
           >
             {showAlts ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
             Alternativen ({fingering.alternatives.length})
@@ -75,9 +75,9 @@ export function FingeringDisplay({ fingering, note }: FingeringDisplayProps) {
           {showAlts && (
             <div className="space-y-3">
               {fingering.alternatives.map((alt, i) => (
-                <div key={i} className="pl-3 border-l-2 border-brand-primary/50">
+                <div key={i} className="pl-3 border-l-2 border-primary/50">
                   {alt.description && (
-                    <p className="text-xs text-gray-500 mb-1">{alt.description}</p>
+                    <p className="text-xs text-muted-foreground mb-1">{alt.description}</p>
                   )}
                   <FingeringList keys={alt.fingering} />
                 </div>
@@ -94,7 +94,7 @@ export function FingeringDisplay({ fingering, note }: FingeringDisplayProps) {
             onClick={() => setShowTrils(v => !v)}
             className={cn(
               'flex items-center gap-1 text-xs font-semibold uppercase tracking-wide mb-1.5 transition-colors',
-              showTrils ? 'text-brand-primary' : 'text-gray-500 hover:text-brand-primary'
+              showTrils ? 'text-primary' : 'text-muted-foreground hover:text-primary'
             )}
           >
             {showTrils ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
@@ -104,8 +104,8 @@ export function FingeringDisplay({ fingering, note }: FingeringDisplayProps) {
             <div className="space-y-3">
               {fingering.trills.map((trill, i) => (
                 <div key={i} className="pl-3 border-l-2 border-amber-400">
-                  <p className="text-xs text-gray-500 mb-1">
-                    Triller → <span className="font-semibold text-gray-700">{trill.to}</span>
+                  <p className="text-xs text-muted-foreground mb-1">
+                    Triller → <span className="font-semibold text-foreground">{trill.to}</span>
                   </p>
                   <FingeringList keys={trill.fingering} />
                 </div>

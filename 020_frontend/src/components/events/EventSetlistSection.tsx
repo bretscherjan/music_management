@@ -570,7 +570,7 @@ function SetlistItem({ item, index, isAdmin, onEdit, onRemove }: SetlistItemProp
                 </>
             ) : (
                 <>
-                    <FileText className="h-5 w-5 text-blue-500 shrink-0" />
+                    <FileText className="h-5 w-5 text-primary shrink-0" />
                     <div className="flex-1 min-w-0">
                         <div className="font-medium truncate">{item.customTitle}</div>
                         {item.customDescription && (

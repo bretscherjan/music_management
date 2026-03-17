@@ -2,7 +2,6 @@ import { useEffect } from 'react';
 import { Outlet } from 'react-router-dom';
 import Header from './Header';
 import { Sidebar } from './Sidebar';
-import MobileBottomNav from './MobileBottomNav';
 import { pushNotificationService } from '@/services/pushNotificationService';
 
 export function MainLayout() {
@@ -31,7 +30,6 @@ export function MainLayout() {
                     </footer>
                 </div>
             </div>
-            <MobileBottomNav />
         </div>
     );
 }

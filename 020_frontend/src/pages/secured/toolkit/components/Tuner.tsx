@@ -285,8 +285,8 @@ export function Tuner() {
             className={cn(
               'px-3 py-1.5 rounded-lg text-sm font-medium transition-all border',
               transpose === key
-                ? 'bg-brand-primary/50 text-brand-primary border-brand-primary/30 shadow-sm'
-                : 'bg-white text-gray-600 border-gray-200 hover:border-brand-primary/50'
+                ? 'bg-primary/50 text-primary border-primary/30 shadow-sm'
+                : 'bg-card text-muted-foreground border-border/50 hover:border-primary/50'
             )}
           >
             {TRANSPOSE_LABELS[key]}
@@ -337,13 +337,13 @@ export function Tuner() {
         <div className="flex flex-col items-center gap-1 min-h-[80px] justify-center">
           {displayNoteInfo ? (
             <>
-              <div className={cn('text-7xl font-bold tracking-tight transition-colors', isInTune ? 'text-brand-primary' : 'text-gray-800')}>
+              <div className={cn('text-7xl font-bold tracking-tight transition-colors', isInTune ? 'text-primary' : 'text-foreground')}>
                 {displayNoteInfo.note}
-                <span className="text-3xl text-gray-400 font-normal ml-1">{displayNoteInfo.octave}</span>
+                <span className="text-3xl text-muted-foreground font-normal ml-1">{displayNoteInfo.octave}</span>
               </div>
-              <div className="text-sm text-gray-500">
+              <div className="text-sm text-muted-foreground">
                 {frequency?.toFixed(1)} Hz
-                <span className={cn('ml-3 font-medium', isInTune ? 'text-brand-primary' : Math.abs(centsVal) <= 20 ? 'text-yellow-600' : 'text-red-500')}>
+                <span className={cn('ml-3 font-medium', isInTune ? 'text-primary' : Math.abs(centsVal) <= 20 ? 'text-yellow-600' : 'text-red-500')}>
                   {centsVal > 0 ? `+${centsVal}` : centsVal} Cent
                 </span>
               </div>
@@ -361,7 +361,7 @@ export function Tuner() {
             'gap-2 px-8 transition-all',
             listening
               ? 'bg-red-500 hover:bg-red-600 text-white'
-              : 'bg-brand-primary hover:bg-brand-primary/90 text-white'
+              : 'bg-primary hover:bg-primary/90 text-white'
           )}
         >
           {listening ? <MicOff className="h-5 w-5" /> : <Mic className="h-5 w-5" />}
@@ -369,7 +369,7 @@ export function Tuner() {
         </Button>
 
         {listening && (
-          <p className="text-xs text-gray-400 flex items-center gap-1 animate-pulse">
+          <p className="text-xs text-muted-foreground flex items-center gap-1 animate-pulse">
             <span className="inline-block w-2 h-2 rounded-full bg-red-400" />
             Hört zu…
           </p>
@@ -378,11 +378,11 @@ export function Tuner() {
 
       {/* ── Tone Generator ── */}
       <div className="border-t pt-5">
-        <h3 className="text-sm font-semibold text-gray-600 mb-3 flex items-center gap-2">
+        <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
           <Volume2 className="h-4 w-4" />
           Tongeber
           {transpose !== 'C' && (
-            <span className="text-xs font-normal text-brand-primary bg-brand-primary/20 px-2 py-0.5 rounded-full">
+            <span className="text-xs font-normal text-primary bg-primary/20 px-2 py-0.5 rounded-full">
               In {transpose} – klingend
             </span>
           )}
@@ -449,11 +449,11 @@ function ToneKeyboard({ transpose, tonePlayer }: ToneKeyboardProps) {
                     'relative flex-1 h-16 border border-gray-300 rounded-b-md flex flex-col items-center justify-end pb-1',
                     'text-[9px] font-medium transition-all',
                     isActive
-                      ? 'bg-brand-primary/50 border-brand-primary z-10'
-                      : 'bg-white hover:bg-gray-50 active:bg-brand-primary/30'
+                      ? 'bg-primary/50 border-primary z-10'
+                      : 'bg-card hover:bg-muted/50 active:bg-primary/30'
                   )}
                 >
-                  <span className={cn(isActive ? 'text-brand-primary' : 'text-gray-500')}>
+                  <span className={cn(isActive ? 'text-primary' : 'text-muted-foreground')}>
                     {row.writtenNote.replace(/[0-9]/, '')}
                   </span>
                 </button>
@@ -478,8 +478,8 @@ function ToneKeyboard({ transpose, tonePlayer }: ToneKeyboardProps) {
                       'absolute top-0 h-10 rounded-b-md z-20 pointer-events-auto',
                       'text-[8px] font-medium transition-all',
                       isActive
-                        ? 'bg-brand-primary border-brand-primary'
-                        : 'bg-gray-800 hover:bg-gray-700'
+                        ? 'bg-primary border-primary'
+                        : 'bg-slate-800 hover:bg-slate-700'
                     )}
                   />
                 );

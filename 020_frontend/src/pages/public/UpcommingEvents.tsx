@@ -1,13 +1,28 @@
 import { useQuery } from '@tanstack/react-query';
-import { Calendar, MapPin, Clock } from 'lucide-react';
+import { MapPin, Clock, Music2 } from 'lucide-react';
 import { eventService } from '@/services/eventService';
-import { formatTime, getCategoryLabel } from '@/lib/utils';
+import { formatTime } from '@/lib/utils';
 import type { Event } from '@/types';
-import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+
+const categoryConfig: Record<string, { label: string; border: string; badge: string }> = {
+    performance: {
+        label: 'Auftritt',
+        border: 'border-l-primary',
+        badge: 'bg-primary/10 text-primary',
+    },
+    rehearsal: {
+        label: 'Probe',
+        border: 'border-l-border',
+        badge: 'bg-muted text-muted-foreground',
+    },
+    other: {
+        label: 'Event',
+        border: 'border-l-brand-yellow',
+        badge: 'bg-brand-yellow/20 text-foreground/70',
+    },
+};
 
 export function UpcommingEvents() {
-    // Fetch upcoming public events
     const { data: events = [], isLoading } = useQuery({
         queryKey: ['publicEvents'],
         queryFn: () => eventService.getPublicEvents(),
@@ -20,52 +35,61 @@ export function UpcommingEvents() {
         .filter((event: Event) => new Date(event.date) >= today)
         .sort((a: Event, b: Event) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
+    const grouped = upcomingEvents.reduce((acc: Record<string, Event[]>, event: Event) => {
+        const key = new Date(event.date).toLocaleDateString('de-CH', { month: 'long', year: 'numeric' });
+        if (!acc[key]) acc[key] = [];
+        acc[key].push(event);
+        return acc;
+    }, {});
+
     if (isLoading) {
         return (
-            <div className="py-16 md:py-24 bg-background">
-                <div className="container-app">
-                    <div className="text-center mb-12">
-                        <h1 className="text-3xl md:text-5xl font-bold text-brand-primary mb-4">
-                            Kommende Termine
-                        </h1>
-                        <p className="text-lg text-muted-foreground">
-                            Wir laden die Termine für Sie...
-                        </p>
-                    </div>
-                    <div className="space-y-4 max-w-4xl mx-auto">
-                        {[1, 2, 3, 4, 5].map((i) => (
-                            <div key={i} className="h-32 bg-white rounded-xl animate-pulse border border-[hsl(var(--border))]" />
-                        ))}
-                    </div>
+            <div className="py-12 bg-background min-h-screen">
+                <div className="container-app max-w-2xl mx-auto px-4">
+                    <div className="h-8 w-48 bg-muted animate-pulse rounded-lg mb-8" />
+                    {[1, 2, 3].map((i) => (
+                        <div key={i} className="h-16 bg-card rounded-xl animate-pulse border border-border/10 mb-2" />
+                    ))}
                 </div>
             </div>
         );
     }
 
     return (
-        <div className="py-16 md:py-24 bg-background">
+        <div className="py-12 bg-background min-h-screen">
             <div className="container-app">
-                <div className="text-center mb-12 md:mb-16">
-                    <h1 className="text-4xl md:text-5xl lg:text-6xl font-black text-brand-primary mb-6 tracking-tight">
+                <header className="mb-8 px-4 max-w-2xl mx-auto text-center">
+                    <h1 className="text-2xl md:text-3xl font-bold text-foreground mb-1 tracking-tight">
                         Kommende Termine
                     </h1>
-                    <div className="h-1.5 w-24 bg-brand-primary mx-auto rounded-full opacity-20" />
-                </div>
+                    <p className="text-sm text-muted-foreground">
+                        Wir freuen uns auf Ihren Besuch!
+                    </p>
+                </header>
 
                 {upcomingEvents.length > 0 ? (
-                    <div className="max-w-4xl mx-auto space-y-6 px-4 md:px-0">
-                        {upcomingEvents.map((event: Event) => (
-                            <DetailedEventCard key={event.id} event={event} />
+                    <div className="max-w-2xl mx-auto px-4 space-y-6">
+                        {Object.entries(grouped).map(([month, monthEvents]) => (
+                            <div key={month}>
+                                <h2 className="text-[10px] font-black uppercase tracking-[0.18em] text-muted-foreground mb-2 px-1">
+                                    {month}
+                                </h2>
+                                <div className="space-y-1.5">
+                                    {monthEvents.map((event: Event) => (
+                                        <EventRow key={event.id} event={event} />
+                                    ))}
+                                </div>
+                            </div>
                         ))}
                     </div>
                 ) : (
-                    <div className="text-center py-16 bg-white rounded-2xl border border-dashed border-[hsl(var(--border))] mx-4 md:mx-auto max-w-2xl">
-                        <Calendar className="h-16 w-16 text-muted-foreground mx-auto mb-4 opacity-50" />
-                        <p className="text-muted-foreground text-xl font-medium">
-                            Aktuell keine geplanten Termine.
-                        </p>
-                        <p className="text-muted-foreground/80 mt-2">
-                            Schauen Sie bald wieder vorbei für neue Informationen!
+                    <div className="text-center py-16 px-4 max-w-md mx-auto">
+                        <div className="h-14 w-14 bg-muted/50 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                            <Music2 className="h-7 w-7 text-muted-foreground opacity-40" />
+                        </div>
+                        <h2 className="text-lg font-bold text-foreground mb-1">Keine Termine</h2>
+                        <p className="text-sm text-muted-foreground">
+                            Aktuell sind keine öffentlichen Termine geplant. Schauen Sie bald wieder vorbei!
                         </p>
                     </div>
                 )}
@@ -74,76 +98,54 @@ export function UpcommingEvents() {
     );
 }
 
-function DetailedEventCard({ event }: { event: Event }) {
+function EventRow({ event }: { event: Event }) {
     const eventDate = new Date(event.date);
-    const formattedDate = eventDate.toLocaleDateString('de-CH', {
-        weekday: 'long',
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric',
-    });
-
-    const categoryVariant: Record<string, 'default' | 'secondary' | 'outline'> = {
-        rehearsal: 'secondary',
-        performance: 'default',
-        other: 'outline',
-    };
+    const config = categoryConfig[event.category] ?? categoryConfig.other;
 
     return (
-        <Card className="overflow-hidden hover:shadow-md transition-all border-l-4 border-l-[hsl(var(--musig-primary))] shadow-sm">
-            <CardContent className="p-0">
-                <div className="flex flex-col md:flex-row">
-                    {/* Date Block */}
-                    <div className="bg-brand-primary/5 md:w-40 flex flex-col items-center justify-center p-6 border-b md:border-b-0 md:border-r border-[hsl(var(--border))]">
-                        <span className="text-sm font-semibold text-brand-primary uppercase tracking-wider">
-                            {eventDate.toLocaleDateString('de-CH', { month: 'short' })}
-                        </span>
-                        <span className="text-4xl font-bold text-brand-primary my-1">
-                            {eventDate.getDate()}
-                        </span>
-                        <span className="text-sm text-muted-foreground">
-                            {eventDate.getFullYear()}
-                        </span>
-                    </div>
-
-                    {/* Content */}
-                    <div className="flex-1 p-6">
-                        <div className="flex flex-wrap items-center justify-between gap-4 mb-4">
-                            <h3 className="text-2xl font-bold text-foreground">
-                                {event.title}
-                            </h3>
-                            <Badge variant={categoryVariant[event.category] as any}>
-                                {getCategoryLabel(event.category)}
-                            </Badge>
-                        </div>
-
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-muted-foreground">
-                            <div className="flex items-center gap-2">
-                                <Calendar className="h-4 w-4 text-brand-primary" />
-                                <span>{formattedDate}</span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                                <Clock className="h-4 w-4 text-brand-primary" />
-                                <span>{formatTime(event.startTime)} {event.endTime ? `- ${formatTime(event.endTime)}` : ''} Uhr</span>
-                            </div>
-                            {event.location && (
-                                <div className="flex items-center gap-2 md:col-span-2">
-                                    <MapPin className="h-4 w-4 text-brand-primary" />
-                                    <span>{event.location}</span>
-                                </div>
-                            )}
-                        </div>
-
-                        {event.description && (
-                            <div className="mt-6 pt-6 border-t border-[hsl(var(--border))]">
-                                <p className="text-foreground leading-relaxed">
-                                    {event.description}
-                                </p>
-                            </div>
-                        )}
-                    </div>
+        <div className={`flex items-center gap-3 px-4 py-3 bg-card rounded-xl border border-border/10 border-l-4 ${config.border} hover:shadow-md transition-all duration-200 group`}>
+            {/* Date */}
+            <div className="flex-none text-center w-10 shrink-0">
+                <div className="text-xl font-black leading-none text-foreground">
+                    {eventDate.getDate()}
                 </div>
-            </CardContent>
-        </Card>
+                <div className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                    {eventDate.toLocaleDateString('de-CH', { month: 'short' })}
+                </div>
+            </div>
+
+            <div className="w-px h-8 bg-border/60 shrink-0" />
+
+            {/* Content */}
+            <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 flex-wrap">
+                    <span className={`text-[9px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded-full ${config.badge}`}>
+                        {config.label}
+                    </span>
+                    <h3 className="text-sm font-bold text-foreground group-hover:text-primary transition-colors truncate">
+                        {event.title}
+                    </h3>
+                </div>
+                <div className="flex items-center gap-3 mt-0.5 text-xs text-muted-foreground flex-wrap">
+                    <span className="flex items-center gap-1">
+                        <Clock className="h-3 w-3 shrink-0" />
+                        {formatTime(event.startTime)}{event.endTime ? ` – ${formatTime(event.endTime)}` : ''} Uhr
+                    </span>
+                    {event.location && (
+                        <span className="flex items-center gap-1">
+                            <MapPin className="h-3 w-3 shrink-0" />
+                            <span className="truncate">{event.location}</span>
+                        </span>
+                    )}
+                </div>
+                {event.description && (
+                    <p className="text-xs text-muted-foreground/60 mt-1 italic line-clamp-1">{event.description}</p>
+                )}
+            </div>
+
+            {event.category === 'performance' && (
+                <div className="shrink-0 h-1.5 w-1.5 rounded-full bg-primary opacity-50" />
+            )}
+        </div>
     );
 }

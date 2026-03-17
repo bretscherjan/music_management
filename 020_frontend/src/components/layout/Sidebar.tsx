@@ -56,17 +56,17 @@ export function Sidebar() {
     const location = useLocation();
 
     return (
-        <aside className="hidden md:flex flex-col w-[100px] bg-white border-r border-gray-200 h-[calc(100vh-4rem)] sticky top-16 shrink-0 z-30">
+        <aside className="hidden md:flex flex-col w-[100px] bg-card border-r border-border h-[calc(100vh-4rem)] sticky top-16 shrink-0 z-30">
 
             {/* Profile Section (Top) */}
             <Link
                 to="/member/settings"
-                className="pt-4 pb-2 flex flex-col items-center justify-center border-b border-gray-100 mx-4 mb-2 hover:bg-gray-50 transition-colors rounded-b-lg"
+                className="pt-4 pb-2 flex flex-col items-center justify-center border-b border-border/50 mx-4 mb-2 hover:bg-muted/50 transition-colors rounded-b-lg"
             >
-                <div className="h-9 w-9 rounded-full bg-brand-primary/10 flex items-center justify-center text-brand-primary font-bold text-sm shadow-sm mb-1">
+                <div className="h-9 w-9 rounded-full bg-brand-red/10 flex items-center justify-center text-brand-red font-bold text-sm shadow-sm mb-1 group-hover:scale-110 transition-transform">
                     {user?.firstName?.[0]}{user?.lastName?.[0]}
                 </div>
-                <span className="text-[10px] text-gray-500 font-medium truncate max-w-full">
+                <span className="text-[10px] text-muted-foreground font-bold truncate max-w-full">
                     Einstellungen
                 </span>
             </Link>
@@ -84,8 +84,8 @@ export function Sidebar() {
                                 className={cn(
                                     "flex flex-col items-center justify-center gap-1 p-2 rounded-xl transition-all duration-200 group",
                                     isActive
-                                        ? "bg-brand-primary/10 text-brand-primary shadow-sm"
-                                        : "text-gray-500 hover:text-gray-900 hover:bg-gray-100"
+                                        ? "bg-brand-red/10 text-brand-red shadow-sm brand-glow"
+                                        : "text-muted-foreground hover:text-brand-red hover:bg-brand-red/5"
                                 )}
                             >
                                 <div className={cn(
@@ -105,7 +105,7 @@ export function Sidebar() {
 
                 {/* Separator */}
                 {isAdmin && (
-                    <div className="mx-4 my-1 border-t border-gray-100" />
+                    <div className="mx-4 my-1 border-t border-border/50" />
                 )}
 
                 {/* Administration */}
@@ -120,8 +120,8 @@ export function Sidebar() {
                                     className={cn(
                                         "flex flex-col items-center justify-center gap-1 p-2 rounded-xl transition-all duration-200 group",
                                         isActive
-                                            ? "bg-brand-primary/10 text-brand-primary shadow-sm"
-                                            : "text-gray-500 hover:text-gray-900 hover:bg-gray-100"
+                                            ? "bg-primary/10 text-primary shadow-sm"
+                                            : "text-muted-foreground hover:text-foreground hover:bg-muted"
                                     )}
                                 >
                                     <div className="!h-5 !w-5 [&>svg]:h-5 [&>svg]:w-5">

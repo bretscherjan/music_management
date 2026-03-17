@@ -53,11 +53,11 @@ function StaffSVG({ notes, halfStepAfter, semitonesAfter }: StaffProps) {
     <svg viewBox={`0 0 ${svgWidth} ${svgHeight}`} className="w-full" style={{ maxHeight: 130 }}>
       {/* Staff lines */}
       {STAFF_LINE_Y.map(y => (
-        <line key={y} x1={10} y1={y} x2={svgWidth - 10} y2={y} stroke="#d1d5db" strokeWidth="1" />
+        <line key={y} x1={10} y1={y} x2={svgWidth - 10} y2={y} stroke="var(--color-border)" strokeWidth="1" />
       ))}
 
       {/* Treble clef symbol */}
-      <text x={12} y={76} fontSize="52" fontFamily="serif" fill="#6b7280" style={{ userSelect: 'none' }}>𝄞</text>
+      <text x={12} y={76} fontSize="52" fontFamily="serif" fill="hsl(var(--muted-foreground))" style={{ userSelect: 'none', opacity: 0.4 }}>𝄞</text>
 
       {notes.map((note, i) => {
         const x = NOTE_X_START + i * NOTE_X_STEP;
@@ -75,7 +75,7 @@ function StaffSVG({ notes, halfStepAfter, semitonesAfter }: StaffProps) {
 
             {/* Accidental */}
             {acc && (
-              <text x={x - 10} y={y + 4} textAnchor="middle" fontSize="11" fill="#374151">
+              <text x={x - 10} y={y + 4} textAnchor="middle" fontSize="11" fill="var(--color-foreground)">
                 {ACC_SYMBOLS[acc] ?? acc}
               </text>
             )}
@@ -84,7 +84,7 @@ function StaffSVG({ notes, halfStepAfter, semitonesAfter }: StaffProps) {
             <ellipse
               cx={x} cy={y}
               rx={6} ry={4.5}
-              fill={isHalfStepBefore ? 'var(--color-brand-primary)' : '#1f2937'}
+              fill={isHalfStepBefore ? 'hsl(var(--brand-red))' : 'hsl(var(--foreground))'}
               stroke="none"
             />
 
@@ -94,7 +94,7 @@ function StaffSVG({ notes, halfStepAfter, semitonesAfter }: StaffProps) {
               const stemX = stemUp ? x + 5.5 : x - 5.5;
               const stemY2 = stemUp ? y - 28 : y + 28;
               return (
-                <line x1={stemX} y1={y} x2={stemX} y2={stemY2} stroke={isHalfStepBefore ? 'var(--color-brand-primary)' : '#4b5563'} strokeWidth="1.2" />
+                <line x1={stemX} y1={y} x2={stemX} y2={stemY2} stroke={isHalfStepBefore ? 'hsl(var(--brand-red))' : 'hsl(var(--foreground))'} strokeWidth="1.2" />
               );
             })()}
 
@@ -104,7 +104,7 @@ function StaffSVG({ notes, halfStepAfter, semitonesAfter }: StaffProps) {
                 <path
                   d={`M ${x + 12} ${y + 16} Q ${x + NOTE_X_STEP / 2} ${y + 24} ${x + NOTE_X_STEP - 12} ${noteY(notes[i + 1]) + 16}`}
                   fill="none"
-                  stroke={semitonesAfter[i] === 1 ? 'var(--color-red-500)' : '#a855f7'}
+                  stroke={semitonesAfter[i] === 1 ? 'hsl(var(--brand-red))' : 'hsl(var(--brand-yellow))'}
                   strokeWidth="1.5"
                   strokeDasharray="3,2"
                 />
@@ -112,9 +112,9 @@ function StaffSVG({ notes, halfStepAfter, semitonesAfter }: StaffProps) {
                   x={x + NOTE_X_STEP / 2}
                   y={Math.max(noteY(notes[i]), noteY(notes[i + 1])) + 30}
                   textAnchor="middle"
-                  fontSize="7"
-                  fill={semitonesAfter[i] === 1 ? 'var(--color-red-500)' : '#a855f7'}
-                  fontWeight="600"
+                  fontSize="8"
+                  fill={semitonesAfter[i] === 1 ? 'hsl(var(--brand-red))' : 'hsl(var(--brand-yellow) / 0.8)'}
+                  fontWeight="900"
                 >
                   {semitonesAfter[i] === 1 ? '½' : '1½'}
                 </text>
@@ -140,17 +140,17 @@ export function ScaleAnalyzer() {
       {/* Controls */}
       <div className="flex flex-wrap gap-3 items-end">
         <div className="flex flex-col gap-1.5">
-          <label className="text-xs font-medium text-gray-600">Grundton</label>
+          <label className="text-xs font-medium text-muted-foreground">Grundton</label>
           <div className="flex flex-wrap gap-1">
             {CHROMATIC_NOTES.map(n => (
               <button
                 key={n.value}
                 onClick={() => setRoot(n.value)}
                 className={cn(
-                  'w-9 h-8 rounded-md text-sm font-medium border transition-all',
+                  'w-9 h-8 rounded-md text-sm font-bold border transition-all',
                   root === n.value
-                    ? 'bg-brand-primary/50 text-brand-primary border-brand-primary/30 font-bold'
-                    : 'bg-white text-gray-600 border-gray-200 hover:border-brand-primary/50'
+                    ? 'bg-brand-red text-white border-brand-red shadow-sm'
+                    : 'bg-white text-muted-foreground border-border/50 hover:border-brand-red hover:text-brand-red'
                 )}
               >
                 {n.label}
@@ -158,19 +158,19 @@ export function ScaleAnalyzer() {
             ))}
           </div>
         </div>
-
+ 
         <div className="flex flex-col gap-1.5">
-          <label className="text-xs font-medium text-gray-600">Modus</label>
+          <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Modus</label>
           <div className="flex flex-wrap gap-1.5">
             {(Object.keys(SCALE_MODES) as ScaleMode[]).map(m => (
               <button
                 key={m}
                 onClick={() => setMode(m)}
                 className={cn(
-                  'px-2.5 py-1.5 text-xs font-medium rounded-lg border transition-all',
+                  'px-3 py-1.5 text-[11px] font-bold rounded-lg border transition-all',
                   mode === m
-                    ? 'bg-brand-primary/50 text-brand-primary border-brand-primary/30'
-                    : 'bg-white text-gray-500 border-gray-200 hover:border-brand-primary/50'
+                    ? 'bg-brand-red text-white border-brand-red shadow-sm'
+                    : 'bg-white text-muted-foreground border-border/50 hover:border-brand-red hover:text-brand-red'
                 )}
               >
                 {SCALE_MODES[m].split(' ')[0]}
@@ -182,25 +182,25 @@ export function ScaleAnalyzer() {
 
       {/* Scale title */}
       <div className="flex items-baseline gap-2">
-        <h3 className="text-xl font-bold text-gray-800">
+        <h3 className="text-xl font-bold text-foreground">
           {scaleInfo.noteNames[0]}-{SCALE_MODES[scaleInfo.mode].split(' ')[0]}
         </h3>
         {scaleInfo.keySignature && scaleInfo.keySignature !== '—' && (
-          <span className="text-sm text-gray-500">
+          <span className="text-sm text-muted-foreground">
             ({scaleInfo.keySignature.includes('#')
               ? `${scaleInfo.keySignature.length} ♯`
               : `${scaleInfo.keySignature.length} ♭`})
           </span>
         )}
         {scaleInfo.relativeKey && (
-          <span className="text-xs text-brand-primary bg-brand-primary/20 px-2 py-0.5 rounded-full">
+          <span className="text-xs text-primary bg-primary/20 px-2 py-0.5 rounded-full">
             Relative: {scaleInfo.relativeKey}
           </span>
         )}
       </div>
 
       {/* Staff Notation */}
-      <div className="bg-white rounded-xl border border-gray-100 px-2 py-1 overflow-x-auto">
+      <div className="bg-card rounded-xl border border-border/50 px-2 py-1 overflow-x-auto">
         <StaffSVG notes={scaleInfo.notes} halfStepAfter={scaleInfo.halfStepAfter} semitonesAfter={scaleInfo.semitonesAfter} />
       </div>
 
@@ -222,8 +222,8 @@ export function ScaleAnalyzer() {
               <div className={cn(
                 'flex flex-col items-center min-w-[28px] h-8 rounded-lg border text-xs font-bold justify-center transition-colors',
                 isHalfBefore
-                  ? 'bg-brand-primary text-white border-brand-primary'
-                  : 'bg-gray-50 text-gray-700 border-gray-200'
+                  ? 'bg-primary text-white border-primary'
+                  : 'bg-muted text-foreground border-border/50'
               )}>
                 {name}
               </div>
@@ -233,10 +233,10 @@ export function ScaleAnalyzer() {
       </div>
 
       {/* Half-step explanation */}
-      <p className="text-[11px] text-gray-400 border-t pt-2 mt-1">
-        <span className="text-red-500 font-medium">Rote Bögen & ½</span> = Halbtonschritte.<br />
-        <span className="text-purple-500 font-medium">Violette Bögen & 1½</span> = Anderthalbtonschritte.<br />
-        <span className="text-brand-primary/50 font-medium">Natürliche Halbtöne:</span> <strong>E–F</strong> und <strong>H–C</strong>.
+      <p className="text-[10px] text-muted-foreground border-t border-border/50 pt-2 mt-1 italic">
+        <span className="text-brand-red font-bold">Rote Markierungen & ½</span> = Halbtonschritte. 
+        <span className="mx-2">·</span>
+        <span className="text-brand-yellow font-bold">Gelbe Markierungen & 1½</span> = Anderthalbtonschritte.
       </p>
     </div>
   );

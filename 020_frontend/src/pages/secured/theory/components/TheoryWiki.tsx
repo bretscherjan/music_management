@@ -33,69 +33,69 @@ export function TheoryWiki() {
 
       {/* ── Transposition ── */}
       <section>
-        <h3 className="text-sm font-bold text-gray-700 uppercase tracking-widest mb-3">
+        <h3 className="text-sm font-bold text-foreground uppercase tracking-widest mb-3">
           Transpositions-Referenz
         </h3>
-        <div className="overflow-x-auto rounded-xl border border-gray-100">
+        <div className="overflow-x-auto rounded-xl border border-border/50">
           <table className="w-full text-sm">
             <thead>
-              <tr className="bg-gray-50 text-left">
-                <th className="px-4 py-2.5 font-semibold text-gray-600 text-xs">Instrument</th>
-                <th className="px-4 py-2.5 font-semibold text-gray-600 text-xs">Geschrieben</th>
-                <th className="px-4 py-2.5 font-semibold text-gray-600 text-xs">Klingt als</th>
-                <th className="px-4 py-2.5 font-semibold text-gray-600 text-xs">Verschiebung</th>
+              <tr className="bg-muted/50 text-left">
+                <th className="px-4 py-2.5 font-semibold text-muted-foreground text-xs">Instrument</th>
+                <th className="px-4 py-2.5 font-semibold text-muted-foreground text-xs">Geschrieben</th>
+                <th className="px-4 py-2.5 font-semibold text-muted-foreground text-xs">Klingt als</th>
+                <th className="px-4 py-2.5 font-semibold text-muted-foreground text-xs">Verschiebung</th>
               </tr>
             </thead>
             <tbody>
               {TRANSPOSITION_TABLE.map((row, i) => (
-                <tr key={i} className="border-b transition-colors hover:bg-muted/50 even:bg-muted/30">
-                  <td className="px-4 py-2.5 font-medium text-brand-primary">{row.instrument}</td>
+                <tr key={i} className="border-b border-border/50 transition-colors hover:bg-muted/50 even:bg-muted/20">
+                  <td className="px-4 py-2.5 font-medium text-primary">{row.instrument}</td>
                   <td className="px-4 py-2.5 font-bold">{row.written}</td>
                   <td className="px-4 py-2.5 font-bold">{row.concert}</td>
-                  <td className="px-4 py-2.5 text-gray-500 text-xs">{row.offset}</td>
+                  <td className="px-4 py-2.5 text-muted-foreground text-xs">{row.offset}</td>
                 </tr>
               ))}
-              <tr className="border-t border-gray-100 bg-brand-primary/10">
-                <td className="px-4 py-2.5 font-medium text-gray-700">C</td>
+              <tr className="border-t border-border/50 bg-primary/20">
+                <td className="px-4 py-2.5 font-medium text-foreground">C</td>
                 <td className="px-4 py-2.5 font-bold">C</td>
                 <td className="px-4 py-2.5 font-bold">C</td>
-                <td className="px-4 py-2.5 text-gray-500 text-xs">Keine Transposition</td>
+                <td className="px-4 py-2.5 text-muted-foreground text-xs">Keine Transposition</td>
               </tr>
             </tbody>
           </table>
         </div>
-        <p className="text-xs text-gray-400 mt-2">
-          Natürliche Halbtöne im Tonalsy stem: <strong>E–F</strong> und <strong>H–C</strong>.
+        <p className="text-xs text-muted-foreground mt-2">
+          Natürliche Halbtöne im Tonalsystem: <strong>E–F</strong> und <strong>H–C</strong>.
           Stimmton: <strong>A1 = 440 Hz</strong> (international), <strong>442 Hz</strong> (orchestral).
         </p>
       </section>
 
       {/* ── Quintenzirkel Tabelle ── */}
       <section>
-        <h3 className="text-sm font-bold text-gray-700 uppercase tracking-widest mb-3">
+        <h3 className="text-sm font-bold text-foreground uppercase tracking-widest mb-3">
           Quintenzirkel – alle Dur-Tonarten
         </h3>
-        <div className="overflow-x-auto rounded-xl border border-gray-100">
+        <div className="overflow-x-auto rounded-xl border border-border/50">
           <table className="w-full text-sm">
             <thead>
-              <tr className="bg-gray-50 text-left">
-                <th className="px-3 py-2.5 font-semibold text-gray-600 text-xs">Tonart</th>
-                <th className="px-3 py-2.5 font-semibold text-gray-600 text-xs">Vorzeichen</th>
-                <th className="px-3 py-2.5 font-semibold text-gray-600 text-xs">Vorzeichen-Töne</th>
-                <th className="px-3 py-2.5 font-semibold text-gray-600 text-xs">Parallele Moll</th>
+              <tr className="bg-muted/50 text-left">
+                <th className="px-3 py-2.5 font-semibold text-muted-foreground text-xs">Tonart</th>
+                <th className="px-3 py-2.5 font-semibold text-muted-foreground text-xs">Vorzeichen</th>
+                <th className="px-3 py-2.5 font-semibold text-muted-foreground text-xs">Vorzeichen-Töne</th>
+                <th className="px-3 py-2.5 font-semibold text-muted-foreground text-xs">Parallele Moll</th>
               </tr>
             </thead>
             <tbody>
               {CIRCLE_ROWS.map((row, i) => (
-                <tr key={i} className="border-b transition-colors hover:bg-muted/50 even:bg-muted/30">
-                  <td className="px-3 py-2 font-bold text-brand-primary">{row.key}-Dur</td>
+                <tr key={i} className="border-b border-border/50 transition-colors hover:bg-muted/50 even:bg-muted/20">
+                  <td className="px-3 py-2 font-bold text-primary">{row.key}-Dur</td>
                   <td className="px-3 py-2 font-mono text-center">
                     {row.sharps === 0 ? '—' : row.sharps > 0
                       ? `${row.sharps} ♯`
                       : `${-row.sharps} ♭`}
                   </td>
-                  <td className="px-3 py-2 text-gray-600 text-xs">{row.accidentals}</td>
-                  <td className="px-3 py-2 text-gray-500">{row.minorKey}-Moll</td>
+                  <td className="px-3 py-2 text-muted-foreground text-xs">{row.accidentals}</td>
+                  <td className="px-3 py-2 text-muted-foreground">{row.minorKey}-Moll</td>
                 </tr>
               ))}
             </tbody>
@@ -105,29 +105,29 @@ export function TheoryWiki() {
 
       {/* ── Akkord-Formeln ── */}
       <section>
-        <h3 className="text-sm font-bold text-gray-700 uppercase tracking-widest mb-3">
+        <h3 className="text-sm font-bold text-foreground uppercase tracking-widest mb-3">
           Akkord-Formeln
         </h3>
-        <div className="overflow-x-auto rounded-xl border border-gray-100">
+        <div className="overflow-x-auto rounded-xl border border-border/50">
           <table className="w-full text-sm">
             <thead>
-              <tr className="bg-gray-50 text-left">
-                <th className="px-4 py-2.5 font-semibold text-gray-600 text-xs">Typ</th>
-                <th className="px-4 py-2.5 font-semibold text-gray-600 text-xs">Stufen</th>
-                <th className="px-4 py-2.5 font-semibold text-gray-600 text-xs">Halbtöne</th>
-                <th className="px-4 py-2.5 font-semibold text-gray-600 text-xs">Beispiel</th>
+              <tr className="bg-muted/50 text-left">
+                <th className="px-4 py-2.5 font-semibold text-muted-foreground text-xs">Typ</th>
+                <th className="px-4 py-2.5 font-semibold text-muted-foreground text-xs">Stufen</th>
+                <th className="px-4 py-2.5 font-semibold text-muted-foreground text-xs">Halbtöne</th>
+                <th className="px-4 py-2.5 font-semibold text-muted-foreground text-xs">Beispiel</th>
               </tr>
             </thead>
             <tbody>
               {CHORD_FORMULAS.map((row, i) => (
-                <tr key={i} className="border-b transition-colors hover:bg-muted/50 even:bg-muted/30">
+                <tr key={i} className="border-b border-border/50 transition-colors hover:bg-muted/50 even:bg-muted/20">
                   <td className="px-4 py-2.5 font-medium">
                     {row.name}
-                    <span className="ml-1.5 text-xs font-mono text-gray-400">{row.symbol}</span>
+                    <span className="ml-1.5 text-xs font-mono text-muted-foreground">{row.symbol}</span>
                   </td>
-                  <td className="px-4 py-2.5 font-mono text-xs text-brand-primary">{row.formula}</td>
-                  <td className="px-4 py-2.5 text-xs text-gray-500">{row.semitones}</td>
-                  <td className="px-4 py-2.5 font-medium text-gray-700">{row.example}</td>
+                  <td className="px-4 py-2.5 font-mono text-xs text-primary">{row.formula}</td>
+                  <td className="px-4 py-2.5 text-xs text-muted-foreground">{row.semitones}</td>
+                  <td className="px-4 py-2.5 font-medium text-foreground">{row.example}</td>
                 </tr>
               ))}
             </tbody>

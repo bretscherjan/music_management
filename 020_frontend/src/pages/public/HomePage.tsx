@@ -66,7 +66,7 @@ export function HomePage() {
                             <Reveal direction="left" delay={100}>
                                 <div className="relative z-10 rounded-3xl overflow-hidden shadow-2xl transform lg:rotate-2 hover:rotate-0 transition-transform duration-500 aspect-[4/3]">
                                     <img
-                                        src="/musig.png"
+                                        src="/ensamble_with_chorus.jpeg"
                                         alt="Musig Elgg Ensemble"
                                         className="w-full h-full object-cover"
                                     />

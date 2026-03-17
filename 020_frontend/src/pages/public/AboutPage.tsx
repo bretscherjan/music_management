@@ -161,7 +161,7 @@ interface FeatureCardProps {
 function FeatureCard({ img, title, description, email1, email2 }: FeatureCardProps) {
     return (
         <div className="bg-background rounded-[2rem] border border-border/10 shadow-sm p-6 hover:shadow-xl transition-all duration-300 h-full flex flex-col group text-center">
-            <div className="w-24 h-24 rounded-2xl mb-8 overflow-hidden grayscale group-hover:grayscale-0 transition-all duration-500 shadow-md mx-auto">
+            <div className="w-24 h-24 rounded-2xl mb-8 overflow-hidden transition-all duration-500 shadow-md mx-auto">
                 <img src={img} alt={title} className="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-700" />
             </div>
             <h3 className="text-2xl font-bold text-foreground mb-4 group-hover:text-brand-primary transition-colors">

@@ -56,13 +56,13 @@ export function UpcommingEvents() {
     }
 
     return (
-        <div className="py-12 bg-background min-h-screen">
+        <div className="py-20 md:py-32 bg-background border-b border-border/50">
             <div className="container-app">
-                <header className="mb-8 px-4 max-w-2xl mx-auto text-center">
-                    <h1 className="text-2xl md:text-3xl font-bold text-foreground mb-1 tracking-tight">
+                <header className="max-w-4xl mx-auto text-center px-4">
+                    <h1 className="text-4xl md:text-6xl lg:text-7xl font-extrabold mb-8 tracking-tighter text-foreground">
                         Kommende Termine
                     </h1>
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-xl md:text-2xl text-muted-foreground leading-relaxed max-w-3xl mx-auto">
                         Wir freuen uns auf Ihren Besuch!
                     </p>
                 </header>

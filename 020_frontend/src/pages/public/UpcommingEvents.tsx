@@ -65,6 +65,7 @@ export function UpcommingEvents() {
                     <p className="text-xl md:text-2xl text-muted-foreground leading-relaxed max-w-3xl mx-auto">
                         Wir freuen uns auf Ihren Besuch!
                     </p>
+                    <br />
                 </header>
 
                 {upcomingEvents.length > 0 ? (

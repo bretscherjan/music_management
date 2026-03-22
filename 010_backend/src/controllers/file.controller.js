@@ -261,6 +261,7 @@ const getFileInfo = asyncHandler(async (req, res) => {
             mimetype: file.mimetype,
             size: file.size,
             visibility: file.visibility,
+            folderId: file.folderId,
             targetRegister: file.targetRegister,
             event: file.event,
             accessRules: file.accessRules,

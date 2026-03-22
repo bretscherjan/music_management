@@ -40,9 +40,87 @@ model User {
   taskHistory          TaskHistory[]
   register             Register?             @relation(fields: [registerId], references: [id])
   verifiedAttendances  VerifiedAttendance[]
+  chatParticipants     ChatParticipant[]
+  chatReadStates       ChatReadState[]
 
   @@index([email])
   @@index([registerId])
+}
+
+model Chat {
+  id                 Int                @id @default(autoincrement())
+  type               ChatType           @default(direct)
+  title              String?
+  createdBy          Int
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+  lastMessageAt      DateTime?
+  lastMessagePreview String?            @db.Text
+  archivedAt         DateTime?
+  participants       ChatParticipant[]
+  readStates         ChatReadState[]
+  messageIndices     ChatMessageIndex[]
+
+  @@index([lastMessageAt])
+}
+
+model ChatParticipant {
+  id               Int      @id @default(autoincrement())
+  chatId           Int
+  userId           Int
+  role             ChatRole @default(member)
+  joinedAt         DateTime @default(now())
+  muted            Boolean  @default(false)
+  canManageMembers Boolean  @default(false)
+  chat             Chat     @relation(fields: [chatId], references: [id], onDelete: Cascade)
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([chatId, userId])
+  @@index([chatId])
+  @@index([userId])
+}
+
+model ChatMessageIndex {
+  id             Int       @id @default(autoincrement())
+  chatId         Int
+  senderId       Int
+  fileSegment    String    // e.g., "2026-03"
+  messageKey     String    // unique key in the JSON file
+  createdAt      DateTime  @default(now())
+  editedAt       DateTime?
+  deletedAt      DateTime?
+  replyToId      Int?      // Refers to another ChatMessageIndex.id
+  searchableText String?   @db.Text
+  hasMentions    Boolean   @default(false)
+  hasLinks       Boolean   @default(false)
+  chat           Chat      @relation(fields: [chatId], references: [id], onDelete: Cascade)
+
+  @@index([chatId])
+  @@index([createdAt])
+}
+
+model ChatReadState {
+  id               Int      @id @default(autoincrement())
+  chatId           Int
+  userId           Int
+  lastReadSequence Int      @default(0)
+  unreadCount      Int      @default(0)
+  chat             Chat     @relation(fields: [chatId], references: [id], onDelete: Cascade)
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([chatId, userId])
+  @@index([chatId])
+  @@index([userId])
+}
+
+enum ChatType {
+  direct
+  group
+}
+
+enum ChatRole {
+  owner
+  member
 }
 
 model NotificationSettings {

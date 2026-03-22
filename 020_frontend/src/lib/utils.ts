@@ -36,6 +36,7 @@ export function formatTime(timeOrDateString: string | Date | undefined): string 
 export function getCategoryLabel(category: string): string {
   const labels: Record<string, string> = {
     rehearsal: 'Probe',
+    performance: 'Auftritt',
     concert: 'Konzert',
     general_meeting: 'Generalversammlung',
     other: 'Sonstiges',

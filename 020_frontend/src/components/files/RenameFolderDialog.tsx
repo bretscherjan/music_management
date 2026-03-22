@@ -8,16 +8,17 @@ import { Label } from '@/components/ui/label';
 import { Loader2, Pencil } from 'lucide-react';
 
 interface RenameFolderDialogProps {
+    folder: { id: number; name: string } | null;
     open: boolean;
     onOpenChange: (open: boolean) => void;
-    folderId: number;
-    currentName: string;
+    onSuccess?: () => void;
 }
 
-export function RenameFolderDialog({ open, onOpenChange, folderId, currentName }: RenameFolderDialogProps) {
+export function RenameFolderDialog({ folder, open, onOpenChange, onSuccess }: RenameFolderDialogProps) {
     const queryClient = useQueryClient();
-    const [folderName, setFolderName] = useState(currentName);
+    const [folderName, setFolderName] = useState(folder?.name ?? '');
     const [error, setError] = useState<string | null>(null);
+    const currentName = folder?.name ?? '';
 
     useEffect(() => {
         if (open) {
@@ -27,9 +28,13 @@ export function RenameFolderDialog({ open, onOpenChange, folderId, currentName }
     }, [open, currentName]);
 
     const mutation = useMutation({
-        mutationFn: (name: string) => fileService.renameFolder(folderId, name),
+        mutationFn: (name: string) => {
+            if (!folder) throw new Error('Kein Ordner ausgewählt');
+            return fileService.renameFolder(folder.id, name);
+        },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['folderContents'] });
+            onSuccess?.();
             onOpenChange(false);
         },
         onError: (err: any) => {
@@ -39,10 +44,12 @@ export function RenameFolderDialog({ open, onOpenChange, folderId, currentName }
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        const trimmed = folderName.trim();
+        const trimmed = (folderName ?? '').trim();
         if (!trimmed || trimmed === currentName) return;
         mutation.mutate(trimmed);
     };
+
+    const trimmedFolderName = (folderName ?? '').trim();
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
@@ -75,7 +82,7 @@ export function RenameFolderDialog({ open, onOpenChange, folderId, currentName }
                         </Button>
                         <Button
                             type="submit"
-                            disabled={mutation.isPending || !folderName.trim() || folderName.trim() === currentName}
+                            disabled={mutation.isPending || !trimmedFolderName || trimmedFolderName === currentName || !folder}
                         >
                             {mutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                             <Pencil className="mr-2 h-4 w-4" />

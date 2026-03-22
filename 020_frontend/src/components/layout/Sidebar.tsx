@@ -16,6 +16,7 @@ import {
     BookOpen,
     Database,
     TableProperties,
+    MessageSquare,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -31,6 +32,7 @@ const mainNavItems: NavItem[] = [
     { label: 'Dateien', href: '/member/files', icon: <FileText className="h-5 w-5" /> },
     { label: 'Mappen', href: '/member/music-folders', icon: <Folder className="h-5 w-5" /> },
     { label: 'Mitglieder', href: '/member/members', icon: <Users className="h-5 w-5" /> },
+    { label: 'Chat', href: '/member/chat', icon: <MessageSquare className="h-5 w-5" /> },
 ];
 
 const adminNavItems: NavItem[] = [

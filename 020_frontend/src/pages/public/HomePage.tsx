@@ -35,7 +35,7 @@ export function HomePage() {
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
                         <div className="text-center lg:text-left order-2 lg:order-1 px-4 lg:px-0">
                             <img
-                                src="/logo_red.png"
+                                src="/logos/logo_on_white.svg"
                                 alt="Musig Elgg Logo"
                                 className="h-20 w-auto mb-8 drop-shadow-md lg:hidden mx-auto lg:mx-0"
                             />
@@ -66,7 +66,7 @@ export function HomePage() {
                             <Reveal direction="left" delay={100}>
                                 <div className="relative z-10 rounded-3xl overflow-hidden shadow-2xl transform lg:rotate-2 hover:rotate-0 transition-transform duration-500 aspect-[4/3]">
                                     <img
-                                        src="/ensamble_with_chorus.jpeg"
+                                        src="/group_picture.jpg"
                                         alt="Musig Elgg Ensemble"
                                         className="w-full h-full object-cover"
                                     />
@@ -77,7 +77,7 @@ export function HomePage() {
                             <div className="absolute -top-6 -right-6 h-32 w-32 bg-brand-primary/10 rounded-full blur-3xl lg:block hidden animate-pulse-glow"></div>
                             <div className="absolute -bottom-10 -left-10 h-48 w-48 bg-brand-yellow/10 rounded-full blur-3xl lg:block hidden animate-pulse-glow" style={{ animationDelay: '1.5s' }}></div>
                             <img
-                                src="/logo_red.png"
+                                src="/logos/logo_on_white.svg"
                                 alt="Musig Elgg Logo"
                                 className="absolute -bottom-6 -right-6 h-32 w-auto drop-shadow-xl lg:block hidden z-20 animate-float-slow"
                             />

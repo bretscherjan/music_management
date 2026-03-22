@@ -28,17 +28,20 @@ interface WrapInFolderDialogProps {
 export function WrapInFolderDialog({
     open,
     onOpenChange,
-    selectedFileIds,
-    selectedFolderIds,
+    selectedFileIds = [],
+    selectedFolderIds = [],
     currentFolderId,
-    currentFolderName,
+    currentFolderName = 'Root',
     onDone,
 }: WrapInFolderDialogProps) {
     const queryClient = useQueryClient();
     const [folderName, setFolderName] = useState('');
     const [error, setError] = useState<string | null>(null);
 
-    const totalSelected = selectedFileIds.length + selectedFolderIds.length;
+    const safeSelectedFileIds = Array.isArray(selectedFileIds) ? selectedFileIds : [];
+    const safeSelectedFolderIds = Array.isArray(selectedFolderIds) ? selectedFolderIds : [];
+
+    const totalSelected = safeSelectedFileIds.length + safeSelectedFolderIds.length;
 
     const mutation = useMutation({
         mutationFn: async (name: string) => {
@@ -54,8 +57,8 @@ export function WrapInFolderDialog({
 
             // 3. Move all selected files and folders into the new folder
             await Promise.all([
-                ...selectedFileIds.map(id => fileService.moveFile(id, newFolder.id)),
-                ...selectedFolderIds.map(id => fileService.moveFolder(id, newFolder.id)),
+                ...safeSelectedFileIds.map(id => fileService.moveFile(id, newFolder.id)),
+                ...safeSelectedFolderIds.map(id => fileService.moveFolder(id, newFolder.id)),
             ]);
         },
         onSuccess: () => {
@@ -105,9 +108,9 @@ export function WrapInFolderDialog({
                             autoFocus
                         />
                         <p className="text-xs text-muted-foreground">
-                            {selectedFileIds.length > 0 && `${selectedFileIds.length} Datei(en)`}
-                            {selectedFileIds.length > 0 && selectedFolderIds.length > 0 && ' und '}
-                            {selectedFolderIds.length > 0 && `${selectedFolderIds.length} Ordner`}
+                            {safeSelectedFileIds.length > 0 && `${safeSelectedFileIds.length} Datei(en)`}
+                            {safeSelectedFileIds.length > 0 && safeSelectedFolderIds.length > 0 && ' und '}
+                            {safeSelectedFolderIds.length > 0 && `${safeSelectedFolderIds.length} Ordner`}
                             {' '}werden verschoben.
                         </p>
                     </div>

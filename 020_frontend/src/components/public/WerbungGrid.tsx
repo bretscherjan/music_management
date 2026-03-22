@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { cmsService } from '@/services/cmsService';
-import { Loader2, ExternalLink, Download } from 'lucide-react';
+import { Loader2, Download } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { getMediaUrl } from '@/lib/api';
@@ -73,7 +73,7 @@ export function WerbungGrid() {
                                             className="flex-1 rounded-xl bg-brand-primary/10 text-brand-primary hover:bg-brand-primary/20 border-none h-11"
                                         >
                                             <a href={getMediaUrl(`/uploads/cms/flyers/${promo.filename}`)} target="_blank" rel="noopener noreferrer">
-                                                <ExternalLink className="h-4 w-4 mr-2" /> Ansehen
+                                                Ansehen
                                             </a>
                                         </Button>
                                         <Button

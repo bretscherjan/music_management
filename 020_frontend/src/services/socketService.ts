@@ -168,6 +168,43 @@ class SocketService {
         // Typing events
         this.socket.on('typing:started', (data) => this.emit('typing:started', data));
         this.socket.on('typing:stopped', (data) => this.emit('typing:stopped', data));
+
+        // Chat events
+        this.socket.on('chat:message:created', (data) => this.emit('chat:message:created', data));
+        this.socket.on('chat:message:updated', (data) => this.emit('chat:message:updated', data));
+        this.socket.on('chat:updated', (data) => this.emit('chat:updated', data));
+        this.socket.on('chat:deleted', (data) => this.emit('chat:deleted', data));
+        this.socket.on('chat:participant:removed', (data) => this.emit('chat:participant:removed', data));
+        this.socket.on('chat:typing:started', (data) => this.emit('chat:typing:started', data));
+        this.socket.on('chat:typing:stopped', (data) => this.emit('chat:typing:stopped', data));
+    }
+
+    /**
+     * Join a chat room
+     */
+    joinChat(chatId: number): void {
+        this.socket?.emit('chat:join', { chatId });
+    }
+
+    /**
+     * Leave a chat room
+     */
+    leaveChat(chatId: number): void {
+        this.socket?.emit('chat:leave', { chatId });
+    }
+
+    /**
+     * Send typing start indicator for chat
+     */
+    startChatTyping(chatId: number): void {
+        this.socket?.emit('chat:typing:start', { chatId });
+    }
+
+    /**
+     * Send typing stop indicator for chat
+     */
+    stopChatTyping(chatId: number): void {
+        this.socket?.emit('chat:typing:stop', { chatId });
     }
 
     /**

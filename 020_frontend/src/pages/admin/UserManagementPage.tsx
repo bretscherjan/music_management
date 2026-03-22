@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useSearchParams } from 'react-router-dom';
 import { userService } from '@/services/userService';
 import { registerService } from '@/services/registerService';
 import { useIsAdmin } from '@/context/AuthContext';
@@ -27,8 +28,10 @@ import { toast } from 'sonner';
 
 export function UserManagementPage() {
     const isAdmin = useIsAdmin();
+    const [searchParams] = useSearchParams();
+    const searchParam = searchParams.get('search');
     const queryClient = useQueryClient();
-    const [searchTerm, setSearchTerm] = useState('');
+    const [searchTerm, setSearchTerm] = useState(searchParam || '');
     const [statusFilter, setStatusFilter] = useState<UserStatus | 'all'>('all');
     const [registerFilter, setRegisterFilter] = useState<number | 'all'>('all');
 
@@ -48,7 +51,11 @@ export function UserManagementPage() {
         queryFn: () => registerService.getAll(),
     });
 
-
+    useEffect(() => {
+        if (searchParam) {
+            setSearchTerm(searchParam);
+        }
+    }, [searchParam]);
 
     const handleEditUser = (user: User) => {
         if (!isAdmin) return;
@@ -133,7 +140,7 @@ export function UserManagementPage() {
                     <div className="flex gap-2">
                         <Button onClick={() => setIsCreateDialogOpen(true)}>
                             <Plus className="mr-2 h-4 w-4" />
-                            Neues Mitglied
+                            Neuer Mitglied
                         </Button>
                     </div>
                 )}
@@ -148,191 +155,156 @@ export function UserManagementPage() {
                             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                             <Input
                                 placeholder="Name oder E-Mail suchen..."
+                                className="pl-10"
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
-                                className="pl-9"
                             />
                         </div>
 
-                        {/* Status Filter */}
-                        <div className="flex gap-2 flex-wrap">
-                            <Button
-                                variant={statusFilter === 'all' ? 'default' : 'outline'}
-                                size="sm"
-                                onClick={() => setStatusFilter('all')}
+                        {/* Register Filter */}
+                        <div className="flex gap-2 items-center">
+                            <span className="text-sm text-muted-foreground whitespace-nowrap">Register:</span>
+                            <select
+                                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                                value={registerFilter}
+                                onChange={(e) => setRegisterFilter(e.target.value === 'all' ? 'all' : parseInt(e.target.value))}
                             >
-                                Alle
-                            </Button>
-                            <Button
-                                variant={statusFilter === 'active' ? 'default' : 'outline'}
-                                size="sm"
-                                onClick={() => setStatusFilter('active')}
-                            >
-                                <UserCheck className="h-4 w-4 mr-1" />
-                                Aktiv
-                            </Button>
-                            <Button
-                                variant={statusFilter === 'passive' ? 'default' : 'outline'}
-                                size="sm"
-                                onClick={() => setStatusFilter('passive')}
-                            >
-                                <UserX className="h-4 w-4 mr-1" />
-                                Passiv
-                            </Button>
+                                <option value="all">Alle</option>
+                                {registers?.map((reg) => (
+                                    <option key={reg.id} value={reg.id}>
+                                        {reg.name}
+                                    </option>
+                                ))}
+                            </select>
                         </div>
 
-                        {/* Register Filter */}
-                        <select
-                            className="h-9 rounded-md border border-input bg-background px-3 py-1 text-sm"
-                            value={registerFilter}
-                            onChange={(e) => setRegisterFilter(e.target.value === 'all' ? 'all' : parseInt(e.target.value))}
-                        >
-                            <option value="all">Alle Register</option>
-                            {registers?.map((reg) => (
-                                <option key={reg.id} value={reg.id}>{reg.name}</option>
-                            ))}
-                        </select>
+                        {/* Status Filter */}
+                        <div className="flex gap-2 items-center">
+                            <span className="text-sm text-muted-foreground whitespace-nowrap">Status:</span>
+                            <select
+                                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                                value={statusFilter}
+                                onChange={(e) => setStatusFilter(e.target.value as any)}
+                            >
+                                <option value="all">Alle</option>
+                                <option value="active">Aktiv</option>
+                                <option value="passive">Passiv</option>
+                                <option value="former">Ehemalig</option>
+                            </select>
+                        </div>
                     </div>
                 </CardContent>
             </Card>
 
-            {/* Users Table */}
-            <Card>
-                <CardContent className="p-0">
-                    {usersLoading ? (
-                        <div className="p-6 space-y-4">
-                            {[1, 2, 3, 4, 5].map((i) => (
-                                <Skeleton key={i} className="h-12 w-full" />
-                            ))}
-                        </div>
-                    ) : (
-                        <ZoomableTableWrapper title="Mitgliederliste">
-                            <Table>
-                                <TableHeader>
-                                    <TableRow>
-                                        <TableHead>Name</TableHead>
-                                        <TableHead className="hidden sm:table-cell">E-Mail</TableHead>
-                                        <TableHead className="hidden lg:table-cell">Telefon</TableHead>
-                                        <TableHead>Register</TableHead>
-                                        <TableHead className="hidden sm:table-cell">Status</TableHead>
-                                        <TableHead className="hidden sm:table-cell">Rolle</TableHead>
-                                        {isAdmin && <TableHead className="text-right">Aktionen</TableHead>}
+            {/* Results */}
+            <div className="rounded-md border bg-card overflow-hidden">
+                <ZoomableTableWrapper>
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead>Name</TableHead>
+                                <TableHead>Register</TableHead>
+                                <TableHead>Status</TableHead>
+                                <TableHead>E-Mail</TableHead>
+                                {isAdmin && <TableHead className="text-right">Aktionen</TableHead>}
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {usersLoading ? (
+                                [1, 2, 3, 4, 5].map((i) => (
+                                    <TableRow key={i}>
+                                        <TableCell><Skeleton className="h-4 w-32" /></TableCell>
+                                        <TableCell><Skeleton className="h-4 w-24" /></TableCell>
+                                        <TableCell><Skeleton className="h-4 w-16" /></TableCell>
+                                        <TableCell><Skeleton className="h-4 w-40" /></TableCell>
+                                        {isAdmin && <TableCell><Skeleton className="h-4 w-12 ml-auto" /></TableCell>}
                                     </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {filteredUsers.map((user) => (
-                                        <TableRow key={user.id}>
-                                            <TableCell className="font-medium py-3 sm:py-4">
-                                                <div className="space-y-1">
-                                                    <div className="font-medium">
-                                                        {user.firstName} {user.lastName}
-                                                    </div>
-                                                    <div className="text-xs text-muted-foreground sm:hidden truncate max-w-[180px]">
-                                                        {user.email}
-                                                    </div>
+                                ))
+                            ) : filteredUsers.length === 0 ? (
+                                <TableRow>
+                                    <TableCell colSpan={isAdmin ? 5 : 4} className="h-32 text-center text-muted-foreground">
+                                        Keine Mitglieder gefunden
+                                    </TableCell>
+                                </TableRow>
+                            ) : (
+                                filteredUsers.map((user) => (
+                                    <TableRow key={user.id} className="hover:bg-muted/50 transition-colors">
+                                        <TableCell className="font-medium">
+                                            {user.firstName} {user.lastName}
+                                        </TableCell>
+                                        <TableCell>
+                                            {user.register?.name || '-'}
+                                        </TableCell>
+                                        <TableCell>
+                                            <Badge variant={statusVariant[user.status]}>
+                                                {getStatusLabel(user.status)}
+                                            </Badge>
+                                        </TableCell>
+                                        <TableCell className="text-muted-foreground">
+                                            {user.email}
+                                        </TableCell>
+                                        {isAdmin && (
+                                            <TableCell className="text-right">
+                                                <div className="flex justify-end gap-2">
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        onClick={() => handleEditUser(user)}
+                                                    >
+                                                        <Pencil className="h-4 w-4" />
+                                                    </Button>
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                                                        onClick={() => {
+                                                            setSelectedUser(user);
+                                                            setIsDeleteDialogOpen(true);
+                                                        }}
+                                                    >
+                                                        <Trash2 className="h-4 w-4" />
+                                                    </Button>
                                                 </div>
                                             </TableCell>
-                                            <TableCell className="hidden sm:table-cell text-muted-foreground">
-                                                {user.email}
-                                            </TableCell>
-                                            <TableCell className="hidden lg:table-cell text-muted-foreground">
-                                                {user.phoneNumber || '-'}
-                                            </TableCell>
-                                            <TableCell>
-                                                <div className="flex flex-col gap-1">
-                                                    <span>{user.register?.name || '–'}</span>
-                                                    <div className="flex gap-1 sm:hidden">
-                                                        <Badge variant={statusVariant[user.status]} className="text-[10px] h-5 px-1.5">
-                                                            {getStatusLabel(user.status)}
-                                                        </Badge>
-                                                        <Badge variant={user.role === 'admin' ? 'default' : 'outline'} className="text-[10px] h-5 px-1.5">
-                                                            {user.role === 'admin' ? 'Admin' : 'Mitgl.'}
-                                                        </Badge>
-                                                    </div>
-                                                </div>
-                                            </TableCell>
-                                            <TableCell className="hidden sm:table-cell">
-                                                <Badge variant={statusVariant[user.status]}>
-                                                    {getStatusLabel(user.status)}
-                                                </Badge>
-                                            </TableCell>
-                                            <TableCell className="hidden sm:table-cell">
-                                                <Badge variant={user.role === 'admin' ? 'default' : 'outline'}>
-                                                    {user.role === 'admin' ? 'Admin' : 'Mitglied'}
-                                                </Badge>
-                                            </TableCell>
-                                            {isAdmin && (
-                                                <TableCell className="text-right py-3 sm:py-4">
-                                                    <div className="flex gap-1 justify-end">
-                                                        <Button
-                                                            variant="ghost"
-                                                            size="icon"
-                                                            onClick={() => handleEditUser(user)}
-                                                            className="h-10 w-10 text-muted-foreground"
-                                                        >
-                                                            <Pencil className="h-5 w-5" />
-                                                        </Button>
-                                                        <Button
-                                                            variant="ghost"
-                                                            size="icon"
-                                                            onClick={() => handleDeleteUser(user)}
-                                                            className="h-10 w-10 text-destructive hover:text-destructive"
-                                                        >
-                                                            <Trash2 className="h-5 w-5" />
-                                                        </Button>
-                                                    </div>
-                                                </TableCell>
-                                            )}
-                                        </TableRow>
-                                    ))}
-                                    {filteredUsers.length === 0 && (
-                                        <TableRow>
-                                            <TableCell colSpan={isAdmin ? 7 : 6} className="text-center py-8 text-muted-foreground">
-                                                Keine Mitglieder gefunden
-                                            </TableCell>
-                                        </TableRow>
-                                    )}
-                                </TableBody>
-                            </Table>
-                        </ZoomableTableWrapper>
-                    )}
-                </CardContent>
-            </Card>
+                                        )}
+                                    </TableRow>
+                                ))
+                            )}
+                        </TableBody>
+                    </Table>
+                </ZoomableTableWrapper>
+            </div>
+
+            {/* Pagination / Total count */}
+            <div className="text-sm text-muted-foreground">
+                Gesamt: {filteredUsers.length} Mitglieder
+            </div>
 
             {/* Dialogs */}
-            {isAdmin && (
-                <>
-                    <AdminEditUserDialog
-                        open={isEditDialogOpen}
-                        onOpenChange={setIsEditDialogOpen}
-                        user={selectedUser}
-                        registers={registers}
-                    />
-                    <CreateUserDialog
-                        open={isCreateDialogOpen}
-                        onOpenChange={setIsCreateDialogOpen}
-                    />
-                    <ConfirmDialog
-                        open={isDeleteDialogOpen}
-                        onOpenChange={setIsDeleteDialogOpen}
-                        title="Mitglied löschen"
-                        description={`Möchten Sie das Mitglied ${selectedUser?.firstName} ${selectedUser?.lastName} wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden.`}
-                        onConfirm={confirmDelete}
-                        confirmText="Löschen"
-                        variant="destructive"
-                        isLoading={deleteUserMutation.isPending}
-                    />
-                </>
+            {isAdmin && selectedUser && (
+                <AdminEditUserDialog
+                    user={selectedUser}
+                    open={isEditDialogOpen}
+                    onOpenChange={setIsEditDialogOpen}
+                />
             )}
 
-            {/* Summary */}
-            {users && (
-                <div className="text-sm text-muted-foreground text-center">
-                    {filteredUsers.length} von {users.length} Mitgliedern angezeigt
-                </div>
+            {isAdmin && (
+                <CreateUserDialog
+                    open={isCreateDialogOpen}
+                    onOpenChange={setIsCreateDialogOpen}
+                />
             )}
+
+            <ConfirmDialog
+                open={isDeleteDialogOpen}
+                onOpenChange={setIsDeleteDialogOpen}
+                title="Mitglied löschen"
+                description={`Bist du sicher, dass du ${selectedUser?.firstName} ${selectedUser?.lastName} löschen möchtest? Dies kann nicht rückgängig gemacht werden.`}
+                onConfirm={confirmDelete}
+                confirmText="Löschen"
+                variant="destructive"
+            />
         </div>
     );
 }
-
-export default UserManagementPage;

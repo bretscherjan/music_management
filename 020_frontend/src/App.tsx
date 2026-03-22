@@ -41,6 +41,9 @@ import { DatabasePreviewerPage } from '@/pages/admin/DatabasePreviewerPage';
 import { TableDetailPage } from '@/pages/admin/TableDetailPage';
 import { ProtokollPage } from '@/pages/admin/ProtokollPage';
 import { LogsPage } from '@/pages/admin/LogsPage';
+import { GrifftabelleEditorPage } from '@/pages/admin/GrifftabelleEditorPage';
+import { ChatPortalPage } from '@/pages/chat/ChatPortalPage';
+import { ChatDetailPage } from '@/pages/chat/ChatDetailPage';
 
 const queryClient = new QueryClient();
 
@@ -78,6 +81,8 @@ function App() {
               <Route path="music-folders/:id" element={<MusicFolderPage />} />
               <Route path="settings" element={<UserSettingsPage />} />
               <Route path="members" element={<UserManagementPage />} />
+              <Route path="chat" element={<ChatPortalPage />} />
+              <Route path="chat/:chatId" element={<ChatDetailPage />} />
 
               <Route path="grifftabelle" element={<ProtectedRoute requireAdmin><GrifftabellePage /></ProtectedRoute>} />
               <Route path="admin/toolkit" element={<ProtectedRoute requireAdmin><ToolkitPage /></ProtectedRoute>} />
@@ -96,6 +101,7 @@ function App() {
               <Route path="admin/db/tables/:tableName" element={<ProtectedRoute requireAdmin><TableDetailPage /></ProtectedRoute>} />
               <Route path="admin/protokoll" element={<ProtectedRoute requireAdmin><ProtokollPage /></ProtectedRoute>} />
               <Route path="admin/logs" element={<ProtectedRoute requireAdmin><LogsPage /></ProtectedRoute>} />
+              <Route path="admin/grifftabelle-edit" element={<ProtectedRoute requireAdmin><GrifftabelleEditorPage /></ProtectedRoute>} />
             </Route>
 
             <Route path="*" element={<Navigate to="/" replace />} />

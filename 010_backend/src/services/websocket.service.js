@@ -74,8 +74,39 @@ function initializeWebSocket(httpServer) {
     io.on('connection', (socket) => {
         console.log(`🔌 Admin connected to workspace: ${socket.user.firstName} ${socket.user.lastName}`);
 
-        // Join the workspace room
+        // Join the workspace room and a private user room
         socket.join('workspace');
+        socket.join(`user:${socket.user.id}`);
+
+        // ── Chat Events ──
+        socket.on('chat:join', (data) => {
+            const { chatId } = data;
+            socket.join(`chat:${chatId}`);
+            console.log(`💬 User ${socket.user.id} joined chat:${chatId}`);
+        });
+
+        socket.on('chat:leave', (data) => {
+            const { chatId } = data;
+            socket.leave(`chat:${chatId}`);
+            console.log(`💬 User ${socket.user.id} left chat:${chatId}`);
+        });
+
+        socket.on('chat:typing:start', (data) => {
+            const { chatId } = data;
+            socket.to(`chat:${chatId}`).emit('chat:typing:started', {
+                chatId,
+                userId: socket.user.id,
+                firstName: socket.user.firstName
+            });
+        });
+
+        socket.on('chat:typing:stop', (data) => {
+            const { chatId } = data;
+            socket.to(`chat:${chatId}`).emit('chat:typing:stopped', {
+                chatId,
+                userId: socket.user.id
+            });
+        });
 
         // ── Presence Tracking (for analytics dashboard) ──
         // Add user to online list

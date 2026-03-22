@@ -1,5 +1,6 @@
-﻿import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useSearchParams } from 'react-router-dom';
 import {
     MoreVertical,
     Shield,
@@ -37,15 +38,6 @@ import {
 } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
-import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle,
-} from '@/components/ui/dialog';
-
 import { toast } from 'sonner';
 import { useIsAdmin } from '@/context/AuthContext';
 import { fileService } from '@/services/fileService';
@@ -57,6 +49,7 @@ import { ManageAccessDialog } from '@/components/files/ManageAccessDialog';
 import { ManageFolderAccessDialog } from '@/components/files/ManageFolderAccessDialog';
 import { ManageBulkAccessDialog } from '@/components/files/ManageBulkAccessDialog';
 import { FilePreviewDialog } from '@/components/files/FilePreviewDialog';
+import { ConfirmDialog } from '@/components/common/ConfirmDialog';
 import { MoveItemDialog } from '@/components/files/MoveItemDialog';
 import { WrapInFolderDialog } from '@/components/files/WrapInFolderDialog';
 import { RenameFolderDialog } from '@/components/files/RenameFolderDialog';
@@ -65,9 +58,13 @@ import { Checkbox } from '@/components/ui/checkbox';
 export function FileListPage() {
     const isAdmin = useIsAdmin();
     const queryClient = useQueryClient();
+    const [searchParams, setSearchParams] = useSearchParams();
+    const folderParam = searchParams.get('folder');
+    const fileIdParam = searchParams.get('fileId');
 
-    // State now tracks Folder ID (null = root)
-    const [currentFolderId, setCurrentFolderId] = useState<number | null>(null);
+    // URL is the single source of truth for folder navigation.
+    const parsedFolderId = folderParam !== null ? parseInt(folderParam, 10) : NaN;
+    const currentFolderId: number | null = Number.isNaN(parsedFolderId) ? null : parsedFolderId;
 
     const [downloading, setDownloading] = useState<number | null>(null);
     const [isUploadOpen, setIsUploadOpen] = useState(false);
@@ -88,10 +85,67 @@ export function FileListPage() {
     const [selectedFolderIds, setSelectedFolderIds] = useState<number[]>([]);
     const [isBulkAccessOpen, setIsBulkAccessOpen] = useState(false);
 
-    const { data: folderContents, isLoading } = useQuery({
+    const { data: folderContents, isLoading, error: folderError } = useQuery({
         queryKey: ['folderContents', currentFolderId],
         queryFn: () => fileService.getFolderContents(currentFolderId ?? 'root'),
     });
+
+    const updateFolderInUrl = useCallback((
+        folderId: number | null,
+        options?: { replace?: boolean; clearFileId?: boolean }
+    ) => {
+        setSearchParams(prev => {
+            const next = new URLSearchParams(prev);
+            if (folderId === null) {
+                next.delete('folder');
+            } else {
+                next.set('folder', folderId.toString());
+            }
+
+            if (options?.clearFileId) {
+                next.delete('fileId');
+            }
+
+            return next;
+        }, { replace: options?.replace ?? false });
+    }, [setSearchParams]);
+
+    // Handle file highlighting
+    useEffect(() => {
+        if (fileIdParam && folderContents) {
+            const timer = setTimeout(() => {
+                const element = document.getElementById(`file-${fileIdParam}`);
+                if (element) {
+                    element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    element.classList.add('ring-2', 'ring-primary', 'ring-offset-2', 'transition-all');
+                    setTimeout(() => {
+                        element.classList.remove('ring-2', 'ring-primary', 'ring-offset-2');
+                    }, 5000);
+                }
+            }, 500);
+            return () => clearTimeout(timer);
+        }
+    }, [fileIdParam, folderContents]);
+
+    // If fileId is provided but we are in the wrong folder, we need to find its parent folder
+    const { data: fileInfo } = useQuery({
+        queryKey: ['fileInfo', fileIdParam],
+        queryFn: () => fileService.getInfo(parseInt(fileIdParam!)),
+        enabled: !!fileIdParam && (!folderContents?.files.find((f: any) => f.id === parseInt(fileIdParam!)))
+    });
+
+    const resolvedFileFolderId: number | null | undefined = fileInfo
+        ? ((fileInfo as any).folderId ?? (fileInfo as any).folder?.id ?? null)
+        : undefined;
+
+    useEffect(() => {
+        if (resolvedFileFolderId !== undefined) {
+            if (resolvedFileFolderId !== currentFolderId) {
+                // Keep browser history clean for automatic deep-link correction.
+                updateFolderInUrl(resolvedFileFolderId, { replace: true });
+            }
+        }
+    }, [resolvedFileFolderId, currentFolderId, updateFolderInUrl]);
 
     const deleteFileMutation = useMutation({
         mutationFn: (id: number) => fileService.delete(id),
@@ -141,41 +195,33 @@ export function FileListPage() {
     };
 
     const navigateToFolder = (folderId: number | null) => {
-        setCurrentFolderId(folderId);
+        // Manual navigation should drop fileId, otherwise deep-link auto-correction can override navigation.
+        updateFolderInUrl(folderId, { clearFileId: true });
     };
 
     const navigateUp = () => {
         if (folderContents?.currentFolder?.parentId !== undefined) {
-            setCurrentFolderId(folderContents.currentFolder.parentId);
+            navigateToFolder(folderContents.currentFolder.parentId);
         } else {
-            setCurrentFolderId(null);
+            navigateToFolder(null);
         }
     };
 
-    const getFileIcon = (mimetype: string) => {
-        if (mimetype.includes('pdf')) return '📄';
-        if (mimetype.includes('image')) return '🖼️';
-        if (mimetype.includes('audio')) return '🎵';
-        if (mimetype.includes('video')) return '🎬';
-        return '📎';
-    };
-
-    // Derived from API response
-    const folders = folderContents?.folders || [];
-    const files = folderContents?.files || [];
-    const breadcrumbs = folderContents?.breadcrumbs || [];
-    const currentFolderName = folderContents?.currentFolder?.name || 'Root';
-
-    const toggleFileSelection = (fileId: number) => {
+    const toggleFileSelection = (id: number) => {
         setSelectedFileIds(prev =>
-            prev.includes(fileId) ? prev.filter(id => id !== fileId) : [...prev, fileId]
+            prev.includes(id) ? prev.filter(fid => fid !== id) : [...prev, id]
         );
     };
 
-    const toggleFolderSelection = (folderId: number) => {
+    const toggleFolderSelection = (id: number) => {
         setSelectedFolderIds(prev =>
-            prev.includes(folderId) ? prev.filter(id => id !== folderId) : [...prev, folderId]
+            prev.includes(id) ? prev.filter(fid => fid !== id) : [...prev, id]
         );
+    };
+
+    const clearSelection = () => {
+        setSelectedFileIds([]);
+        setSelectedFolderIds([]);
     };
 
     const toggleSelectAll = () => {
@@ -188,13 +234,24 @@ export function FileListPage() {
         }
     };
 
-    const clearSelection = () => {
-        setSelectedFileIds([]);
-        setSelectedFolderIds([]);
+    const getFileIcon = (mimetype: string) => {
+        if (mimetype.includes('pdf')) return '📄';
+        if (mimetype.includes('word')) return '📄';
+        if (mimetype.includes('excel')) return '📊';
+        if (mimetype.includes('powerpoint')) return '📈';
+        if (mimetype.includes('image')) return '🖼️';
+        if (mimetype.includes('audio')) return '🎵';
+        if (mimetype.includes('video')) return '🎬';
+        return '📄';
     };
 
+    const folders = folderContents?.folders || [];
+    const files = folderContents?.files || [];
+    const breadcrumbs = folderContents?.breadcrumbs || [];
+    const currentFolderName = folderContents?.currentFolder?.name || 'Root';
+
     return (
-        <div className="space-y-6 container-app py-8">
+        <div className="space-y-6">
             {/* Header */}
             <div className="flex items-center justify-between flex-wrap gap-4">
                 <div>
@@ -231,7 +288,7 @@ export function FileListPage() {
                     <span>Root</span>
                 </button>
 
-                {breadcrumbs.map((crumb) => (
+                {breadcrumbs.map((crumb: any) => (
                     <div key={crumb.id} className="flex items-center gap-2">
                         <ChevronRight className="h-4 w-4 text-muted-foreground" />
                         <button
@@ -242,10 +299,6 @@ export function FileListPage() {
                         </button>
                     </div>
                 ))}
-
-                {/* Always show current if not root and not in breadcrumbs (if logic differs) */}
-                {/* Check if current is last breadcrumb, if not add it? API returns full path usually including current? */}
-                {/* Based on my backend logic, I included current in breadcrumbs. So valid. */}
             </div>
 
             {/* Back Button if not root */}
@@ -268,6 +321,15 @@ export function FileListPage() {
                         </Card>
                     ))}
                 </div>
+            ) : folderError ? (
+                <Card>
+                    <CardContent className="p-12 text-center">
+                        <p className="text-destructive font-medium mb-3">Fehler beim Laden der Dateien</p>
+                        <Button variant="outline" size="sm" onClick={() => window.location.reload()}>
+                            Erneut versuchen
+                        </Button>
+                    </CardContent>
+                </Card>
             ) : (
                 <Card>
                     <CardHeader>
@@ -301,11 +363,11 @@ export function FileListPage() {
                             {folders.length > 0 && (
                                 <div className="space-y-2">
                                     <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-1">Ordner</h4>
-                                    {folders.map((folder) => (
+                                    {folders.map((folder: any) => (
                                         <div
                                             key={folder.id}
-                                            className={`flex items-center justify-between p-3 rounded-lg transition-colors group relative border ${selectedFolderIds.includes(folder.id) ? 'bg-primary/10 border-primary/20' : 'bg-muted/30 hover:bg-muted/50 border-transparent'
-                                                }`}
+                                            id={`folder-${folder.id}`}
+                                            className={`flex items-center justify-between p-3 rounded-lg transition-colors group relative border ${selectedFolderIds.includes(folder.id) ? 'bg-primary/10 border-primary/20' : 'bg-muted/30 hover:bg-muted/50 border-transparent'}`}
                                         >
                                             <div className="flex items-center gap-3 flex-1 min-w-0">
                                                 {isAdmin && (
@@ -324,9 +386,7 @@ export function FileListPage() {
                                                 >
                                                     <Folder className="h-10 w-10 fill-primary/20 text-primary transition-transform group-hover:scale-110 shrink-0" />
                                                     <div className="flex flex-col overflow-hidden">
-                                                        <span className="font-medium text-base truncate">
-                                                            {folder.name}
-                                                        </span>
+                                                        <span className="font-medium text-base truncate">{folder.name}</span>
                                                         <span className="text-xs text-muted-foreground">
                                                             {(folder._count?.files || 0) + (folder._count?.children || 0)} Objekte
                                                         </span>
@@ -346,38 +406,20 @@ export function FileListPage() {
                                                         <DropdownMenuContent align="end">
                                                             <DropdownMenuLabel>Aktionen</DropdownMenuLabel>
                                                             <DropdownMenuSeparator />
-                                                            <DropdownMenuItem
-                                                                onClick={(e) => {
-                                                                    e.stopPropagation();
-                                                                    setRenameFolder({ id: folder.id, name: folder.name });
-                                                                }}
-                                                            >
+                                                            <DropdownMenuItem onClick={() => setRenameFolder({ id: folder.id, name: folder.name })}>
                                                                 <Pencil className="mr-2 h-4 w-4" />
                                                                 Umbenennen
                                                             </DropdownMenuItem>
-                                                            <DropdownMenuItem
-                                                                onClick={(e) => {
-                                                                    e.stopPropagation();
-                                                                    setMoveItem({ id: folder.id, type: 'folder', name: folder.name });
-                                                                }}
-                                                            >
+                                                            <DropdownMenuItem onClick={() => setMoveItem({ id: folder.id, type: 'folder', name: folder.name })}>
                                                                 <FolderInput className="mr-2 h-4 w-4" />
                                                                 Verschieben
                                                             </DropdownMenuItem>
-                                                            <DropdownMenuItem
-                                                                onClick={(e) => {
-                                                                    e.stopPropagation();
-                                                                    setManageAccessFolder(folder);
-                                                                }}
-                                                            >
+                                                            <DropdownMenuItem onClick={() => setManageAccessFolder(folder)}>
                                                                 <Shield className="mr-2 h-4 w-4" />
                                                                 Berechtigungen
                                                             </DropdownMenuItem>
                                                             <DropdownMenuItem
-                                                                onClick={(e) => {
-                                                                    e.stopPropagation();
-                                                                    setDeleteFolderId(folder.id);
-                                                                }}
+                                                                onClick={() => setDeleteFolderId(folder.id)}
                                                                 className="text-red-600 focus:text-red-600"
                                                             >
                                                                 <Trash2 className="mr-2 h-4 w-4" />
@@ -396,13 +438,13 @@ export function FileListPage() {
                             {files.length > 0 && (
                                 <div className="space-y-2">
                                     <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-1">Dateien</h4>
-                                    {files.map((file) => (
+                                    {files.map((file: FileEntity) => (
                                         <div
                                             key={file.id}
+                                            id={`file-${file.id}`}
                                             className={`flex items-center justify-between p-3 rounded-lg transition-colors border group relative ${selectedFileIds.includes(file.id)
                                                 ? 'bg-primary/10 border-primary/30'
-                                                : 'hover:bg-accent/50 border-transparent hover:border-border'
-                                                } cursor-pointer`}
+                                                : 'hover:bg-accent/50 border-transparent hover:border-border'} cursor-pointer`}
                                             onClick={() => handlePreview(file.id)}
                                         >
                                             <div className="flex items-center gap-3 min-w-0 flex-1">
@@ -417,9 +459,7 @@ export function FileListPage() {
                                                     </div>
                                                 )}
                                                 <div className="flex items-center gap-3 min-w-0 flex-1">
-                                                    <span className="text-2xl flex-shrink-0">
-                                                        {getFileIcon(file.mimetype)}
-                                                    </span>
+                                                    <span className="text-2xl flex-shrink-0">{getFileIcon(file.mimetype)}</span>
                                                     <div className="min-w-0 flex-1">
                                                         <p className="font-medium truncate transition-colors">{file.originalName}</p>
                                                         <div className="flex gap-2 text-xs text-muted-foreground">
@@ -434,7 +474,7 @@ export function FileListPage() {
                                                     </div>
                                                 </div>
                                             </div>
-                                            <div className="flex items-center gap-1">
+                                            <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
                                                 <Button
                                                     variant="ghost"
                                                     size="icon"
@@ -461,18 +501,12 @@ export function FileListPage() {
                                                     <DropdownMenuContent align="end">
                                                         <DropdownMenuLabel>Aktionen</DropdownMenuLabel>
                                                         <DropdownMenuSeparator />
-                                                        <DropdownMenuItem onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            handlePreview(file.id);
-                                                        }}>
+                                                        <DropdownMenuItem onClick={() => handlePreview(file.id)}>
                                                             <Eye className="mr-2 h-4 w-4" />
                                                             Vorschau
                                                         </DropdownMenuItem>
                                                         <DropdownMenuItem
-                                                            onClick={(e) => {
-                                                                e.stopPropagation();
-                                                                handleDownload(file.id, file.originalName);
-                                                            }}
+                                                            onClick={() => handleDownload(file.id, file.originalName)}
                                                             disabled={downloading === file.id}
                                                         >
                                                             {downloading === file.id ? (
@@ -486,27 +520,16 @@ export function FileListPage() {
                                                         {isAdmin && (
                                                             <>
                                                                 <DropdownMenuSeparator />
-                                                                <DropdownMenuItem
-                                                                    onClick={(e) => {
-                                                                        e.stopPropagation();
-                                                                        setMoveItem({ id: file.id, type: 'file', name: file.originalName });
-                                                                    }}
-                                                                >
+                                                                <DropdownMenuItem onClick={() => setMoveItem({ id: file.id, type: 'file', name: file.originalName })}>
                                                                     <FolderInput className="mr-2 h-4 w-4" />
                                                                     Verschieben
                                                                 </DropdownMenuItem>
-                                                                <DropdownMenuItem onClick={(e) => {
-                                                                    e.stopPropagation();
-                                                                    setManageAccessFile(file);
-                                                                }}>
+                                                                <DropdownMenuItem onClick={() => setManageAccessFile(file)}>
                                                                     <Shield className="mr-2 h-4 w-4" />
                                                                     Berechtigungen
                                                                 </DropdownMenuItem>
                                                                 <DropdownMenuItem
-                                                                    onClick={(e) => {
-                                                                        e.stopPropagation();
-                                                                        setDeleteFileId(file.id);
-                                                                    }}
+                                                                    onClick={() => setDeleteFileId(file.id)}
                                                                     className="text-red-600 focus:text-red-600"
                                                                 >
                                                                     <Trash2 className="mr-2 h-4 w-4" />
@@ -549,40 +572,14 @@ export function FileListPage() {
                             </div>
 
                             <div className="flex items-center gap-2">
-                                <Button
-                                    size="sm"
-                                    onClick={() => setIsBulkAccessOpen(true)}
-                                    className="h-9"
-                                >
+                                <Button size="sm" onClick={() => setIsBulkAccessOpen(true)} className="h-9">
                                     <Shield className="h-4 w-4 mr-2" />
                                     Berechtigungen setzen
                                 </Button>
 
-                                <Button
-                                    size="sm"
-                                    variant="outline"
-                                    onClick={() => setIsWrapInFolderOpen(true)}
-                                    className="h-9"
-                                >
+                                <Button size="sm" variant="outline" onClick={() => setIsWrapInFolderOpen(true)} className="h-9">
                                     <FolderPlus className="h-4 w-4 mr-2" />
                                     In Ordner einpacken
-                                </Button>
-
-                                <Button
-                                    size="sm"
-                                    variant="destructive"
-                                    onClick={() => {
-                                        // Simple bulk delete confirmation or just open dialog? 
-                                        // For simplicity, let's just use existing dialogs for single delete
-                                        // Or we could implement bulk delete too.
-                                        // Plan didn't specify bulk delete, but it's logical.
-                                        // Let's stick to the plan: permissions.
-                                    }}
-                                    className="h-9 hidden sm:flex"
-                                    disabled
-                                >
-                                    <Trash2 className="h-4 w-4 mr-2" />
-                                    Löschen
                                 </Button>
                             </div>
                         </CardContent>
@@ -590,7 +587,7 @@ export function FileListPage() {
                 </div>
             )}
 
-            {/* Upload Dialog */}
+            {/* Dialogs */}
             <FileUploadDialog
                 open={isUploadOpen}
                 onOpenChange={setIsUploadOpen}
@@ -598,7 +595,6 @@ export function FileListPage() {
                 currentFolderName={currentFolderName}
             />
 
-            {/* Create Folder Dialog */}
             <CreateFolderDialog
                 open={isCreateFolderOpen}
                 onOpenChange={setIsCreateFolderOpen}
@@ -606,125 +602,87 @@ export function FileListPage() {
                 currentFolderName={currentFolderName}
             />
 
-            {/* Manage Access Dialog */}
-            <ManageAccessDialog
-                open={!!manageAccessFile}
-                onOpenChange={(open) => !open && setManageAccessFile(null)}
-                file={manageAccessFile}
-            />
+            {manageAccessFile && (
+                <ManageAccessDialog
+                    file={manageAccessFile}
+                    open={!!manageAccessFile}
+                    onOpenChange={(open) => !open && setManageAccessFile(null)}
+                />
+            )}
 
-            {/* Manage Folder Access Dialog */}
-            <ManageFolderAccessDialog
-                open={!!manageAccessFolder}
-                onOpenChange={(open) => !open && setManageAccessFolder(null)}
-                folder={manageAccessFolder}
-            />
+            {manageAccessFolder && (
+                <ManageFolderAccessDialog
+                    folder={manageAccessFolder}
+                    open={!!manageAccessFolder}
+                    onOpenChange={(open) => !open && setManageAccessFolder(null)}
+                />
+            )}
 
-            {/* Manage Bulk Access Dialog */}
-            <ManageBulkAccessDialog
-                open={isBulkAccessOpen}
-                onOpenChange={setIsBulkAccessOpen}
-                selectedFileIds={selectedFileIds}
-                selectedFolderIds={selectedFolderIds}
-            />
+            {isBulkAccessOpen && (
+                <ManageBulkAccessDialog
+                    selectedFileIds={selectedFileIds}
+                    selectedFolderIds={selectedFolderIds}
+                    open={isBulkAccessOpen}
+                    onOpenChange={setIsBulkAccessOpen}
+                />
+            )}
 
-            {/* Delete File Confirmation Dialog */}
-            <Dialog open={deleteFileId !== null} onOpenChange={() => setDeleteFileId(null)}>
-                <DialogContent>
-                    <DialogHeader>
-                        <DialogTitle>Datei löschen</DialogTitle>
-                        <DialogDescription>
-                            Möchten Sie diese Datei wirklich löschen? Diese Aktion kann nicht rückgängig
-                            gemacht werden.
-                        </DialogDescription>
-                    </DialogHeader>
-                    <DialogFooter>
-                        <Button variant="outline" onClick={() => setDeleteFileId(null)}>
-                            Abbrechen
-                        </Button>
-                        <Button
-                            variant="destructive"
-                            onClick={handleDeleteFile}
-                            disabled={deleteFileMutation.isPending}
-                        >
-                            {deleteFileMutation.isPending && (
-                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                            )}
-                            Löschen
-                        </Button>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
-
-            {/* Delete Folder Confirmation Dialog */}
-            <Dialog open={deleteFolderId !== null} onOpenChange={() => setDeleteFolderId(null)}>
-                <DialogContent>
-                    <DialogHeader>
-                        <DialogTitle>Ordner löschen</DialogTitle>
-                        <DialogDescription className="text-destructive font-medium">
-                            WARNUNG: Möchten Sie den ausgewählten Ordner wirklich löschen?
-                        </DialogDescription>
-                        <DialogDescription>
-                            Dies wird permanent <b>alle Dateien und Unterordner</b> darin löschen.
-                            Diese Aktion kann nicht rückgängig gemacht werden.
-                        </DialogDescription>
-                    </DialogHeader>
-                    <DialogFooter>
-                        <Button variant="outline" onClick={() => setDeleteFolderId(null)}>
-                            Abbrechen
-                        </Button>
-                        <Button
-                            variant="destructive"
-                            onClick={handleDeleteFolder}
-                            disabled={deleteFolderMutation.isPending}
-                        >
-                            {deleteFolderMutation.isPending && (
-                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                            )}
-                            Alles löschen
-                        </Button>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
-
-            {/* File Preview Dialog */}
             <FilePreviewDialog
-                open={previewFileId !== null}
-                onOpenChange={(open) => !open && setPreviewFileId(null)}
-                files={files}
+                files={folderContents?.files ?? []}
                 initialFileId={previewFileId}
+                open={!!previewFileId}
+                onOpenChange={(open) => !open && setPreviewFileId(null)}
             />
-            {/* Move Item Dialog */}
+
+            <ConfirmDialog
+                open={!!deleteFileId}
+                onOpenChange={(open) => !open && setDeleteFileId(null)}
+                title="Datei löschen"
+                description="Bist du sicher, dass du diese Datei löschen möchtest? Dies kann nicht rückgängig gemacht werden."
+                onConfirm={handleDeleteFile}
+                variant="destructive"
+            />
+
+            <ConfirmDialog
+                open={!!deleteFolderId}
+                onOpenChange={(open) => !open && setDeleteFolderId(null)}
+                title="Ordner löschen"
+                description="Bist du sicher, dass du diesen Ordner und alle darin enthaltenen Dateien löschen möchtest?"
+                onConfirm={handleDeleteFolder}
+                variant="destructive"
+            />
+
             <MoveItemDialog
-                open={moveItem !== null}
-                onOpenChange={(open) => !open && setMoveItem(null)}
                 itemId={moveItem?.id ?? null}
                 itemType={moveItem?.type ?? 'file'}
                 itemName={moveItem?.name}
                 currentFolderId={currentFolderId}
+                open={!!moveItem}
+                onOpenChange={(open) => !open && setMoveItem(null)}
             />
 
-            {/* Wrap In Folder Dialog */}
             <WrapInFolderDialog
                 open={isWrapInFolderOpen}
                 onOpenChange={setIsWrapInFolderOpen}
                 selectedFileIds={selectedFileIds}
                 selectedFolderIds={selectedFolderIds}
                 currentFolderId={currentFolderId}
-                currentFolderName={currentFolderName}
-                onDone={clearSelection}
+                currentFolderName={folderContents?.currentFolder?.name ?? 'Root'}
+                onDone={() => {
+                    queryClient.invalidateQueries({ queryKey: ['folderContents'] });
+                    clearSelection();
+                    setIsWrapInFolderOpen(false);
+                }}
             />
 
-            {/* Rename Folder Dialog */}
-            {renameFolder && (
-                <RenameFolderDialog
-                    open={renameFolder !== null}
-                    onOpenChange={(open) => !open && setRenameFolder(null)}
-                    folderId={renameFolder.id}
-                    currentName={renameFolder.name}
-                />
-            )}
-
+            <RenameFolderDialog
+                folder={renameFolder}
+                open={!!renameFolder}
+                onOpenChange={(open) => !open && setRenameFolder(null)}
+                onSuccess={() => {
+                    queryClient.invalidateQueries({ queryKey: ['folderContents'] });
+                }}
+            />
         </div>
     );
 }

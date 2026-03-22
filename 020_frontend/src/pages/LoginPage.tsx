@@ -67,7 +67,7 @@ export function LoginPage() {
             <header className="border-b bg-card">
                 <div className="container-app flex items-center justify-between h-16">
                     <Link to="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
-                        <img src="/musig.png" alt="Musig Elgg Logo" className="h-12 w-auto" />
+                        <img src="/logos/musig.svg" alt="Musig Elgg Logo" className="h-12 w-auto" />
                         <div className="flex flex-col">
                             <span className="text-xl font-bold text-brand-secondary">
                                 Elgg
@@ -89,7 +89,7 @@ export function LoginPage() {
                 <Card className="w-full max-w-md shadow-xl border-border/10 rounded-[2rem] overflow-hidden">
                     <CardHeader className="text-center space-y-4 bg-muted/30">
                         <div className="flex justify-center">
-                            <img src="/logo_red.png" alt="Musig Elgg Logo" className="h-24 w-auto" />
+                            <img src="/logos/logo_on_white.svg" alt="Musig Elgg Logo" className="h-24 w-auto" />
                         </div>
                         <CardTitle className="text-2xl font-bold text-brand-primary">
                             Mitgliederbereich

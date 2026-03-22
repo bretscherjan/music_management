@@ -13,6 +13,7 @@
       {
         "note": "B3",
         "standard": [
+          "lh_thumb",
           "lh1",
           "lh2",
           "lh3",
@@ -20,8 +21,7 @@
           "rh2",
           "rh3",
           "rh_pinky_low_c",
-          "lh_pinky_low_b",
-          "lh_thumb"
+          "lh_pinky_low_b"
         ],
         "alternatives": [],
         "trills": []
@@ -29,14 +29,14 @@
       {
         "note": "C4",
         "standard": [
+          "lh_thumb",
           "lh1",
           "lh2",
           "lh3",
           "rh1",
           "rh2",
           "rh3",
-          "rh_pinky_low_c",
-          "lh_thumb"
+          "rh_pinky_low_c"
         ],
         "alternatives": [],
         "trills": []
@@ -44,14 +44,14 @@
       {
         "note": "C#4",
         "standard": [
+          "lh_thumb",
           "lh1",
           "lh2",
           "lh3",
           "rh1",
           "rh2",
           "rh3",
-          "rh_pinky_low_cs",
-          "lh_thumb"
+          "rh_pinky_low_cs"
         ],
         "alternatives": [],
         "trills": []
@@ -402,6 +402,7 @@
         "note": "A5",
         "standard": [
           "lh_thumb",
+          "lh1",
           "lh2",
           "rh_pinky_eb"
         ],
@@ -424,7 +425,6 @@
         "standard": [
           "lh_thumb",
           "lh1",
-          "rh3",
           "rh_pinky_eb"
         ],
         "alternatives": [],
@@ -434,10 +434,7 @@
         "note": "C6",
         "standard": [
           "lh1",
-          "lh2",
-          "lh3",
-          "lh_pinky_gs",
-          "rh1"
+          "rh_pinky_eb"
         ],
         "alternatives": [],
         "trills": []
@@ -445,10 +442,7 @@
       {
         "note": "C#6",
         "standard": [
-          "lh2",
-          "lh3",
-          "lh_pinky_gs",
-          "rh1"
+          "rh_pinky_eb"
         ],
         "alternatives": [],
         "trills": []
@@ -458,9 +452,7 @@
         "standard": [
           "lh_thumb",
           "lh2",
-          "lh3",
-          "rh1",
-          "rh_pinky_eb"
+          "lh3"
         ],
         "alternatives": [],
         "trills": [
@@ -477,6 +469,7 @@
       {
         "note": "D#6",
         "standard": [
+          "lh_thumb",
           "lh1",
           "lh2",
           "lh3",
@@ -492,6 +485,7 @@
       {
         "note": "E6",
         "standard": [
+          "lh_thumb",
           "lh1",
           "lh2",
           "rh1",
@@ -519,7 +513,7 @@
           "lh_thumb",
           "lh1",
           "lh3",
-          "rh2",
+          "rh3",
           "rh_pinky_eb"
         ],
         "alternatives": [],
@@ -552,7 +546,6 @@
         "standard": [
           "lh_thumb",
           "lh2",
-          "lh_pinky_gs",
           "rh1",
           "rh_pinky_eb"
         ],
@@ -564,10 +557,7 @@
         "standard": [
           "lh_thumb",
           "lh1",
-          "lh2",
-          "rh1",
-          "rh2",
-          "rh_pinky_eb"
+          "rh1"
         ],
         "alternatives": [],
         "trills": []
@@ -577,8 +567,7 @@
         "standard": [
           "lh_thumb",
           "lh1",
-          "lh3",
-          "rh1"
+          "lh3"
         ],
         "alternatives": [],
         "trills": []
@@ -587,10 +576,9 @@
         "note": "C7",
         "standard": [
           "lh1",
-          "lh2",
           "lh3",
           "lh_pinky_gs",
-          "rh1"
+          "rh_pinky_eb"
         ],
         "alternatives": [],
         "trills": []
@@ -601,7 +589,10 @@
           "lh2",
           "lh3",
           "lh_pinky_gs",
-          "rh1"
+          "rh1",
+          "rh2",
+          "rh3",
+          "rh_pinky_eb"
         ],
         "alternatives": [],
         "trills": []
@@ -611,9 +602,7 @@
         "standard": [
           "lh_thumb",
           "lh2",
-          "lh3",
-          "rh1",
-          "rh_pinky_eb"
+          "rh2"
         ],
         "alternatives": [],
         "trills": []
@@ -955,6 +944,7 @@
         "note": "A5",
         "standard": [
           "lh_thumb",
+          "lh1",
           "lh2",
           "rh_pinky_eb"
         ],
@@ -977,7 +967,6 @@
         "standard": [
           "lh_thumb",
           "lh1",
-          "rh3",
           "rh_pinky_eb"
         ],
         "alternatives": [],
@@ -987,10 +976,7 @@
         "note": "C6",
         "standard": [
           "lh1",
-          "lh2",
-          "lh3",
-          "lh_pinky_gs",
-          "rh1"
+          "rh_pinky_eb"
         ],
         "alternatives": [],
         "trills": [
@@ -1010,10 +996,7 @@
       {
         "note": "C#6",
         "standard": [
-          "lh2",
-          "lh3",
-          "lh_pinky_gs",
-          "rh1"
+          "rh_pinky_eb"
         ],
         "alternatives": [],
         "trills": []
@@ -1023,9 +1006,7 @@
         "standard": [
           "lh_thumb",
           "lh2",
-          "lh3",
-          "rh1",
-          "rh_pinky_eb"
+          "lh3"
         ],
         "alternatives": [],
         "trills": [
@@ -1042,6 +1023,7 @@
       {
         "note": "D#6",
         "standard": [
+          "lh_thumb",
           "lh1",
           "lh2",
           "lh3",
@@ -1057,6 +1039,7 @@
       {
         "note": "E6",
         "standard": [
+          "lh_thumb",
           "lh1",
           "lh2",
           "rh1",
@@ -1093,7 +1076,7 @@
           "lh_thumb",
           "lh1",
           "lh3",
-          "rh2",
+          "rh3",
           "rh_pinky_eb"
         ],
         "alternatives": [],
@@ -1126,7 +1109,6 @@
         "standard": [
           "lh_thumb",
           "lh2",
-          "lh_pinky_gs",
           "rh1",
           "rh_pinky_eb"
         ],
@@ -1138,10 +1120,7 @@
         "standard": [
           "lh_thumb",
           "lh1",
-          "lh2",
-          "rh1",
-          "rh2",
-          "rh_pinky_eb"
+          "rh1"
         ],
         "alternatives": [],
         "trills": []
@@ -1151,8 +1130,7 @@
         "standard": [
           "lh_thumb",
           "lh1",
-          "lh3",
-          "rh1"
+          "lh3"
         ],
         "alternatives": [],
         "trills": []
@@ -1161,10 +1139,9 @@
         "note": "C7",
         "standard": [
           "lh1",
-          "lh2",
           "lh3",
           "lh_pinky_gs",
-          "rh1"
+          "rh_pinky_eb"
         ],
         "alternatives": [
           {
@@ -1195,7 +1172,10 @@
           "lh2",
           "lh3",
           "lh_pinky_gs",
-          "rh1"
+          "rh1",
+          "rh2",
+          "rh3",
+          "rh_pinky_eb"
         ],
         "alternatives": [],
         "trills": []
@@ -1644,8 +1624,8 @@
       {
         "note": "G5",
         "standard": [
-          "lh_thumb",
-          "lh1:half",
+          "lh_octave",
+          "lh1",
           "lh2",
           "lh3"
         ],
@@ -1666,8 +1646,7 @@
         "note": "G#5",
         "standard": [
           "lh_octave",
-          "lh_thumb",
-          "lh1:half",
+          "lh1",
           "lh2",
           "lh3",
           "lh_pinky_gs"
@@ -1678,9 +1657,8 @@
       {
         "note": "A5",
         "standard": [
-          "lh_octave",
-          "lh_thumb",
-          "lh1:half",
+          "lh_whisper",
+          "lh1",
           "lh2"
         ],
         "alternatives": [
@@ -1697,10 +1675,8 @@
       {
         "note": "Bb5",
         "standard": [
-          "lh_octave",
-          "lh_thumb",
-          "lh1:half",
-          "lh2",
+          "lh_whisper",
+          "lh1",
           "rh1"
         ],
         "alternatives": [
@@ -1718,9 +1694,8 @@
       {
         "note": "B5",
         "standard": [
-          "lh_octave",
-          "lh_thumb",
-          "lh1:half"
+          "lh_whisper",
+          "lh1"
         ],
         "alternatives": [
           {
@@ -1735,8 +1710,7 @@
       {
         "note": "C6",
         "standard": [
-          "lh_octave",
-          "lh_thumb",
+          "lh_whisper",
           "lh2"
         ],
         "alternatives": [
@@ -2149,8 +2123,8 @@
       {
         "note": "Bb4",
         "standard": [
-          "lh_pinky_gs",
-          "lh_octave"
+          "lh_octave",
+          "lh_thumb"
         ],
         "alternatives": [],
         "trills": []
@@ -2717,9 +2691,8 @@
       {
         "note": "Bb4",
         "standard": [
-          "lh_thumb",
-          "lh1",
-          "lh_octave"
+          "lh_octave",
+          "lh_thumb"
         ],
         "alternatives": [],
         "trills": []
@@ -4402,9 +4375,7 @@
         "note": "D6",
         "standard": [
           "lh_thumb",
-          "lh_palm_f",
-          "rh2",
-          "rh3"
+          "lh_palm_d"
         ],
         "alternatives": [
           {
@@ -4433,10 +4404,8 @@
         "note": "Eb6",
         "standard": [
           "lh_thumb",
-          "lh_palm_f",
-          "rh2",
-          "rh3",
-          "rh_pinky_eb"
+          "lh_palm_d",
+          "lh_palm_eb"
         ],
         "alternatives": [],
         "trills": []
@@ -4445,8 +4414,9 @@
         "note": "E6",
         "standard": [
           "lh_thumb",
-          "lh1",
-          "lh_palm_d"
+          "lh_palm_d",
+          "lh_palm_eb",
+          "rh_side_e"
         ],
         "alternatives": [
           {
@@ -4475,9 +4445,9 @@
         "note": "F6",
         "standard": [
           "lh_thumb",
-          "lh1",
           "lh_palm_d",
-          "rh2",
+          "lh_palm_eb",
+          "lh_palm_f",
           "rh_side_e"
         ],
         "alternatives": [
@@ -4508,10 +4478,8 @@
         "note": "F#6",
         "standard": [
           "lh_thumb",
-          "lh1",
-          "lh_palm_d",
+          "lh_front_f",
           "lh_palm_eb",
-          "rh2",
           "rh_side_e"
         ],
         "alternatives": [
@@ -5141,9 +5109,7 @@
         "note": "D6",
         "standard": [
           "lh_thumb",
-          "lh_palm_f",
-          "rh2",
-          "rh3"
+          "lh_palm_d"
         ],
         "alternatives": [
           {
@@ -5172,10 +5138,8 @@
         "note": "Eb6",
         "standard": [
           "lh_thumb",
-          "lh_palm_f",
-          "rh2",
-          "rh3",
-          "rh_pinky_eb"
+          "lh_palm_d",
+          "lh_palm_eb"
         ],
         "alternatives": [],
         "trills": []
@@ -5184,8 +5148,9 @@
         "note": "E6",
         "standard": [
           "lh_thumb",
-          "lh1",
-          "lh_palm_d"
+          "lh_palm_d",
+          "lh_palm_eb",
+          "rh_side_e"
         ],
         "alternatives": [
           {
@@ -5214,9 +5179,9 @@
         "note": "F6",
         "standard": [
           "lh_thumb",
-          "lh1",
           "lh_palm_d",
-          "rh2",
+          "lh_palm_eb",
+          "lh_palm_f",
           "rh_side_e"
         ],
         "alternatives": [
@@ -5247,10 +5212,8 @@
         "note": "F#6",
         "standard": [
           "lh_thumb",
-          "lh1",
-          "lh_palm_d",
+          "lh_front_f",
           "lh_palm_eb",
-          "rh2",
           "rh_side_e"
         ],
         "alternatives": [
@@ -5880,9 +5843,7 @@
         "note": "D6",
         "standard": [
           "lh_thumb",
-          "lh_palm_f",
-          "rh2",
-          "rh3"
+          "lh_palm_d"
         ],
         "alternatives": [
           {
@@ -5911,10 +5872,8 @@
         "note": "Eb6",
         "standard": [
           "lh_thumb",
-          "lh_palm_f",
-          "rh2",
-          "rh3",
-          "rh_pinky_eb"
+          "lh_palm_d",
+          "lh_palm_eb"
         ],
         "alternatives": [],
         "trills": []
@@ -5923,8 +5882,9 @@
         "note": "E6",
         "standard": [
           "lh_thumb",
-          "lh1",
-          "lh_palm_d"
+          "lh_palm_d",
+          "lh_palm_eb",
+          "rh_side_e"
         ],
         "alternatives": [
           {
@@ -5953,9 +5913,9 @@
         "note": "F6",
         "standard": [
           "lh_thumb",
-          "lh1",
           "lh_palm_d",
-          "rh2",
+          "lh_palm_eb",
+          "lh_palm_f",
           "rh_side_e"
         ],
         "alternatives": [
@@ -5986,10 +5946,8 @@
         "note": "F#6",
         "standard": [
           "lh_thumb",
-          "lh1",
-          "lh_palm_d",
+          "lh_front_f",
           "lh_palm_eb",
-          "rh2",
           "rh_side_e"
         ],
         "alternatives": [
@@ -6634,9 +6592,7 @@
         "note": "D6",
         "standard": [
           "lh_thumb",
-          "lh_palm_f",
-          "rh2",
-          "rh3"
+          "lh_palm_d"
         ],
         "alternatives": [
           {
@@ -6665,10 +6621,8 @@
         "note": "Eb6",
         "standard": [
           "lh_thumb",
-          "lh_palm_f",
-          "rh2",
-          "rh3",
-          "rh_pinky_eb"
+          "lh_palm_d",
+          "lh_palm_eb"
         ],
         "alternatives": [],
         "trills": []
@@ -6677,8 +6631,9 @@
         "note": "E6",
         "standard": [
           "lh_thumb",
-          "lh1",
-          "lh_palm_d"
+          "lh_palm_d",
+          "lh_palm_eb",
+          "rh_side_e"
         ],
         "alternatives": [
           {
@@ -6707,9 +6662,9 @@
         "note": "F6",
         "standard": [
           "lh_thumb",
-          "lh1",
           "lh_palm_d",
-          "rh2",
+          "lh_palm_eb",
+          "lh_palm_f",
           "rh_side_e"
         ],
         "alternatives": [
@@ -6740,10 +6695,8 @@
         "note": "F#6",
         "standard": [
           "lh_thumb",
-          "lh1",
-          "lh_palm_d",
+          "lh_front_f",
           "lh_palm_eb",
-          "rh2",
           "rh_side_e"
         ],
         "alternatives": [

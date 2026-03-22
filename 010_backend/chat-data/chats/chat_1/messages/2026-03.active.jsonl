@@ -1,0 +1,32 @@
+{"id":"047f1f31-d761-4b1e-978b-08c214aa287c","senderId":38,"text":"hallo lisa","type":"text","createdAt":"2026-03-22T00:27:13.767Z","chatId":1}
+{"id":"5d1ad754-ffb3-48e2-8514-1a1a20f0215f","senderId":38,"text":"wie gehts dir?","type":"text","createdAt":"2026-03-22T00:27:33.067Z","chatId":1}
+{"id":"34b392d6-6cec-4d67-98fe-02898d4c9ad0","senderId":38,"text":"wie","type":"text","createdAt":"2026-03-22T00:27:37.309Z","chatId":1,"reactions":[{"emoji":"😮","userIds":[44]}],"editedAt":"2026-03-22T00:45:13.626Z"}
+{"id":"bb5f1f1a-bdb2-44a3-bb0e-5fde05a7a125","senderId":38,"text":"hallo wieso ist die nachricht doppelt?","type":"text","createdAt":"2026-03-22T00:27:46.908Z","chatId":1,"reactions":[{"emoji":"❤️","userIds":[38]}],"editedAt":"2026-03-22T00:45:10.926Z"}
+{"id":"b789c4fb-8feb-4f3c-b963-a4e2a0067838","senderId":44,"text":"hallo","type":"text","replyToId":"bb5f1f1a-bdb2-44a3-bb0e-5fde05a7a125","replyToText":"hallo wieso ist die nachricht doppelt?","createdAt":"2026-03-22T00:43:39.341Z","chatId":1}
+{"id":"e87c75e2-cbd8-41c0-9f9c-c24629df7a04","senderId":44,"text":"hoi","type":"text","replyToId":"047f1f31-d761-4b1e-978b-08c214aa287c","replyToText":"hallo lisa","createdAt":"2026-03-22T00:44:53.069Z","chatId":1}
+{"id":"9331142a-48c6-4902-9478-ad6008055b1c","senderId":38,"text":"test","type":"text","createdAt":"2026-03-22T00:45:45.371Z","chatId":1}
+{"id":"4615d457-2ba7-435f-9e1e-d730f27ad7fa","senderId":44,"text":"test","type":"text","createdAt":"2026-03-22T00:45:56.847Z","chatId":1}
+{"id":"cf853d10-4aa2-4dc0-9c26-e8f756674ea4","senderId":44,"text":"te","type":"text","createdAt":"2026-03-22T00:45:59.028Z","chatId":1}
+{"id":"4f07c740-3f2f-4095-bd51-5f81d18f0315","senderId":44,"text":"e","type":"text","createdAt":"2026-03-22T00:45:59.401Z","chatId":1}
+{"id":"7fe09b5c-4f5d-4961-89f4-b59dbc60ac27","senderId":44,"text":"e","type":"text","createdAt":"2026-03-22T00:45:59.976Z","chatId":1}
+{"id":"0be47980-fd59-41df-8253-4238a53c4b41","senderId":44,"text":"e","type":"text","createdAt":"2026-03-22T00:46:00.320Z","chatId":1}
+{"id":"06b32022-af84-4da6-99af-acba3e0d149b","senderId":44,"text":"er","type":"text","createdAt":"2026-03-22T00:46:01.201Z","chatId":1,"reactions":[{"emoji":"😮","userIds":[38,44]},{"emoji":"😂","userIds":[38]}],"editedAt":"2026-03-22T00:50:19.189Z"}
+{"id":"8820f784-0900-4dc4-9a2f-3aa3b4542cda","senderId":44,"text":"r","type":"text","createdAt":"2026-03-22T00:46:01.520Z","chatId":1}
+{"id":"46735cdd-558a-484e-a5ae-d76f8c4e17d8","senderId":38,"text":"es langed","type":"text","replyToId":"06b32022-af84-4da6-99af-acba3e0d149b","replyToText":"er","createdAt":"2026-03-22T00:46:14.261Z","chatId":1,"reactions":[{"emoji":"😂","userIds":[44]}],"editedAt":"2026-03-22T01:01:52.436Z"}
+{"id":"c13b87ba-22bd-4165-b2cd-779f887f3f15","senderId":38,"text":"#Probe","type":"text","createdAt":"2026-03-22T00:57:32.164Z","chatId":1}
+{"id":"e15e4e89-c29f-4a1a-9ada-fd48ceb79d66","senderId":38,"text":"#benutzer lisa","type":"text","createdAt":"2026-03-22T01:01:31.477Z","chatId":1}
+{"id":"60964845-28e4-4be6-a470-1f1f8189f933","senderId":38,"text":"[[user:12|Jan Bretscher]]","type":"text","createdAt":"2026-03-22T01:05:00.642Z","chatId":1}
+{"id":"69dfccaf-604d-4d43-bef9-7b7fa88dba15","senderId":44,"text":"[[folder:9|Noten]]","type":"text","createdAt":"2026-03-22T01:05:17.054Z","chatId":1}
+{"id":"d495b794-5f47-4bbb-a1b6-c3760513332b","senderId":44,"text":"[[folder:10|test]]","type":"text","createdAt":"2026-03-22T01:05:47.409Z","chatId":1}
+{"id":"de9713c7-005b-438e-a159-12571d8017dc","senderId":44,"text":"[[file:39|Jahresprogramm_2025.pdf]]","type":"text","createdAt":"2026-03-22T01:06:10.650Z","chatId":1}
+{"id":"6cf35fd7-3145-48fb-98f7-8ac44585ba8d","senderId":44,"text":"[[file:47|test.mp3]]","type":"text","createdAt":"2026-03-22T01:06:44.947Z","chatId":1}
+{"id":"650e08d1-94ff-435a-8879-5a4304c74a42","senderId":44,"text":"[[folder:10|test]]","type":"text","createdAt":"2026-03-22T01:10:39.429Z","chatId":1}
+{"id":"1948cbaf-d85e-4d9e-95d5-27e02a31f041","senderId":44,"text":"[[event:94|Frühlingskonzert 2026]]","type":"text","createdAt":"2026-03-22T01:12:04.637Z","chatId":1}
+{"id":"b2f340cd-ff35-414b-913f-906725dfb993","senderId":38,"text":"[[event:93|Sonderprobe Weihnachtskonzert]]","type":"text","createdAt":"2026-03-22T01:13:16.139Z","chatId":1}
+{"id":"f5c42e38-2c71-4190-af42-9f6f313d0522","senderId":38,"text":"[[file:39|Jahresprogramm_2025.pdf]]","type":"text","createdAt":"2026-03-22T01:18:47.034Z","chatId":1}
+{"id":"1efd6382-beb0-497b-98dc-4b180c0bbd9a","senderId":10,"text":"hallo","type":"text","createdAt":"2026-03-22T20:59:14.701Z","chatId":1,"reactions":[{"emoji":"😮","userIds":[6]}],"editedAt":"2026-03-22T20:59:30.213Z"}
+{"id":"ef03c503-1819-42f7-9ed9-6366d692fedb","senderId":10,"text":"[[event:4|Frühlingskonzert 2026]]","type":"text","createdAt":"2026-03-22T20:59:42.057Z","chatId":1}
+{"id":"c63bff40-edc3-49aa-907c-f1e55e0c9ba2","senderId":10,"text":"[[user:4|Maria Keller]]","type":"text","createdAt":"2026-03-22T20:59:58.866Z","chatId":1}
+{"id":"82b08174-a62c-4dee-a18c-47ae61ea3b3c","senderId":10,"text":"[[file:1|Jahresprogramm_2025.pdf]]","type":"text","createdAt":"2026-03-22T21:00:17.149Z","chatId":1}
+{"id":"1c872a4a-cb03-4da8-8900-73b9336a9755","senderId":10,"text":"[[event:7|Weihnachtskonzert 2026]]","type":"text","createdAt":"2026-03-22T21:00:50.680Z","chatId":1}
+{"id":"e2095cf7-e88b-417d-855c-b6c00e2cafa0","senderId":10,"text":"[[folder:2|Noten]]","type":"text","createdAt":"2026-03-22T21:33:40.960Z","chatId":1}

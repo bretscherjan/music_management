@@ -73,8 +73,8 @@ const notifyEventCreated = async (event) => {
                         pushService.sendPushToUser(user.id, {
                             title: `Neuer Termin: ${event.title}`,
                             body: `${formattedDate} um ${event.startTime}`,
-                            icon: '/logo_red.png',
-                            badge: '/logo_red.png',
+                            icon: '/logos/logo_on_white.svg',
+                            badge: '/logos/logo_on_white.svg',
                             data: {
                                 type: 'event_created',
                                 eventId: event.id,
@@ -146,8 +146,8 @@ const notifyEventUpdated = async (event) => {
                         pushService.sendPushToUser(user.id, {
                             title: `Termin aktualisiert: ${event.title}`,
                             body: `${formattedDate} um ${event.startTime}`,
-                            icon: '/logo_red.png',
-                            badge: '/logo_red.png',
+                            icon: '/logos/logo_on_white.svg',
+                            badge: '/logos/logo_on_white.svg',
                             data: {
                                 type: 'event_updated',
                                 eventId: event.id,
@@ -217,8 +217,8 @@ const notifyEventDeleted = async (event) => {
                         pushService.sendPushToUser(user.id, {
                             title: `Termin abgesagt: ${event.title}`,
                             body: `${formattedDate} wurde gelöscht`,
-                            icon: '/logo_red.png',
-                            badge: '/logo_red.png',
+                            icon: '/logos/logo_on_white.svg',
+                            badge: '/logos/logo_on_white.svg',
                             data: {
                                 type: 'event_deleted',
                                 eventId: event.id,
@@ -300,8 +300,8 @@ const notifyFileUploaded = async (file) => {
                         pushService.sendPushToUser(user.id, {
                             title: `Neue Datei: ${file.originalName}`,
                             body: 'Eine neue Datei wurde hochgeladen',
-                            icon: '/logo_red.png',
-                            badge: '/logo_red.png',
+                            icon: '/logos/logo_on_white.svg',
+                            badge: '/logos/logo_on_white.svg',
                             data: {
                                 type: 'file_uploaded',
                                 fileId: file.id,
@@ -383,8 +383,8 @@ const notifyFileDeleted = async (file) => {
                         pushService.sendPushToUser(user.id, {
                             title: `Datei gelöscht: ${file.originalName}`,
                             body: 'Eine Datei wurde entfernt',
-                            icon: '/logo_red.png',
-                            badge: '/logo_red.png',
+                            icon: '/logos/logo_on_white.svg',
+                            badge: '/logos/logo_on_white.svg',
                             data: {
                                 type: 'file_deleted',
                                 fileId: file.id,
@@ -471,8 +471,8 @@ const sendScheduledReminder = async (eventId, userId, channels, intervalMinutes)
             await pushService.sendPushToUser(user.id, {
                 title: `Erinnerung: ${event.title}`,
                 body: `Findet in ${timeDisplay} statt (${formattedDate})`,
-                icon: '/logo_red.png',
-                badge: '/logo_red.png',
+                icon: '/logos/logo_on_white.svg',
+                badge: '/logos/logo_on_white.svg',
                 data: {
                     type: 'event_reminder',
                     eventId: event.id,

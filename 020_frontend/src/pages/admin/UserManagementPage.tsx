@@ -17,7 +17,7 @@ import {
     TableRow,
 } from '@/components/ui/table';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Users, Search, UserCheck, UserX, Pencil, Plus, Trash2 } from 'lucide-react';
+import { Users, Search, Pencil, Plus, Trash2 } from 'lucide-react';
 import { getStatusLabel } from '@/lib/utils';
 import type { UserStatus, User } from '@/types';
 import { AdminEditUserDialog } from '@/components/admin/AdminEditUserDialog';
@@ -257,10 +257,7 @@ export function UserManagementPage() {
                                                         variant="ghost"
                                                         size="icon"
                                                         className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                                                        onClick={() => {
-                                                            setSelectedUser(user);
-                                                            setIsDeleteDialogOpen(true);
-                                                        }}
+                                                        onClick={() => handleDeleteUser(user)}
                                                     >
                                                         <Trash2 className="h-4 w-4" />
                                                     </Button>
@@ -286,6 +283,7 @@ export function UserManagementPage() {
                     user={selectedUser}
                     open={isEditDialogOpen}
                     onOpenChange={setIsEditDialogOpen}
+                    registers={registers}
                 />
             )}
 

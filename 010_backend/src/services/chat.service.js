@@ -386,7 +386,7 @@ class ChatService {
             where: { id: chatId }
         });
 
-        // Optionally cleanup filesystem, but maybe keep for audit/backup.
+        await chatStorage.deleteChatData(chatId);
     }
 
     /**

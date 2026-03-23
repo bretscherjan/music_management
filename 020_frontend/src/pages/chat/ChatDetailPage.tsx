@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { 
-    ChevronLeft, Send, Users, Info, 
+    ChevronLeft, Send, Info, 
     Smile, Reply, Trash, UserPlus, X, Check, MessageSquare,
     Calendar, FileText, Folder as FolderIcon, User as UserIcon,
     Hash
@@ -24,12 +24,6 @@ import {
     DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu';
 import { toast } from 'sonner';
-
-interface EntityLink {
-    type: 'event' | 'file' | 'folder' | 'user';
-    id: number;
-    label: string;
-}
 
 const CATEGORIES = [
     { key: 'termin', label: 'Termine', type: 'event', icon: Calendar },
@@ -298,7 +292,7 @@ export function ChatDetailPage() {
         inputRef.current?.focus();
     };
 
-    const renderMessageText = (text: string) => {
+    const renderMessageText = (text: string, isMine: boolean) => {
         const parts = text.split(/(\[\[(?:event|file|folder|user):\d+\|[^\]]+\]\])/g);
         
         return parts.map((part, i) => {
@@ -328,14 +322,28 @@ export function ChatDetailPage() {
                 }
 
                 return (
-                    <Link 
-                        key={i} 
-                        to={url} 
-                        className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-primary/10 text-primary hover:bg-primary/20 transition-colors border border-primary/20 mx-0.5"
-                    >
-                        <Icon className="w-3 h-3" />
-                        <span className="font-medium">{label}</span>
-                    </Link>
+                    <>
+                        {isMine ? (
+                            <Link 
+                                key={i} 
+                                to={url} 
+                                className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-primary/10 hover:bg-primary/20 transition-colors text-primary-foreground border border-primary/20 mx-0.5"
+                            >
+                                <Icon className="w-3 h-3" />
+                                <span className="font-medium">{label}</span>
+                            </Link>
+                        ) : (
+                            <Link 
+                                key={i} 
+                                to={url} 
+                                className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-primary/10 hover:bg-primary/20 transition-colors text-card-foreground border border-primary/20 mx-0.5"
+                            >
+                                <Icon className="w-3 h-3" />
+                                <span className="font-medium">{label}</span>
+                            </Link>
+                        )}
+                    </>
+
                 );
             }
             return part;
@@ -473,9 +481,7 @@ export function ChatDetailPage() {
                     </Button>
                     <div className="flex items-center gap-3">
                         <Avatar>
-                            <AvatarFallback>
-                                {currentChat?.type === 'group' ? <Users /> : chatTitle.charAt(0)}
-                            </AvatarFallback>
+                            <AvatarFallback name={chatTitle} />
                         </Avatar>
                         <div>
                             <h2 className="font-bold leading-none mb-1">{chatTitle}</h2>
@@ -548,7 +554,7 @@ export function ChatDetailPage() {
                                                 <div className="flex items-center gap-3">
                                                     <Avatar className="h-8 w-8">
                                                         <AvatarImage src={p.user.profilePicture || undefined} />
-                                                        <AvatarFallback>{p.user.firstName[0]}</AvatarFallback>
+                                                        <AvatarFallback name={`${p.user.firstName} ${p.user.lastName}`} />
                                                     </Avatar>
                                                     <div>
                                                         <p className="text-sm font-medium">{p.user.firstName} {p.user.lastName}</p>
@@ -601,7 +607,7 @@ export function ChatDetailPage() {
                                             <div className="flex items-center gap-2">
                                                 <Avatar className="h-8 w-8">
                                                     <AvatarImage src={u.profilePicture || undefined} />
-                                                    <AvatarFallback>{u.firstName[0]}</AvatarFallback>
+                                                    <AvatarFallback name={`${u.firstName} ${u.lastName}`} />
                                                 </Avatar>
                                                 <span className="text-sm">{u.firstName} {u.lastName}</span>
                                             </div>
@@ -641,7 +647,7 @@ export function ChatDetailPage() {
                                         {showAvatar && (
                                             <Avatar className="w-8 h-8 shadow-sm">
                                                 <AvatarImage src={sender?.profilePicture || undefined} />
-                                                <AvatarFallback className="text-[10px]">{sender?.firstName[0]}</AvatarFallback>
+                                                <AvatarFallback className="text-[10px]" name={sender ? `${sender.firstName} ${sender.lastName || ''}` : undefined} />
                                             </Avatar>
                                         )}
                                     </div>
@@ -669,9 +675,9 @@ export function ChatDetailPage() {
                                             "p-3 rounded-2xl shadow-sm transition-all relative",
                                             isMine 
                                                 ? 'bg-primary text-primary-foreground rounded-br-none' 
-                                                : 'bg-card border rounded-bl-none'
+                                                : 'bg-card text-card-foreground border rounded-bl-none'
                                         )}>
-                                            <div className="text-sm whitespace-pre-wrap break-words">{renderMessageText(msg.text)}</div>
+                                            <div className="text-sm whitespace-pre-wrap break-words">{renderMessageText(msg.text, isMine)}</div>
                                             <p className={cn(
                                                 "text-[9px] mt-1 text-right opacity-60",
                                             )}>

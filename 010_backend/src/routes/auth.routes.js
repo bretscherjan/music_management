@@ -8,9 +8,11 @@ const { registerSchema, loginSchema } = require('../validations/auth.validation'
 const { rateLimiter } = require('../middlewares/rateLimit.middleware');
 
 // Brute-force protection
-const loginLimit        = rateLimiter('ratelimit:login',          10,  15 * 60);  // 10 req / 15 min
-const registerLimit     = rateLimiter('ratelimit:register',        5,  60 * 60);  // 5  req / hour
-const forgotPassLimit   = rateLimiter('ratelimit:forgot-password', 3,  60 * 60);  // 3  req / hour
+// Login: per-email (user-specific, tight) + per-IP (looser, DDoS/enumeration guard)
+const loginLimitByEmail = rateLimiter('ratelimit:login:email', 5,  15 * 60, (req) => req.body?.email?.toLowerCase()?.trim());
+const loginLimitByIp    = rateLimiter('ratelimit:login:ip',   30,  15 * 60);
+const registerLimit     = rateLimiter('ratelimit:register',    5,  60 * 60);  // 5  req / hour
+const forgotPassLimit   = rateLimiter('ratelimit:forgot-password', 3, 60 * 60);  // 3  req / hour
 
 /**
  * @route   POST /api/auth/register
@@ -24,7 +26,7 @@ router.post('/register', registerLimit, validate(registerSchema), authController
  * @desc    Login user
  * @access  Public
  */
-router.post('/login', loginLimit, validate(loginSchema), authController.login);
+router.post('/login', loginLimitByIp, loginLimitByEmail, validate(loginSchema), authController.login);
 
 /**
  * @route   GET /api/auth/me

@@ -11,7 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { MessageSquare, Plus, Search, Users, Trash2 } from 'lucide-react';
+import { MessageSquare, Plus, Search, Trash2 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { de } from 'date-fns/locale';
 import { useAuth } from '@/context/AuthContext';
@@ -193,7 +193,7 @@ export function ChatPortalPage() {
                                         <div className="flex items-center gap-3">
                                             <Avatar className="h-8 w-8">
                                                 <AvatarImage src={u.profilePicture} />
-                                                <AvatarFallback>{u.firstName[0]}{u.lastName[0]}</AvatarFallback>
+                                                <AvatarFallback name={`${u.firstName} ${u.lastName}`} />
                                             </Avatar>
                                             <div>
                                                 <p className="text-sm font-medium">{u.firstName} {u.lastName}</p>
@@ -275,9 +275,7 @@ export function ChatPortalPage() {
                                 <div className="relative">
                                     <Avatar className="h-12 w-12">
                                         <AvatarImage src={chat.participants.find((p: any) => p.userId !== user?.id)?.user.profilePicture || undefined} />
-                                        <AvatarFallback>
-                                            {chat.type === 'group' ? <Users className="w-6 h-6" /> : getChatTitle(chat)[0]}
-                                        </AvatarFallback>
+                                        <AvatarFallback name={getChatTitle(chat)} />
                                     </Avatar>
                                     {chat.readStates[0]?.unreadCount > 0 && (
                                         <Badge 

@@ -7,22 +7,28 @@ const redis = new Redis({
     maxRetriesPerRequest: null
 });
 
+const getClientIp = (req) => {
+    const forwarded = req.headers['x-forwarded-for'];
+    const forwardedIp = Array.isArray(forwarded)
+        ? forwarded[0]
+        : typeof forwarded === 'string'
+            ? forwarded.split(',')[0].trim()
+            : null;
+    return forwardedIp || req.ip || req.socket.remoteAddress || 'unknown';
+};
+
 /**
- * Simple rate limiter middleware using Redis
- * @param {string} keyPrefix Prefix for the redis key (e.g. 'ratelimit:contact')
- * @param {number} limit Maximum number of requests allowed
- * @param {number} windowSeconds Time window in seconds
+ * Generic rate limiter middleware using Redis.
+ * @param {string} keyPrefix  Prefix for the Redis key (e.g. 'ratelimit:login:email')
+ * @param {number} limit      Maximum number of requests allowed in the window
+ * @param {number} windowSeconds  Time window in seconds
+ * @param {function} [keyExtractor]  Optional fn(req) => string to derive the identifier.
+ *                                   Defaults to client IP when omitted.
  */
-const rateLimiter = (keyPrefix, limit, windowSeconds) => {
+const rateLimiter = (keyPrefix, limit, windowSeconds, keyExtractor = null) => {
     return async (req, res, next) => {
-        const forwarded = req.headers['x-forwarded-for'];
-        const forwardedIp = Array.isArray(forwarded)
-            ? forwarded[0]
-            : typeof forwarded === 'string'
-                ? forwarded.split(',')[0].trim()
-                : null;
-        const ip = forwardedIp || req.ip || req.socket.remoteAddress || 'unknown';
-        const key = `${keyPrefix}:${ip}`;
+        const identifier = keyExtractor ? (keyExtractor(req) || 'unknown') : getClientIp(req);
+        const key = `${keyPrefix}:${identifier}`;
 
         try {
             const currentCount = await redis.incr(key);

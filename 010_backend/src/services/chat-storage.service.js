@@ -117,6 +117,15 @@ class ChatStorageService {
             throw error;
         }
     }
+
+    /**
+     * Delete all filesystem data for a chat
+     * @param {number} chatId
+     */
+    async deleteChatData(chatId) {
+        const chatDir = this.getChatDir(chatId);
+        await fs.rm(chatDir, { recursive: true, force: true });
+    }
 }
 
 // Since we need UUID which might not be installed, I'll use a simple fallback if needed.

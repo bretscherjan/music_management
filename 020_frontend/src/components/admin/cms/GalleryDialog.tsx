@@ -130,7 +130,7 @@ export function GalleryDialog({ open, onOpenChange, image }: GalleryDialogProps)
                     )}
                     {image && preview && (
                         <div className="mt-2 border rounded overflow-hidden aspect-video">
-                            <img src={getMediaUrl(preview)} alt="Preview" className="w-full h-full object-cover" />
+                            <img src={resolveMediaUrl(preview)} alt="Preview" className="w-full h-full object-cover" />
                         </div>
                     )}
                     <div className="flex items-center justify-between">

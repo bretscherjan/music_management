@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { toast } from 'sonner';
-import { getMediaUrl } from '@/lib/api';
+import { resolveMediaUrl } from '@/lib/api';
 
 interface GalleryDialogProps {
     open: boolean;
@@ -123,7 +123,7 @@ export function GalleryDialog({ open, onOpenChange, image }: GalleryDialogProps)
                             <Input id="image" type="file" onChange={handleFileChange} accept="image/*" required />
                             {preview && (
                                 <div className="mt-2 border rounded overflow-hidden aspect-video">
-                                    <img src={getMediaUrl(preview)} alt="Preview" className="w-full h-full object-cover" />
+                                    <img src={resolveMediaUrl(preview)} alt="Preview" className="w-full h-full object-cover" />
                                 </div>
                             )}
                         </div>

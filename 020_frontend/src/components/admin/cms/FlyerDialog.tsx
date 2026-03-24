@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { toast } from 'sonner';
-import { getMediaUrl } from '@/lib/api';
+import { resolveMediaUrl } from '@/lib/api';
 
 interface FlyerDialogProps {
     open: boolean;
@@ -114,7 +114,7 @@ export function FlyerDialog({ open, onOpenChange }: FlyerDialogProps) {
                         <Input id="image" type="file" onChange={handleFileChange} accept="image/*,application/pdf" required />
                         {preview && (
                             <div className="mt-2 border rounded p-1 bg-muted max-h-40 overflow-hidden">
-                                <img src={getMediaUrl(preview)} alt="Preview" className="h-full w-auto mx-auto object-contain" />
+                                <img src={resolveMediaUrl(preview)} alt="Preview" className="h-full w-auto mx-auto object-contain" />
                             </div>
                         )}
                         {file && file.type === 'application/pdf' && (

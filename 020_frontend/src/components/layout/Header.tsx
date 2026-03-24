@@ -68,7 +68,7 @@ export function Header() {
             <div className="container-app flex h-16 items-center justify-between">
                 {/* Logo & Mobile Menu Trigger (Left align on mobile?) No, standart right aligned hamburger usually. */}
                 <Link to="/member" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
-                    <img src="../../../public/logos/logo_smile.svg" alt="Musig Elgg Logo" className="h-8 w-8 rounded-full object-cover" />
+                    <img src="/logo_smile.svg" alt="Musig Elgg Logo" className="h-8 w-8 rounded-full object-cover" />
                     <div className="flex flex-col">
                         <span className="font-bold text-lg leading-tight">Musig Elgg</span>
                         <span className="text-xs text-muted-foreground">Mitgliederbereich</span>

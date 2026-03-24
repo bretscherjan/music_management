@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { toast } from 'sonner';
-import { getMediaUrl } from '@/lib/api';
+import { resolveMediaUrl } from '@/lib/api';
 
 interface SponsorDialogProps {
     open: boolean;
@@ -110,7 +110,7 @@ export function SponsorDialog({ open, onOpenChange, sponsor }: SponsorDialogProp
                         <Input id="logo" type="file" onChange={handleFileChange} accept="image/*" required={!sponsor} />
                         {preview && (
                             <div className="mt-2 p-2 border rounded bg-muted">
-                                <img src={getMediaUrl(preview)} alt="Preview" className="h-20 w-auto mx-auto object-contain" />
+                                <img src={resolveMediaUrl(preview)} alt="Preview" className="h-20 w-auto mx-auto object-contain" />
                             </div>
                         )}
                     </div>

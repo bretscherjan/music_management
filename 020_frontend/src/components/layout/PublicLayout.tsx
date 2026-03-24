@@ -1,7 +1,6 @@
 import { Outlet } from 'react-router-dom';
 import { Navbar } from './Navbar';
 import { Footer } from './Footer';
-import { CookieBanner } from './CookieBanner';
 import { ScrollToTop } from './ScrollToTop';
 
 export function PublicLayout() {
@@ -13,7 +12,6 @@ export function PublicLayout() {
                 <Outlet />
             </main>
             <Footer />
-            <CookieBanner />
         </div>
     );
 }

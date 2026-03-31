@@ -2,14 +2,14 @@ const express = require('express');
 const router = express.Router();
 const protokollController = require('../controllers/protokoll.controller');
 const { authMiddleware } = require('../middlewares/auth.middleware');
-const { adminOnly } = require('../middlewares/roleCheck.middleware');
+const { permissionCheck } = require('../middlewares/permission.middleware');
 
 /**
  * @route   GET /api/protokoll/health
  * @desc    Check Whisper + LLM availability
  * @access  Admin
  */
-router.get('/health', authMiddleware, adminOnly, protokollController.checkHealth);
+router.get('/health', authMiddleware, permissionCheck('protokoll:read'), protokollController.checkHealth);
 
 /**
  * @route   POST /api/protokoll/transcribe
@@ -19,7 +19,7 @@ router.get('/health', authMiddleware, adminOnly, protokollController.checkHealth
 router.post(
     '/transcribe',
     authMiddleware,
-    adminOnly,
+    permissionCheck('protokoll:read'),
     protokollController.upload.single('audio'),
     protokollController.transcribe
 );
@@ -29,13 +29,13 @@ router.post(
  * @desc    Send raw text → get structured protocol via LLM
  * @access  Admin
  */
-router.post('/summarize', authMiddleware, adminOnly, protokollController.summarize);
+router.post('/summarize', authMiddleware, permissionCheck('protokoll:read'), protokollController.summarize);
 
 /**
  * @route   POST /api/protokoll/export
  * @desc    Export protocol as TXT, PDF, or MD
  * @access  Admin
  */
-router.post('/export', authMiddleware, adminOnly, protokollController.exportProtokoll);
+router.post('/export', authMiddleware, permissionCheck('protokoll:read'), protokollController.exportProtokoll);
 
 module.exports = router;

@@ -6,13 +6,17 @@ import type {
     UpdateUserStatusDto,
     UpdateUserRoleDto,
     AdminUpdateUserDto,
-    NotificationSettings
+    AdminCreateUserDto,
+    NotificationSettings,
+    Permission,
+    PermissionTemplate,
 } from '@/types';
 
 interface UsersQueryParams {
     status?: string;
     registerId?: number;
     role?: string;
+    type?: string;
 }
 
 export const userService = {
@@ -49,6 +53,11 @@ export const userService = {
     },
 
     // Admin routes
+    async create(data: AdminCreateUserDto): Promise<User> {
+        const response = await api.post<{ user: User }>('/users', data);
+        return response.data.user;
+    },
+
     async getAll(params?: UsersQueryParams): Promise<User[]> {
         const response = await api.get<{ users: User[] }>('/users', { params });
         return response.data.users;
@@ -81,6 +90,35 @@ export const userService = {
 
     async delete(id: number): Promise<void> {
         await api.delete(`/users/${id}`);
+    },
+
+    async getAllPermissions(): Promise<Permission[]> {
+        const response = await api.get<{ permissions: Permission[] }>('/users/permissions');
+        return response.data.permissions;
+    },
+
+    async getPermissionTemplates(): Promise<PermissionTemplate[]> {
+        const response = await api.get<{ templates: PermissionTemplate[] }>('/users/permission-templates');
+        return response.data.templates;
+    },
+
+    async createPermissionTemplate(data: { name: string; description?: string | null; permissionKeys: string[] }): Promise<PermissionTemplate> {
+        const response = await api.post<{ template: PermissionTemplate }>('/users/permission-templates', data);
+        return response.data.template;
+    },
+
+    async updatePermissionTemplate(id: number, data: { name: string; description?: string | null; permissionKeys: string[] }): Promise<PermissionTemplate> {
+        const response = await api.put<{ template: PermissionTemplate }>(`/users/permission-templates/${id}`, data);
+        return response.data.template;
+    },
+
+    async deletePermissionTemplate(id: number): Promise<void> {
+        await api.delete(`/users/permission-templates/${id}`);
+    },
+
+    async updatePermissions(userId: number, permissionKeys: string[]): Promise<User> {
+        const response = await api.patch<{ user: User }>(`/users/${userId}/permissions`, { permissionKeys });
+        return response.data.user;
     },
 };
 

@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const workspaceController = require('../controllers/workspace.controller');
 const { authMiddleware } = require('../middlewares/auth.middleware');
-const { adminOnly } = require('../middlewares/roleCheck.middleware');
+const { permissionCheck } = require('../middlewares/permission.middleware');
 const { validate } = require('../middlewares/validate.middleware');
 const {
     createCategorySchema,
@@ -24,9 +24,7 @@ const {
     reorderCategoriesSchema,
 } = require('../validations/workspace.validation');
 
-// All workspace routes require admin authentication
 router.use(authMiddleware);
-router.use(adminOnly);
 
 // ============================================
 // CATEGORY ROUTES
@@ -37,35 +35,35 @@ router.use(adminOnly);
  * @desc    Get all task categories
  * @access  Admin
  */
-router.get('/categories', workspaceController.getCategories);
+router.get('/categories', permissionCheck('workspace:read'), workspaceController.getCategories);
 
 /**
  * @route   POST /api/workspace/categories
  * @desc    Create a new category
  * @access  Admin
  */
-router.post('/categories', validate(createCategorySchema), workspaceController.createCategory);
+router.post('/categories', permissionCheck('workspace:write'), validate(createCategorySchema), workspaceController.createCategory);
 
 /**
  * @route   PUT /api/workspace/categories/:id
  * @desc    Update a category
  * @access  Admin
  */
-router.put('/categories/:id', validate(updateCategorySchema), workspaceController.updateCategory);
+router.put('/categories/:id', permissionCheck('workspace:write'), validate(updateCategorySchema), workspaceController.updateCategory);
 
 /**
  * @route   DELETE /api/workspace/categories/:id
  * @desc    Delete a category
  * @access  Admin
  */
-router.delete('/categories/:id', validate(deleteCategorySchema), workspaceController.deleteCategory);
+router.delete('/categories/:id', permissionCheck('workspace:write'), validate(deleteCategorySchema), workspaceController.deleteCategory);
 
 /**
  * @route   PUT /api/workspace/categories/reorder
  * @desc    Reorder categories (drag & drop)
  * @access  Admin
  */
-router.put('/categories/reorder', validate(reorderCategoriesSchema), workspaceController.reorderCategories);
+router.put('/categories/reorder', permissionCheck('workspace:write'), validate(reorderCategoriesSchema), workspaceController.reorderCategories);
 
 // ============================================
 // TASK ROUTES
@@ -76,56 +74,56 @@ router.put('/categories/reorder', validate(reorderCategoriesSchema), workspaceCo
  * @desc    Get all tasks (with optional filters)
  * @access  Admin
  */
-router.get('/tasks', workspaceController.getTasks);
+router.get('/tasks', permissionCheck('workspace:read'), workspaceController.getTasks);
 
 /**
  * @route   POST /api/workspace/tasks
  * @desc    Create a new task
  * @access  Admin
  */
-router.post('/tasks', validate(createTaskSchema), workspaceController.createTask);
+router.post('/tasks', permissionCheck('workspace:write'), validate(createTaskSchema), workspaceController.createTask);
 
 /**
  * @route   PUT /api/workspace/tasks/reorder
  * @desc    Reorder tasks (drag & drop)
  * @access  Admin
  */
-router.put('/tasks/reorder', validate(reorderTasksSchema), workspaceController.reorderTasks);
+router.put('/tasks/reorder', permissionCheck('workspace:write'), validate(reorderTasksSchema), workspaceController.reorderTasks);
 
 /**
  * @route   PUT /api/workspace/tasks/:id
  * @desc    Update a task
  * @access  Admin
  */
-router.put('/tasks/:id', validate(updateTaskSchema), workspaceController.updateTask);
+router.put('/tasks/:id', permissionCheck('workspace:write'), validate(updateTaskSchema), workspaceController.updateTask);
 
 /**
  * @route   PUT /api/workspace/tasks/:id/complete
  * @desc    Complete or uncomplete a task
  * @access  Admin
  */
-router.put('/tasks/:id/complete', validate(completeTaskSchema), workspaceController.completeTask);
+router.put('/tasks/:id/complete', permissionCheck('workspace:write'), validate(completeTaskSchema), workspaceController.completeTask);
 
 /**
  * @route   PUT /api/workspace/tasks/:id/archive
  * @desc    Archive or unarchive a task
  * @access  Admin
  */
-router.put('/tasks/:id/archive', validate(archiveTaskSchema), workspaceController.archiveTask);
+router.put('/tasks/:id/archive', permissionCheck('workspace:write'), validate(archiveTaskSchema), workspaceController.archiveTask);
 
 /**
  * @route   DELETE /api/workspace/tasks/:id
  * @desc    Delete a task
  * @access  Admin
  */
-router.delete('/tasks/:id', validate(deleteTaskSchema), workspaceController.deleteTask);
+router.delete('/tasks/:id', permissionCheck('workspace:write'), validate(deleteTaskSchema), workspaceController.deleteTask);
 
 /**
  * @route   GET /api/workspace/tasks/:id/history
  * @desc    Get task history
  * @access  Admin
  */
-router.get('/tasks/:id/history', validate(getTaskHistorySchema), workspaceController.getTaskHistory);
+router.get('/tasks/:id/history', permissionCheck('workspace:read'), validate(getTaskHistorySchema), workspaceController.getTaskHistory);
 
 // ============================================
 // NOTE ROUTES
@@ -136,35 +134,35 @@ router.get('/tasks/:id/history', validate(getTaskHistorySchema), workspaceContro
  * @desc    Get all notes
  * @access  Admin
  */
-router.get('/notes', workspaceController.getNotes);
+router.get('/notes', permissionCheck('workspace:read'), workspaceController.getNotes);
 
 /**
  * @route   POST /api/workspace/notes
  * @desc    Create a new note
  * @access  Admin
  */
-router.post('/notes', validate(createNoteSchema), workspaceController.createNote);
+router.post('/notes', permissionCheck('workspace:write'), validate(createNoteSchema), workspaceController.createNote);
 
 /**
  * @route   PUT /api/workspace/notes/:id
  * @desc    Update a note
  * @access  Admin
  */
-router.put('/notes/:id', validate(updateNoteSchema), workspaceController.updateNote);
+router.put('/notes/:id', permissionCheck('workspace:write'), validate(updateNoteSchema), workspaceController.updateNote);
 
 /**
  * @route   DELETE /api/workspace/notes/:id
  * @desc    Delete a note
  * @access  Admin
  */
-router.delete('/notes/:id', validate(deleteNoteSchema), workspaceController.deleteNote);
+router.delete('/notes/:id', permissionCheck('workspace:write'), validate(deleteNoteSchema), workspaceController.deleteNote);
 
 /**
  * @route   PUT /api/workspace/notes/:id/pin
  * @desc    Pin or unpin a note
  * @access  Admin
  */
-router.put('/notes/:id/pin', validate(pinNoteSchema), workspaceController.pinNote);
+router.put('/notes/:id/pin', permissionCheck('workspace:write'), validate(pinNoteSchema), workspaceController.pinNote);
 
 // ============================================
 // SEARCH & EXPORT ROUTES
@@ -175,20 +173,20 @@ router.put('/notes/:id/pin', validate(pinNoteSchema), workspaceController.pinNot
  * @desc    Search across tasks and notes
  * @access  Admin
  */
-router.get('/search', validate(searchSchema), workspaceController.searchWorkspace);
+router.get('/search', permissionCheck('workspace:read'), validate(searchSchema), workspaceController.searchWorkspace);
 
 /**
  * @route   GET /api/workspace/export/pdf
  * @desc    Export workspace data as PDF
  * @access  Admin
  */
-router.get('/export/pdf', validate(exportPdfSchema), workspaceController.exportPdf);
+router.get('/export/pdf', permissionCheck('workspace:read'), validate(exportPdfSchema), workspaceController.exportPdf);
 
 /**
  * @route   GET /api/workspace/stats
  * @desc    Get workspace statistics
  * @access  Admin
  */
-router.get('/stats', workspaceController.getStats);
+router.get('/stats', permissionCheck('workspace:read'), workspaceController.getStats);
 
 module.exports = router;

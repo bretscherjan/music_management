@@ -47,6 +47,7 @@ export function EventSetlistSection({ event, isAdmin }: EventSetlistSectionProps
     const [pauseMinutes, setPauseMinutes] = useState(15);
     const [customTitle, setCustomTitle] = useState('');
     const [customDescription, setCustomDescription] = useState('');
+    const [isExportingPdf, setIsExportingPdf] = useState(false);
 
     // Drag and drop
     const sensors = useSensors(
@@ -167,6 +168,18 @@ export function EventSetlistSection({ event, isAdmin }: EventSetlistSectionProps
         setPauseMinutes(15);
     };
 
+    const handleExportPdf = async () => {
+        setIsExportingPdf(true);
+        try {
+            const blob = await eventService.exportPdf(event.id);
+            eventService.downloadBlob(blob, `${event.title.replace(/[^a-z0-9]/gi, '_') || 'ablauf'}.pdf`);
+        } catch (error: any) {
+            toast.error(error.response?.data?.message || 'Fehler beim PDF-Export');
+        } finally {
+            setIsExportingPdf(false);
+        }
+    };
+
     const sortedSetlist = [...(event.setlist || [])].sort((a, b) => a.position - b.position);
 
     return (
@@ -177,11 +190,11 @@ export function EventSetlistSection({ event, isAdmin }: EventSetlistSectionProps
                     <h3 className="text-lg font-semibold">Programm / Setlist</h3>
                 </div>
                 <div className="flex flex-wrap gap-2">
-                    <Button asChild variant="outline" size="sm">
-                        <a href={eventService.getPdfExportUrl(event.id)} target="_blank" rel="noopener noreferrer">
+                    <Button variant="outline" size="sm" onClick={handleExportPdf} disabled={isExportingPdf}>
+                        <span className="flex items-center">
                             <Download className="h-4 w-4 mr-2" />
                             Ablauf als PDF
-                        </a>
+                        </span>
                     </Button>
                     {isAdmin && (
                         <div className="flex gap-2">

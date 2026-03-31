@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useAuth } from '@/context/AuthContext';
+import { useAuth, useCan } from '@/context/AuthContext';
 import { sheetMusicService } from '@/services';
 import { useDebounce } from '@/hooks/useDebounce';
 import type {
@@ -43,7 +43,11 @@ import { ZoomableTableWrapper } from '@/components/common/ZoomableTableWrapper';
 
 export function SheetMusicManagementPage() {
     const { user } = useAuth();
+    const can = useCan();
     const queryClient = useQueryClient();
+    const canManageSheetMusic = can('sheetMusic:manage');
+    const canBookmarkSheetMusic = can('sheetMusic:write');
+    const canAddSheetMusicToFolders = can('folders:write');
 
     // Filter state
     const [search, setSearch] = useState('');
@@ -326,89 +330,93 @@ export function SheetMusicManagementPage() {
 
                 {/* Action Buttons */}
                 <div className="flex gap-2 flex-wrap">
-                    <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
-                        <DialogTrigger asChild>
-                            <Button>
-                                <Plus className="h-4 w-4 mr-2" />
-                                Neue Note
-                            </Button>
-                        </DialogTrigger>
-                        <CreateEditDialog
-                            title="Neue Note erstellen"
-                            formData={formData}
-                            setFormData={setFormData}
-                            onSubmit={() => createMutation.mutate(formData)}
-                            isLoading={createMutation.isPending}
-                        />
-                    </Dialog>
+                    {canManageSheetMusic && (
+                        <>
+                            <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
+                                <DialogTrigger asChild>
+                                    <Button>
+                                        <Plus className="h-4 w-4 mr-2" />
+                                        Neue Note
+                                    </Button>
+                                </DialogTrigger>
+                                <CreateEditDialog
+                                    title="Neue Note erstellen"
+                                    formData={formData}
+                                    setFormData={setFormData}
+                                    onSubmit={() => createMutation.mutate(formData)}
+                                    isLoading={createMutation.isPending}
+                                />
+                            </Dialog>
 
-                    <Dialog open={csvDialogOpen} onOpenChange={setCsvDialogOpen}>
-                        <DialogTrigger asChild>
-                            <Button variant="outline">
-                                <FileUp className="h-4 w-4 mr-2" />
-                                CSV Import
-                            </Button>
-                        </DialogTrigger>
-                        <DialogContent className="max-w-2xl">
-                            <DialogHeader>
-                                <DialogTitle>CSV Import</DialogTitle>
-                                <DialogDescription>
-                                    Format: title,composer,arranger,genre,difficulty,publisher,notes
-                                </DialogDescription>
-                            </DialogHeader>
-                            <div className="space-y-4">
-                                <div>
-                                    <Label>Import-Modus</Label>
-                                    <div className="flex gap-4 mt-2">
-                                        <label className="flex items-center gap-2">
-                                            <input
-                                                type="radio"
-                                                checked={csvMode === 'add'}
-                                                onChange={() => setCsvMode('add')}
+                            <Dialog open={csvDialogOpen} onOpenChange={setCsvDialogOpen}>
+                                <DialogTrigger asChild>
+                                    <Button variant="outline">
+                                        <FileUp className="h-4 w-4 mr-2" />
+                                        CSV Import
+                                    </Button>
+                                </DialogTrigger>
+                                <DialogContent className="max-w-2xl">
+                                    <DialogHeader>
+                                        <DialogTitle>CSV Import</DialogTitle>
+                                        <DialogDescription>
+                                            Format: title,composer,arranger,genre,difficulty,publisher,notes
+                                        </DialogDescription>
+                                    </DialogHeader>
+                                    <div className="space-y-4">
+                                        <div>
+                                            <Label>Import-Modus</Label>
+                                            <div className="flex gap-4 mt-2">
+                                                <label className="flex items-center gap-2">
+                                                    <input
+                                                        type="radio"
+                                                        checked={csvMode === 'add'}
+                                                        onChange={() => setCsvMode('add')}
+                                                    />
+                                                    <span>Nur neue hinzufügen</span>
+                                                </label>
+                                                <label className="flex items-center gap-2">
+                                                    <input
+                                                        type="radio"
+                                                        checked={csvMode === 'update'}
+                                                        onChange={() => setCsvMode('update')}
+                                                    />
+                                                    <span>Aktualisieren + Neue hinzufügen</span>
+                                                </label>
+                                            </div>
+                                        </div>
+
+                                        <div>
+                                            <Label>Datei hochladen</Label>
+                                            <Input
+                                                type="file"
+                                                accept=".csv"
+                                                onChange={handleFileUpload}
+                                                className="mt-2"
                                             />
-                                            <span>Nur neue hinzufügen</span>
-                                        </label>
-                                        <label className="flex items-center gap-2">
-                                            <input
-                                                type="radio"
-                                                checked={csvMode === 'update'}
-                                                onChange={() => setCsvMode('update')}
+                                        </div>
+                                        <div>
+                                            <Label>Oder CSV Daten manuell eingeben</Label>
+                                            <Textarea
+                                                rows={10}
+                                                value={csvData}
+                                                onChange={(e) => setCsvData(e.target.value)}
+                                                placeholder="title,composer,arranger,genre,difficulty,publisher,notes&#10;Test Marsch,Johann Strauss,,,medium,Musikverlag XY,Klassischer Marsch"
+                                                className="mt-2"
                                             />
-                                            <span>Aktualisieren + Neue hinzufügen</span>
-                                        </label>
+                                        </div>
                                     </div>
-                                </div>
-
-                                <div>
-                                    <Label>Datei hochladen</Label>
-                                    <Input
-                                        type="file"
-                                        accept=".csv"
-                                        onChange={handleFileUpload}
-                                        className="mt-2"
-                                    />
-                                </div>
-                                <div>
-                                    <Label>Oder CSV Daten manuell eingeben</Label>
-                                    <Textarea
-                                        rows={10}
-                                        value={csvData}
-                                        onChange={(e) => setCsvData(e.target.value)}
-                                        placeholder="title,composer,arranger,genre,difficulty,publisher,notes&#10;Test Marsch,Johann Strauss,,,medium,Musikverlag XY,Klassischer Marsch"
-                                        className="mt-2"
-                                    />
-                                </div>
-                            </div>
-                            <DialogFooter>
-                                <Button
-                                    onClick={() => importCsvMutation.mutate()}
-                                    disabled={!csvData || importCsvMutation.isPending}
-                                >
-                                    {importCsvMutation.isPending ? 'Importiere...' : 'Importieren'}
-                                </Button>
-                            </DialogFooter>
-                        </DialogContent>
-                    </Dialog>
+                                    <DialogFooter>
+                                        <Button
+                                            onClick={() => importCsvMutation.mutate()}
+                                            disabled={!csvData || importCsvMutation.isPending}
+                                        >
+                                            {importCsvMutation.isPending ? 'Importiere...' : 'Importieren'}
+                                        </Button>
+                                    </DialogFooter>
+                                </DialogContent>
+                            </Dialog>
+                        </>
+                    )}
 
                     <Button variant="outline" onClick={() => exportMutation.mutate()} disabled={exportMutation.isPending}>
                         <FileDown className="h-4 w-4 mr-2" />
@@ -497,34 +505,41 @@ export function SheetMusicManagementPage() {
                                                         size="icon"
                                                         variant={isBookmarkedByMe(sheet) ? 'default' : 'ghost'}
                                                         onClick={() => bookmarkMutation.mutate(sheet.id)}
+                                                        disabled={!canBookmarkSheetMusic}
                                                     >
                                                         <Star
                                                             className={`h-4 w-4 ${isBookmarkedByMe(sheet) ? 'fill-white' : ''
                                                                 }`}
                                                         />
                                                     </Button>
-                                                    <Button
-                                                        size="icon"
-                                                        variant="ghost"
-                                                        title="Zu Mappe hinzufügen"
-                                                        onClick={() => handleAddToFolder(sheet)}
-                                                    >
-                                                        <Folder className="h-4 w-4" />
-                                                    </Button>
-                                                    <Button
-                                                        size="icon"
-                                                        variant="ghost"
-                                                        onClick={() => handleEdit(sheet)}
-                                                    >
-                                                        <Edit2 className="h-4 w-4" />
-                                                    </Button>
-                                                    <Button
-                                                        size="icon"
-                                                        variant="ghost"
-                                                        onClick={() => handleDelete(sheet.id, sheet.title)}
-                                                    >
-                                                        <Trash2 className="h-4 w-4" />
-                                                    </Button>
+                                                    {canAddSheetMusicToFolders && (
+                                                        <Button
+                                                            size="icon"
+                                                            variant="ghost"
+                                                            title="Zu Mappe hinzufügen"
+                                                            onClick={() => handleAddToFolder(sheet)}
+                                                        >
+                                                            <Folder className="h-4 w-4" />
+                                                        </Button>
+                                                    )}
+                                                    {canManageSheetMusic && (
+                                                        <>
+                                                            <Button
+                                                                size="icon"
+                                                                variant="ghost"
+                                                                onClick={() => handleEdit(sheet)}
+                                                            >
+                                                                <Edit2 className="h-4 w-4" />
+                                                            </Button>
+                                                            <Button
+                                                                size="icon"
+                                                                variant="ghost"
+                                                                onClick={() => handleDelete(sheet.id, sheet.title)}
+                                                            >
+                                                                <Trash2 className="h-4 w-4" />
+                                                            </Button>
+                                                        </>
+                                                    )}
                                                 </div>
                                             </TableCell>
                                         </TableRow>

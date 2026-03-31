@@ -16,6 +16,8 @@ model User {
   profilePicture       String?
   status               UserStatus            @default(active)
   role                 UserRole              @default(member)
+  type                 UserType              @default(REGULAR)
+  expiresAt            DateTime?
   registerId           Int?
   createdAt            DateTime              @default(now())
   updatedAt            DateTime              @updatedAt
@@ -42,9 +44,47 @@ model User {
   verifiedAttendances  VerifiedAttendance[]
   chatParticipants     ChatParticipant[]
   chatReadStates       ChatReadState[]
+  permissions          UserPermission[]
 
   @@index([email])
   @@index([registerId])
+}
+
+model Permission {
+  id          Int              @id @default(autoincrement())
+  key         String           @unique
+  description String?          @db.Text
+  category    String?          
+  users       UserPermission[]
+}
+
+model PermissionTemplate {
+  id             Int      @id @default(autoincrement())
+  systemKey      String?  @unique
+  name           String
+  description    String?  @db.Text
+  permissionKeys Json
+  isSystem       Boolean  @default(false)
+  createdBy      Int?
+  updatedBy      Int?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([name])
+  @@index([isSystem])
+}
+
+model UserPermission {
+  userId       Int
+  permissionId Int
+  grantedAt    DateTime @default(now())
+  grantedBy    Int?     
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@id([userId, permissionId])
+  @@index([userId])
+  @@index([permissionId])
 }
 
 model Chat {
@@ -554,6 +594,11 @@ model Flyer {
   @@index([active])
   @@index([showOnHomePage])
   @@index([position])
+}
+
+enum UserType {
+  REGULAR
+  GUEST
 }
 
 enum UserStatus {

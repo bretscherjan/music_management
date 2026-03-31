@@ -97,6 +97,12 @@ const adminUpdateUserSchema = {
             .optional(),
         status: z.enum(['active', 'passive', 'former']).optional(),
         role: z.enum(['member', 'admin']).optional(),
+        type: z.enum(['REGULAR', 'GUEST']).optional(),
+        expiresAt: z
+            .string()
+            .datetime()
+            .optional()
+            .nullable(),
         registerId: z
             .number()
             .int()
@@ -107,6 +113,41 @@ const adminUpdateUserSchema = {
             .string()
             .optional()
             .nullable(),
+    }),
+};
+
+// Admin: Update user permissions
+const updateUserPermissionsSchema = {
+    params: z.object({
+        id: z.string().regex(/^\d+$/, 'Ungültige User-ID'),
+    }),
+    body: z.object({
+        permissionKeys: z.array(z.string()).describe('Liste der Permission-Keys'),
+    }),
+};
+
+const createPermissionTemplateSchema = {
+    body: z.object({
+        name: z.string().min(1, 'Name ist erforderlich').max(100, 'Name darf maximal 100 Zeichen lang sein'),
+        description: z.string().max(1000, 'Beschreibung darf maximal 1000 Zeichen lang sein').optional().nullable(),
+        permissionKeys: z.array(z.string()).default([]),
+    }),
+};
+
+const updatePermissionTemplateSchema = {
+    params: z.object({
+        id: z.string().regex(/^\d+$/, 'Ungültige Vorlagen-ID'),
+    }),
+    body: z.object({
+        name: z.string().min(1, 'Name ist erforderlich').max(100, 'Name darf maximal 100 Zeichen lang sein'),
+        description: z.string().max(1000, 'Beschreibung darf maximal 1000 Zeichen lang sein').optional().nullable(),
+        permissionKeys: z.array(z.string()).default([]),
+    }),
+};
+
+const deletePermissionTemplateSchema = {
+    params: z.object({
+        id: z.string().regex(/^\d+$/, 'Ungültige Vorlagen-ID'),
     }),
 };
 
@@ -122,6 +163,7 @@ const queryUsersSchema = {
     query: z.object({
         status: z.enum(['active', 'passive', 'former']).optional(),
         role: z.enum(['member', 'admin']).optional(),
+        type: z.enum(['REGULAR', 'GUEST']).optional(),
         registerId: z.string().regex(/^\d+$/).optional(),
         search: z.string().max(100).optional(),
     }),
@@ -150,6 +192,12 @@ const createUserSchema = {
             .min(8, 'Passwort muss mindestens 8 Zeichen lang sein'),
         status: z.enum(['active', 'passive', 'former']).optional().default('active'),
         role: z.enum(['member', 'admin']).optional().default('member'),
+        type: z.enum(['REGULAR', 'GUEST']).optional().default('REGULAR'),
+        expiresAt: z
+            .string()
+            .datetime()
+            .optional()
+            .nullable(),
         registerId: z
             .number()
             .int()
@@ -164,6 +212,10 @@ module.exports = {
     changePasswordSchema,
     updateUserStatusSchema,
     updateUserRoleSchema,
+    updateUserPermissionsSchema,
+    createPermissionTemplateSchema,
+    updatePermissionTemplateSchema,
+    deletePermissionTemplateSchema,
     adminUpdateUserSchema,
     getUserByIdSchema,
     queryUsersSchema,

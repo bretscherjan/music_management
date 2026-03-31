@@ -2,14 +2,14 @@ const express = require('express');
 const router = express.Router();
 const transcribeController = require('../controllers/transcribe.controller');
 const { authMiddleware } = require('../middlewares/auth.middleware');
-const { adminOnly } = require('../middlewares/roleCheck.middleware');
+const { permissionCheck } = require('../middlewares/permission.middleware');
 
 /**
  * @route   GET /api/transcribe/health
  * @desc    Check Whisper server availability
  * @access  Admin
  */
-router.get('/health', authMiddleware, adminOnly, transcribeController.checkHealth);
+router.get('/health', authMiddleware, permissionCheck('protokoll:read'), transcribeController.checkHealth);
 
 /**
  * @route   POST /api/transcribe
@@ -19,7 +19,7 @@ router.get('/health', authMiddleware, adminOnly, transcribeController.checkHealt
 router.post(
     '/',
     authMiddleware,
-    adminOnly,
+    permissionCheck('protokoll:read'),
     transcribeController.upload.single('audio'),
     transcribeController.transcribe
 );

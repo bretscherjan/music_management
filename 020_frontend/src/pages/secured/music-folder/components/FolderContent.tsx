@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { musicFolderService } from '@/services/musicFolderService';
 import { sheetMusicService } from '@/services/sheetMusicService';
-import { useIsAdmin } from '@/context/AuthContext';
+import { useCan } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Download, Plus, Trash2, GripVertical, Save, X } from 'lucide-react';
 import { PdfExportDialog } from '@/components/ui/PdfExportDialog';
@@ -37,7 +37,8 @@ interface FolderContentProps {
 }
 
 export const FolderContent = ({ folderId }: FolderContentProps) => {
-    const isAdmin = useIsAdmin();
+    const can = useCan();
+    const canManageFolders = can('folders:write');
     const queryClient = useQueryClient();
     const navigate = useNavigate();
     const [editMode, setEditMode] = useState(false);
@@ -236,12 +237,12 @@ export const FolderContent = ({ folderId }: FolderContentProps) => {
                     )}
                 </div>
                 <div className="flex flex-wrap gap-2">
-                    {isAdmin && !editMode && (
+                    {canManageFolders && !editMode && (
                         <Button variant="outline" size="sm" onClick={() => setEditMode(true)}>
                             Bearbeiten
                         </Button>
                     )}
-                    {isAdmin && editMode && (
+                    {canManageFolders && editMode && (
                         <>
                             <Button
                                 variant="destructive"
@@ -315,7 +316,7 @@ export const FolderContent = ({ folderId }: FolderContentProps) => {
 
                     {!editMode && (
                         <>
-                            {isAdmin && (
+                            {canManageFolders && (
                                 <Button
                                     variant="destructive"
                                     size="icon"
@@ -330,7 +331,7 @@ export const FolderContent = ({ folderId }: FolderContentProps) => {
                                     <Trash2 className="h-4 w-4" />
                                 </Button>
                             )}
-                            {isAdmin && (
+                            {canManageFolders && (
                                 <Button
                                     variant="destructive"
                                     size="sm"

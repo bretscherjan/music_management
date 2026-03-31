@@ -39,7 +39,8 @@ import {
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-import { useIsAdmin } from '@/context/AuthContext';
+import { useCan } from '@/context/AuthContext';
+import { useFileAccess } from '@/hooks/useFileAccess';
 import { fileService } from '@/services/fileService';
 import { formatFileSize } from '@/lib/utils';
 import type { FileEntity } from '@/types';
@@ -56,7 +57,11 @@ import { RenameFolderDialog } from '@/components/files/RenameFolderDialog';
 import { Checkbox } from '@/components/ui/checkbox';
 
 export function FileListPage() {
-    const isAdmin = useIsAdmin();
+    const can = useCan();
+    const canUploadFiles = can('files:upload');
+    const canManageFilePermissions = can('files:permissions');
+    const canSelectItems = canUploadFiles || canManageFilePermissions;
+    const { checkFileAccess, checkFolderAccess } = useFileAccess();
     const queryClient = useQueryClient();
     const [searchParams, setSearchParams] = useSearchParams();
     const folderParam = searchParams.get('folder');
@@ -264,16 +269,20 @@ export function FileListPage() {
                     </p>
                 </div>
 
-                {isAdmin && (
+                {(canUploadFiles || canManageFilePermissions) && (
                     <div className="flex gap-2">
-                        <Button variant="outline" onClick={() => setIsCreateFolderOpen(true)}>
-                            <FolderPlus className="h-4 w-4 mr-2" />
-                            Ordner erstellen
-                        </Button>
-                        <Button onClick={() => setIsUploadOpen(true)}>
-                            <Upload className="h-4 w-4 mr-2" />
-                            Datei hochladen
-                        </Button>
+                        {canUploadFiles && (
+                            <>
+                                <Button variant="outline" onClick={() => setIsCreateFolderOpen(true)}>
+                                    <FolderPlus className="h-4 w-4 mr-2" />
+                                    Ordner erstellen
+                                </Button>
+                                <Button onClick={() => setIsUploadOpen(true)}>
+                                    <Upload className="h-4 w-4 mr-2" />
+                                    Datei hochladen
+                                </Button>
+                            </>
+                        )}
                     </div>
                 )}
             </div>
@@ -339,7 +348,7 @@ export function FileListPage() {
                                 <span className="truncate">{currentFolderName}</span>
                             </div>
 
-                            {isAdmin && (files.length > 0 || folders.length > 0) && (
+                            {canSelectItems && (files.length > 0 || folders.length > 0) && (
                                 <div className="flex items-center gap-2">
                                     <Button
                                         variant="ghost"
@@ -363,14 +372,16 @@ export function FileListPage() {
                             {folders.length > 0 && (
                                 <div className="space-y-2">
                                     <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-1">Ordner</h4>
-                                    {folders.map((folder: any) => (
+                                    {folders.map((folder: any) => {
+                                        const folderAccess = checkFolderAccess(folder);
+                                        return (
                                         <div
                                             key={folder.id}
                                             id={`folder-${folder.id}`}
-                                            className={`flex items-center justify-between p-3 rounded-lg transition-colors group relative border ${selectedFolderIds.includes(folder.id) ? 'bg-primary/10 border-primary/20' : 'bg-muted/30 hover:bg-muted/50 border-transparent'}`}
+                                            className={`flex items-center justify-between p-3 rounded-lg transition-colors group relative border ${selectedFolderIds.includes(folder.id) ? 'bg-primary/10 border-primary/20' : folderAccess.isRestricted ? 'bg-muted/20 border-muted' : 'bg-muted/30 hover:bg-muted/50 border-transparent'} ${!folderAccess.canAccess ? 'opacity-60' : ''}`}
                                         >
                                             <div className="flex items-center gap-3 flex-1 min-w-0">
-                                                {isAdmin && (
+                                                {canSelectItems && (
                                                     <div className="flex items-center justify-center p-1" onClick={(e) => e.stopPropagation()}>
                                                         <Checkbox
                                                             id={`folder-${folder.id}`}
@@ -382,20 +393,32 @@ export function FileListPage() {
                                                 )}
                                                 <div
                                                     className="flex items-center gap-3 flex-1 cursor-pointer overflow-hidden"
-                                                    onClick={() => navigateToFolder(folder.id)}
+                                                    onClick={() => folderAccess.canAccess ? navigateToFolder(folder.id) : null}
                                                 >
-                                                    <Folder className="h-10 w-10 fill-primary/20 text-primary transition-transform group-hover:scale-110 shrink-0" />
+                                                    {folderAccess.isRestricted ? (
+                                                        <Shield className="h-8 w-8 text-amber-500 shrink-0" />
+                                                    ) : (
+                                                        <Folder className="h-10 w-10 fill-primary/20 text-primary transition-transform group-hover:scale-110 shrink-0" />
+                                                    )}
                                                     <div className="flex flex-col overflow-hidden">
-                                                        <span className="font-medium text-base truncate">{folder.name}</span>
+                                                        <span className="font-medium text-base truncate flex items-center gap-2">
+                                                            {folder.name}
+                                                            {folderAccess.isRestricted && !folderAccess.canAccess && (
+                                                                <Shield className="h-3 w-3 text-amber-500" />
+                                                            )}
+                                                        </span>
                                                         <span className="text-xs text-muted-foreground">
                                                             {(folder._count?.files || 0) + (folder._count?.children || 0)} Objekte
+                                                            {folderAccess.restrictionReason && (
+                                                                <span className="text-amber-600 ml-1">• {folderAccess.restrictionReason}</span>
+                                                            )}
                                                         </span>
                                                     </div>
                                                 </div>
                                             </div>
                                             <div className="flex items-center gap-2">
                                                 <ChevronRight className="h-4 w-4 text-muted-foreground mr-2" />
-                                                {isAdmin && (
+                                                {(canUploadFiles || canManageFilePermissions) && (
                                                     <DropdownMenu>
                                                         <DropdownMenuTrigger asChild>
                                                             <Button variant="ghost" className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -406,31 +429,40 @@ export function FileListPage() {
                                                         <DropdownMenuContent align="end">
                                                             <DropdownMenuLabel>Aktionen</DropdownMenuLabel>
                                                             <DropdownMenuSeparator />
-                                                            <DropdownMenuItem onClick={() => setRenameFolder({ id: folder.id, name: folder.name })}>
-                                                                <Pencil className="mr-2 h-4 w-4" />
-                                                                Umbenennen
-                                                            </DropdownMenuItem>
-                                                            <DropdownMenuItem onClick={() => setMoveItem({ id: folder.id, type: 'folder', name: folder.name })}>
-                                                                <FolderInput className="mr-2 h-4 w-4" />
-                                                                Verschieben
-                                                            </DropdownMenuItem>
-                                                            <DropdownMenuItem onClick={() => setManageAccessFolder(folder)}>
-                                                                <Shield className="mr-2 h-4 w-4" />
-                                                                Berechtigungen
-                                                            </DropdownMenuItem>
-                                                            <DropdownMenuItem
-                                                                onClick={() => setDeleteFolderId(folder.id)}
-                                                                className="text-red-600 focus:text-red-600"
-                                                            >
-                                                                <Trash2 className="mr-2 h-4 w-4" />
-                                                                Löschen
-                                                            </DropdownMenuItem>
+                                                            {canUploadFiles && (
+                                                                <>
+                                                                    <DropdownMenuItem onClick={() => setRenameFolder({ id: folder.id, name: folder.name })}>
+                                                                        <Pencil className="mr-2 h-4 w-4" />
+                                                                        Umbenennen
+                                                                    </DropdownMenuItem>
+                                                                    <DropdownMenuItem onClick={() => setMoveItem({ id: folder.id, type: 'folder', name: folder.name })}>
+                                                                        <FolderInput className="mr-2 h-4 w-4" />
+                                                                        Verschieben
+                                                                    </DropdownMenuItem>
+                                                                </>
+                                                            )}
+                                                            {canManageFilePermissions && (
+                                                                <>
+                                                                    <DropdownMenuItem onClick={() => setManageAccessFolder(folder)}>
+                                                                        <Shield className="mr-2 h-4 w-4" />
+                                                                        Berechtigungen
+                                                                    </DropdownMenuItem>
+                                                                    <DropdownMenuItem
+                                                                        onClick={() => setDeleteFolderId(folder.id)}
+                                                                        className="text-red-600 focus:text-red-600"
+                                                                    >
+                                                                        <Trash2 className="mr-2 h-4 w-4" />
+                                                                        Löschen
+                                                                    </DropdownMenuItem>
+                                                                </>
+                                                            )}
                                                         </DropdownMenuContent>
                                                     </DropdownMenu>
                                                 )}
                                             </div>
                                         </div>
-                                    ))}
+                                        );
+                                    })}
                                 </div>
                             )}
 
@@ -438,17 +470,19 @@ export function FileListPage() {
                             {files.length > 0 && (
                                 <div className="space-y-2">
                                     <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-1">Dateien</h4>
-                                    {files.map((file: FileEntity) => (
+                                    {files.map((file: FileEntity) => {
+                                        const fileAccess = checkFileAccess(file);
+                                        return (
                                         <div
                                             key={file.id}
                                             id={`file-${file.id}`}
                                             className={`flex items-center justify-between p-3 rounded-lg transition-colors border group relative ${selectedFileIds.includes(file.id)
                                                 ? 'bg-primary/10 border-primary/30'
-                                                : 'hover:bg-accent/50 border-transparent hover:border-border'} cursor-pointer`}
-                                            onClick={() => handlePreview(file.id)}
+                                                : fileAccess.isRestricted ? 'bg-muted/20 border-muted' : 'hover:bg-accent/50 border-transparent hover:border-border'} ${!fileAccess.canAccess ? 'opacity-60' : ''} cursor-pointer`}
+                                            onClick={() => fileAccess.canAccess ? handlePreview(file.id) : null}
                                         >
                                             <div className="flex items-center gap-3 min-w-0 flex-1">
-                                                {isAdmin && (
+                                                {canSelectItems && (
                                                     <div className="flex items-center justify-center p-1" onClick={(e) => e.stopPropagation()}>
                                                         <Checkbox
                                                             id={`file-${file.id}`}
@@ -459,11 +493,23 @@ export function FileListPage() {
                                                     </div>
                                                 )}
                                                 <div className="flex items-center gap-3 min-w-0 flex-1">
-                                                    <span className="text-2xl flex-shrink-0">{getFileIcon(file.mimetype)}</span>
+                                                    {fileAccess.isRestricted && !fileAccess.canAccess ? (
+                                                        <Shield className="h-8 w-8 text-amber-500 flex-shrink-0" />
+                                                    ) : (
+                                                        <span className="text-2xl flex-shrink-0">{getFileIcon(file.mimetype)}</span>
+                                                    )}
                                                     <div className="min-w-0 flex-1">
-                                                        <p className="font-medium truncate transition-colors">{file.originalName}</p>
-                                                        <div className="flex gap-2 text-xs text-muted-foreground">
+                                                        <p className="font-medium truncate transition-colors flex items-center gap-2">
+                                                            {file.originalName}
+                                                            {fileAccess.isRestricted && !fileAccess.canAccess && (
+                                                                <Shield className="h-3 w-3 text-amber-500" />
+                                                            )}
+                                                        </p>
+                                                        <div className="flex gap-2 text-xs text-muted-foreground flex-wrap">
                                                             <span>{formatFileSize(file.size)}</span>
+                                                            {fileAccess.restrictionReason && (
+                                                                <span className="text-amber-600">• {fileAccess.restrictionReason}</span>
+                                                            )}
                                                             {file.visibility !== 'all' && (
                                                                 <Badge variant="outline" className="text-[10px] h-4 py-0 flex items-center gap-1 border-primary/30">
                                                                     <Shield className="h-3 w-3" />
@@ -475,6 +521,7 @@ export function FileListPage() {
                                                 </div>
                                             </div>
                                             <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+                                                {fileAccess.canAccess && (
                                                 <Button
                                                     variant="ghost"
                                                     size="icon"
@@ -491,6 +538,7 @@ export function FileListPage() {
                                                         <Download className="h-4 w-4" />
                                                     )}
                                                 </Button>
+                                                )}
 
                                                 <DropdownMenu>
                                                     <DropdownMenuTrigger asChild>
@@ -501,47 +549,63 @@ export function FileListPage() {
                                                     <DropdownMenuContent align="end">
                                                         <DropdownMenuLabel>Aktionen</DropdownMenuLabel>
                                                         <DropdownMenuSeparator />
-                                                        <DropdownMenuItem onClick={() => handlePreview(file.id)}>
-                                                            <Eye className="mr-2 h-4 w-4" />
-                                                            Vorschau
-                                                        </DropdownMenuItem>
-                                                        <DropdownMenuItem
-                                                            onClick={() => handleDownload(file.id, file.originalName)}
-                                                            disabled={downloading === file.id}
-                                                        >
-                                                            {downloading === file.id ? (
-                                                                <Loader2 className="mr-2 h-4 w-4 animate-spin text-muted-foreground" />
-                                                            ) : (
-                                                                <Download className="mr-2 h-4 w-4" />
-                                                            )}
-                                                            Herunterladen
-                                                        </DropdownMenuItem>
-
-                                                        {isAdmin && (
+                                                        {fileAccess.canAccess ? (
                                                             <>
-                                                                <DropdownMenuSeparator />
-                                                                <DropdownMenuItem onClick={() => setMoveItem({ id: file.id, type: 'file', name: file.originalName })}>
-                                                                    <FolderInput className="mr-2 h-4 w-4" />
-                                                                    Verschieben
-                                                                </DropdownMenuItem>
-                                                                <DropdownMenuItem onClick={() => setManageAccessFile(file)}>
-                                                                    <Shield className="mr-2 h-4 w-4" />
-                                                                    Berechtigungen
+                                                                <DropdownMenuItem onClick={() => handlePreview(file.id)}>
+                                                                    <Eye className="mr-2 h-4 w-4" />
+                                                                    Vorschau
                                                                 </DropdownMenuItem>
                                                                 <DropdownMenuItem
-                                                                    onClick={() => setDeleteFileId(file.id)}
-                                                                    className="text-red-600 focus:text-red-600"
+                                                                    onClick={() => handleDownload(file.id, file.originalName)}
+                                                                    disabled={downloading === file.id}
                                                                 >
-                                                                    <Trash2 className="mr-2 h-4 w-4" />
-                                                                    Löschen
+                                                                    {downloading === file.id ? (
+                                                                        <Loader2 className="mr-2 h-4 w-4 animate-spin text-muted-foreground" />
+                                                                    ) : (
+                                                                        <Download className="mr-2 h-4 w-4" />
+                                                                    )}
+                                                                    Herunterladen
                                                                 </DropdownMenuItem>
+                                                            </>
+                                                        ) : (
+                                                            <DropdownMenuItem disabled className="opacity-50">
+                                                                <Shield className="mr-2 h-4 w-4" />
+                                                                Kein Zugriff
+                                                            </DropdownMenuItem>
+                                                        )}
+
+                                                        {(canUploadFiles || canManageFilePermissions) && (
+                                                            <>
+                                                                <DropdownMenuSeparator />
+                                                                {canUploadFiles && (
+                                                                    <DropdownMenuItem onClick={() => setMoveItem({ id: file.id, type: 'file', name: file.originalName })}>
+                                                                        <FolderInput className="mr-2 h-4 w-4" />
+                                                                        Verschieben
+                                                                    </DropdownMenuItem>
+                                                                )}
+                                                                {canManageFilePermissions && (
+                                                                    <>
+                                                                        <DropdownMenuItem onClick={() => setManageAccessFile(file)}>
+                                                                            <Shield className="mr-2 h-4 w-4" />
+                                                                            Berechtigungen
+                                                                        </DropdownMenuItem>
+                                                                        <DropdownMenuItem
+                                                                            onClick={() => setDeleteFileId(file.id)}
+                                                                            className="text-red-600 focus:text-red-600"
+                                                                        >
+                                                                            <Trash2 className="mr-2 h-4 w-4" />
+                                                                            Löschen
+                                                                        </DropdownMenuItem>
+                                                                    </>
+                                                                )}
                                                             </>
                                                         )}
                                                     </DropdownMenuContent>
                                                 </DropdownMenu>
                                             </div>
                                         </div>
-                                    ))}
+                                        );
+                                    })}
                                 </div>
                             )}
 
@@ -557,7 +621,7 @@ export function FileListPage() {
             )}
 
             {/* Bulk Action Toolbar */}
-            {isAdmin && (selectedFileIds.length > 0 || selectedFolderIds.length > 0) && (
+            {canSelectItems && (selectedFileIds.length > 0 || selectedFolderIds.length > 0) && (
                 <div className="fixed bottom-20 left-1/2 -translate-x-1/2 z-50 animate-in fade-in slide-in-from-bottom-4 duration-300">
                     <Card className="shadow-2xl border-primary/20 bg-background/95 backdrop-blur-sm">
                         <CardContent className="p-4 flex items-center gap-4">
@@ -572,15 +636,19 @@ export function FileListPage() {
                             </div>
 
                             <div className="flex items-center gap-2">
-                                <Button size="sm" onClick={() => setIsBulkAccessOpen(true)} className="h-9">
-                                    <Shield className="h-4 w-4 mr-2" />
-                                    Berechtigungen setzen
-                                </Button>
+                                {canManageFilePermissions && (
+                                    <Button size="sm" onClick={() => setIsBulkAccessOpen(true)} className="h-9">
+                                        <Shield className="h-4 w-4 mr-2" />
+                                        Berechtigungen setzen
+                                    </Button>
+                                )}
 
-                                <Button size="sm" variant="outline" onClick={() => setIsWrapInFolderOpen(true)} className="h-9">
-                                    <FolderPlus className="h-4 w-4 mr-2" />
-                                    In Ordner einpacken
-                                </Button>
+                                {canUploadFiles && (
+                                    <Button size="sm" variant="outline" onClick={() => setIsWrapInFolderOpen(true)} className="h-9">
+                                        <FolderPlus className="h-4 w-4 mr-2" />
+                                        In Ordner einpacken
+                                    </Button>
+                                )}
                             </div>
                         </CardContent>
                     </Card>
@@ -588,21 +656,25 @@ export function FileListPage() {
             )}
 
             {/* Dialogs */}
-            <FileUploadDialog
-                open={isUploadOpen}
-                onOpenChange={setIsUploadOpen}
-                currentFolderId={currentFolderId}
-                currentFolderName={currentFolderName}
-            />
+            {canUploadFiles && (
+                <>
+                    <FileUploadDialog
+                        open={isUploadOpen}
+                        onOpenChange={setIsUploadOpen}
+                        currentFolderId={currentFolderId}
+                        currentFolderName={currentFolderName}
+                    />
 
-            <CreateFolderDialog
-                open={isCreateFolderOpen}
-                onOpenChange={setIsCreateFolderOpen}
-                currentFolderId={currentFolderId}
-                currentFolderName={currentFolderName}
-            />
+                    <CreateFolderDialog
+                        open={isCreateFolderOpen}
+                        onOpenChange={setIsCreateFolderOpen}
+                        currentFolderId={currentFolderId}
+                        currentFolderName={currentFolderName}
+                    />
+                </>
+            )}
 
-            {manageAccessFile && (
+            {canManageFilePermissions && manageAccessFile && (
                 <ManageAccessDialog
                     file={manageAccessFile}
                     open={!!manageAccessFile}
@@ -610,7 +682,7 @@ export function FileListPage() {
                 />
             )}
 
-            {manageAccessFolder && (
+            {canManageFilePermissions && manageAccessFolder && (
                 <ManageFolderAccessDialog
                     folder={manageAccessFolder}
                     open={!!manageAccessFolder}
@@ -618,7 +690,7 @@ export function FileListPage() {
                 />
             )}
 
-            {isBulkAccessOpen && (
+            {canManageFilePermissions && isBulkAccessOpen && (
                 <ManageBulkAccessDialog
                     selectedFileIds={selectedFileIds}
                     selectedFolderIds={selectedFolderIds}
@@ -652,37 +724,41 @@ export function FileListPage() {
                 variant="destructive"
             />
 
-            <MoveItemDialog
-                itemId={moveItem?.id ?? null}
-                itemType={moveItem?.type ?? 'file'}
-                itemName={moveItem?.name}
-                currentFolderId={currentFolderId}
-                open={!!moveItem}
-                onOpenChange={(open) => !open && setMoveItem(null)}
-            />
+            {canUploadFiles && (
+                <>
+                    <MoveItemDialog
+                        itemId={moveItem?.id ?? null}
+                        itemType={moveItem?.type ?? 'file'}
+                        itemName={moveItem?.name}
+                        currentFolderId={currentFolderId}
+                        open={!!moveItem}
+                        onOpenChange={(open) => !open && setMoveItem(null)}
+                    />
 
-            <WrapInFolderDialog
-                open={isWrapInFolderOpen}
-                onOpenChange={setIsWrapInFolderOpen}
-                selectedFileIds={selectedFileIds}
-                selectedFolderIds={selectedFolderIds}
-                currentFolderId={currentFolderId}
-                currentFolderName={folderContents?.currentFolder?.name ?? 'Root'}
-                onDone={() => {
-                    queryClient.invalidateQueries({ queryKey: ['folderContents'] });
-                    clearSelection();
-                    setIsWrapInFolderOpen(false);
-                }}
-            />
+                    <WrapInFolderDialog
+                        open={isWrapInFolderOpen}
+                        onOpenChange={setIsWrapInFolderOpen}
+                        selectedFileIds={selectedFileIds}
+                        selectedFolderIds={selectedFolderIds}
+                        currentFolderId={currentFolderId}
+                        currentFolderName={folderContents?.currentFolder?.name ?? 'Root'}
+                        onDone={() => {
+                            queryClient.invalidateQueries({ queryKey: ['folderContents'] });
+                            clearSelection();
+                            setIsWrapInFolderOpen(false);
+                        }}
+                    />
 
-            <RenameFolderDialog
-                folder={renameFolder}
-                open={!!renameFolder}
-                onOpenChange={(open) => !open && setRenameFolder(null)}
-                onSuccess={() => {
-                    queryClient.invalidateQueries({ queryKey: ['folderContents'] });
-                }}
-            />
+                    <RenameFolderDialog
+                        folder={renameFolder}
+                        open={!!renameFolder}
+                        onOpenChange={(open) => !open && setRenameFolder(null)}
+                        onSuccess={() => {
+                            queryClient.invalidateQueries({ queryKey: ['folderContents'] });
+                        }}
+                    />
+                </>
+            )}
         </div>
     );
 }

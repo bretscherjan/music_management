@@ -2,6 +2,35 @@
 
 export type UserStatus = 'active' | 'passive' | 'former';
 export type UserRole = 'member' | 'admin';
+export type UserType = 'REGULAR' | 'GUEST';
+
+export interface Permission {
+    id: number;
+    key: string;
+    description?: string | null;
+    category?: string | null;
+}
+
+export interface PermissionTemplate {
+    id: number;
+    systemKey?: string | null;
+    name: string;
+    description?: string | null;
+    permissionKeys: string[];
+    isSystem: boolean;
+    createdBy?: number | null;
+    updatedBy?: number | null;
+    createdAt: string;
+    updatedAt: string;
+}
+
+export interface UserPermission {
+    userId: number;
+    permissionId: number;
+    grantedAt: string;
+    grantedBy?: number | null;
+    permission: Permission;
+}
 
 export interface User {
     id: number;
@@ -12,6 +41,8 @@ export interface User {
     profilePicture?: string | null;
     status: UserStatus;
     role: UserRole;
+    type: UserType;
+    expiresAt?: string | null;
     registerId?: number | null;
     register?: {
         id: number;
@@ -21,6 +52,7 @@ export interface User {
     createdAt: string;
     updatedAt: string;
     calendarToken?: string;
+    permissions?: UserPermission[];
 }
 
 export interface NotificationSettings {
@@ -87,5 +119,20 @@ export interface AdminUpdateUserDto {
     phoneNumber?: string | null;
     status?: UserStatus;
     role?: UserRole;
+    type?: UserType;
+    expiresAt?: string | null;
+    registerId?: number | null;
+}
+
+export interface AdminCreateUserDto {
+    firstName: string;
+    lastName: string;
+    email: string;
+    password?: string;
+    phoneNumber?: string | null;
+    status?: UserStatus;
+    role?: UserRole;
+    type?: UserType;
+    expiresAt?: string | null;
     registerId?: number | null;
 }

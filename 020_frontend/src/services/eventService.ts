@@ -1,5 +1,6 @@
 import api from '@/lib/api';
 import { publicApi } from '@/lib/api';
+import { pdfOptsToParams, DEFAULT_PDF_OPTIONS, type PdfOptions } from '@/utils/pdfTheme';
 import type {
     Event,
     CreateEventDto,
@@ -108,8 +109,23 @@ export const eventService = {
         return response.data;
     },
 
-    getPdfExportUrl: (eventId: number) => {
-        return `${api.defaults.baseURL}/events/${eventId}/export-pdf`;
+    async exportPdf(eventId: number, pdfOpts: PdfOptions = DEFAULT_PDF_OPTIONS): Promise<Blob> {
+        const response = await api.get(`/events/${eventId}/export-pdf`, {
+            params: pdfOptsToParams(pdfOpts),
+            responseType: 'blob',
+        });
+        return response.data;
+    },
+
+    downloadBlob(blob: Blob, filename: string): void {
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
     },
 };
 

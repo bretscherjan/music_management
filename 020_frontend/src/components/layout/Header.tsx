@@ -1,5 +1,5 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { useAuth, useIsAdmin } from '@/context/AuthContext';
+import { useAuth, useCan } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
 import {
     Calendar,
@@ -21,54 +21,59 @@ import {
     Wrench,
     BookOpen,
     TableProperties,
+    MessageSquare,
 } from 'lucide-react';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
+import { getMediaUrl } from '@/lib/api';
 
 
 interface NavItem {
     label: string;
     href: string;
     icon: React.ReactNode;
-    adminOnly?: boolean;
+    permission?: string;
 }
 
 const mainNavItems: NavItem[] = [
-    { label: 'Termine', href: '/member/events', icon: <Calendar className="h-5 w-5" /> },
-    { label: 'Dateien', href: '/member/files', icon: <FileText className="h-5 w-5" /> },
-    { label: 'Mappen', href: '/member/music-folders', icon: <Folder className="h-5 w-5" /> },
-    { label: 'Mitglieder', href: '/member/members', icon: <Users className="h-5 w-5" /> },
+    { label: 'Termine', href: '/member/events', icon: <Calendar className="h-5 w-5" />, permission: 'events:read' },
+    { label: 'Dateien', href: '/member/files', icon: <FileText className="h-5 w-5" />, permission: 'files:read' },
+    { label: 'Mappen', href: '/member/music-folders', icon: <Folder className="h-5 w-5" />, permission: 'folders:read' },
+    { label: 'Mitglieder', href: '/member/members', icon: <Users className="h-5 w-5" />, permission: 'members:read' },
+    { label: 'Chat', href: '/member/chat', icon: <MessageSquare className="h-5 w-5" />, permission: 'chat:read' },
 ];
 
 const adminNavItems: NavItem[] = [
-    { label: 'Toolkit', href: '/member/admin/toolkit', icon: <Wrench className="h-5 w-5" />, adminOnly: true },
-    { label: 'Theorie', href: '/member/admin/theory', icon: <BookOpen className="h-5 w-5" />, adminOnly: true },
-    { label: 'Grifftabelle', href: '/member/grifftabelle', icon: <TableProperties className="h-5 w-5" />, adminOnly: true },
-    { label: 'Termine admin', href: '/member/admin/events', icon: <Calendar className="h-5 w-5" />, adminOnly: true },
-    { label: 'Workspace', href: '/member/admin/workspace', icon: <Folder className="h-5 w-5" />, adminOnly: true },
-    { label: 'Noten', href: '/member/admin/sheet-music', icon: <Library className="h-5 w-5" />, adminOnly: true },
-    { label: 'Register', href: '/member/admin/registers', icon: <Music className="h-5 w-5" />, adminOnly: true },
-    { label: 'News', href: '/member/admin/news', icon: <Newspaper className="h-5 w-5" />, adminOnly: true },
-    { label: 'Statistiken', href: '/member/admin/statistics', icon: <BarChart className="h-5 w-5" />, adminOnly: true },
-    { label: 'Engagement', href: '/member/admin/engagement', icon: <Activity className="h-5 w-5" />, adminOnly: true },
-    { label: 'Protokoll', href: '/member/admin/protokoll', icon: <ClipboardList className="h-5 w-5" />, adminOnly: true },
-    { label: 'DB', href: '/member/admin/db', icon: <Database className="h-5 w-5" />, adminOnly: true },
-    { label: 'CMS', href: '/member/admin/cms', icon: <Newspaper className="h-5 w-5" />, adminOnly: true },
+    { label: 'Toolkit', href: '/member/admin/toolkit', icon: <Wrench className="h-5 w-5" />, permission: 'toolkit:read' },
+    { label: 'Theorie', href: '/member/admin/theory', icon: <BookOpen className="h-5 w-5" />, permission: 'theory:read' },
+    { label: 'Grifftabelle', href: '/member/grifftabelle', icon: <TableProperties className="h-5 w-5" />, permission: 'grifftabelle:read' },
+    { label: 'Termine admin', href: '/member/admin/events', icon: <Calendar className="h-5 w-5" />, permission: 'events:write' },
+    { label: 'Workspace', href: '/member/admin/workspace', icon: <Folder className="h-5 w-5" />, permission: 'workspace:read' },
+    { label: 'Noten', href: '/member/admin/sheet-music', icon: <Library className="h-5 w-5" />, permission: 'sheetMusic:read' },
+    { label: 'Register', href: '/member/admin/registers', icon: <Music className="h-5 w-5" />, permission: 'registers:write' },
+    { label: 'News', href: '/member/admin/news', icon: <Newspaper className="h-5 w-5" />, permission: 'news:write' },
+    { label: 'Statistiken', href: '/member/admin/statistics', icon: <BarChart className="h-5 w-5" />, permission: 'statistics:read' },
+    { label: 'Engagement', href: '/member/admin/engagement', icon: <Activity className="h-5 w-5" />, permission: 'engagement:read' },
+    { label: 'Protokoll', href: '/member/admin/protokoll', icon: <ClipboardList className="h-5 w-5" />, permission: 'protokoll:read' },
+    { label: 'DB', href: '/member/admin/db', icon: <Database className="h-5 w-5" />, permission: 'db:read' },
+    { label: 'CMS', href: '/member/admin/cms', icon: <Newspaper className="h-5 w-5" />, permission: 'cms:write' },
 ];
 
 export function Header() {
     const { logout } = useAuth();
-    const isAdmin = useIsAdmin();
+    const can = useCan();
     const location = useLocation();
     const navigate = useNavigate();
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+    const filteredMainNavItems = mainNavItems.filter((item) => !item.permission || can(item.permission));
+    const filteredAdminNavItems = adminNavItems.filter((item) => !item.permission || can(item.permission));
 
     return (
         <header className="sticky top-0 z-50 w-full border-b bg-background/80 backdrop-blur-md supports-[backdrop-filter]:bg-background/80">
             <div className="container-app flex h-16 items-center justify-between">
                 {/* Logo & Mobile Menu Trigger (Left align on mobile?) No, standart right aligned hamburger usually. */}
                 <Link to="/member" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
-                    <img src="/logo_smile.svg" alt="Musig Elgg Logo" className="h-8 w-8 rounded-full object-cover" />
+                    <img src={getMediaUrl('/logo_smile.svg')} alt="Musig Elgg Logo" className="h-8 w-8 rounded-full object-cover" />
                     <div className="flex flex-col">
                         <span className="font-bold text-lg leading-tight">Musig Elgg</span>
                         <span className="text-xs text-muted-foreground">Mitgliederbereich</span>
@@ -113,7 +118,7 @@ export function Header() {
                             <h4 className="px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
                                 Allgemein
                             </h4>
-                            {mainNavItems.map((item) => (
+                            {filteredMainNavItems.map((item) => (
                                 <Link
                                     key={item.href}
                                     to={item.href}
@@ -131,7 +136,7 @@ export function Header() {
                             ))}
                         </div>
 
-                        {isAdmin && (
+                        {filteredAdminNavItems.length > 0 && (
                             <div className="space-y-1">
                                 <div className="flex items-center px-4 mb-2 gap-2 text-muted-foreground">
                                     <Shield className="h-3 w-3" />
@@ -139,7 +144,7 @@ export function Header() {
                                         Verwaltung
                                     </h4>
                                 </div>
-                                {adminNavItems.map((item) => (
+                                {filteredAdminNavItems.map((item) => (
                                     <Link
                                         key={item.href}
                                         to={item.href}

@@ -5,11 +5,14 @@
 
 const { PrismaClient } = require('@prisma/client');
 const bcrypt = require('bcryptjs');
+const { seedPermissions, assignDefaultPermissions } = require('../src/utils/permissions.seed');
 
 const prisma = new PrismaClient();
 
 async function main() {
     console.log('🌱 Seeding database...\n');
+
+    await seedPermissions(prisma);
 
     // ============================================
     // 1. REGISTER (Stimmen/Instrumentengruppen)
@@ -194,6 +197,12 @@ async function main() {
     ]);
 
     console.log(`  ✓ ${users.length} users created\n`);
+
+    for (const user of users) {
+        await assignDefaultPermissions(user.id, user, { prismaClient: prisma });
+    }
+
+    console.log('  ✓ default permissions assigned\n');
 
     // ============================================
     // 3. EVENTS (Proben und Auftritte)

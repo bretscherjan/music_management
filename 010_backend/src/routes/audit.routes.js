@@ -2,10 +2,10 @@ const express = require('express');
 const router = express.Router();
 const auditController = require('../controllers/audit.controller');
 const { authMiddleware } = require('../middlewares/auth.middleware');
-const { adminOnly } = require('../middlewares/roleCheck.middleware');
+const { permissionCheck } = require('../middlewares/permission.middleware');
 
 router.use(authMiddleware);
-router.use(adminOnly);
+router.use(permissionCheck('engagement:read'));
 
 router.get('/',       auditController.getAuditLogs);
 router.get('/filters', auditController.getAuditFilters);

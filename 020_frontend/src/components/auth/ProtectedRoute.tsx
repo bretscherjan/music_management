@@ -1,14 +1,16 @@
 import { Navigate, useLocation } from 'react-router-dom';
-import { useAuth } from '@/context/AuthContext';
+import { useAuth, useCan } from '@/context/AuthContext';
 import type { ReactNode } from 'react';
 
 interface ProtectedRouteProps {
     children: ReactNode;
     requireAdmin?: boolean;
+    permission?: string;
 }
 
-export function ProtectedRoute({ children, requireAdmin = false }: ProtectedRouteProps) {
+export function ProtectedRoute({ children, requireAdmin = false, permission }: ProtectedRouteProps) {
     const { isAuthenticated, isLoading, user } = useAuth();
+    const can = useCan();
     const location = useLocation();
 
     if (isLoading) {
@@ -24,7 +26,12 @@ export function ProtectedRoute({ children, requireAdmin = false }: ProtectedRout
     }
 
     if (requireAdmin && user?.role !== 'admin') {
-        return <Navigate to="/" replace />;
+        return <Navigate to="/member" replace />;
+    }
+
+    // Check specific permission requirement
+    if (permission && !can(permission)) {
+        return <Navigate to="/member" replace />;
     }
 
     return <>{children}</>;

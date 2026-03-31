@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { eventService } from '@/services/eventService';
+import { useCan } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -14,6 +15,8 @@ import type { CreateEventDto } from '@/types';
 
 
 export function CreateEventPage() {
+    const can = useCan();
+    const canReadRegisters = can('registers:read');
     const navigate = useNavigate();
     const { id } = useParams<{ id: string }>();
     const isEditMode = !!id;
@@ -60,6 +63,7 @@ export function CreateEventPage() {
     const { data: registers = [] } = useQuery({
         queryKey: ['registers'],
         queryFn: registerService.getAll,
+        enabled: canReadRegisters,
     });
 
     // Populate form when data is loaded
@@ -298,6 +302,7 @@ export function CreateEventPage() {
                         </div>
 
                         {/* Internal Visibility / Register Restriction */}
+                        {canReadRegisters && (
                         <div className="space-y-3 p-4 border rounded-lg bg-muted/20">
                             <Label className="font-semibold">Sichtbarkeit für Mitglieder</Label>
                             <p className="text-sm text-muted-foreground">
@@ -339,6 +344,7 @@ export function CreateEventPage() {
                                     : "Für alle Mitglieder sichtbar."}
                             </p>
                         </div>
+                        )}
 
                         {/* Default Attendance Status - ONLY SHOW IN CREATE MODE */}
                         {!isEditMode && (

@@ -14,13 +14,16 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { MessageSquare, Plus, Search, Trash2 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { de } from 'date-fns/locale';
-import { useAuth } from '@/context/AuthContext';
+import { useAuth, useCan } from '@/context/AuthContext';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { toast } from 'sonner';
 
 export function ChatPortalPage() {
     const navigate = useNavigate();
     const { user } = useAuth();
+    const can = useCan();
+    const canCreateChat = can('chat:create');
+    const canReadRegisters = can('registers:read');
     const queryClient = useQueryClient();
     const [searchQuery, setSearchQuery] = useState('');
     const [isNewChatOpen, setIsNewChatOpen] = useState(false);
@@ -56,7 +59,8 @@ export function ChatPortalPage() {
 
     const { data: registers } = useQuery({
         queryKey: ['registers'],
-        queryFn: () => registerService.getAll()
+        queryFn: () => registerService.getAll(),
+        enabled: isNewChatOpen && canCreateChat && canReadRegisters,
     });
 
     const filteredUsers = usersData?.filter((u: any) => {
@@ -131,101 +135,103 @@ export function ChatPortalPage() {
                     <MessageSquare className="w-8 h-8 text-primary" />
                     Chats
                 </h1>
-                <Dialog open={isNewChatOpen} onOpenChange={(open) => {
-                    setIsNewChatOpen(open);
-                    if (!open) {
-                        setSelectedUserIds([]);
-                        setGroupTitle('');
-                        setUserSearch('');
-                    }
-                }}>
-                    <DialogTrigger asChild>
-                        <Button className="gap-2">
-                            <Plus className="w-4 h-4" />
-                            Neuer Chat
-                        </Button>
-                    </DialogTrigger>
-                    <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col">
-                        <DialogHeader>
-                            <DialogTitle>Neuen Chat starten</DialogTitle>
-                        </DialogHeader>
-                        <div className="space-y-4 py-4 flex-1 overflow-hidden flex flex-col">
-                            {selectedUserIds.length > 1 && (
-                                <div className="space-y-2">
-                                    <label className="text-sm font-medium">Gruppenname</label>
+                {canCreateChat && (
+                    <Dialog open={isNewChatOpen} onOpenChange={(open) => {
+                        setIsNewChatOpen(open);
+                        if (!open) {
+                            setSelectedUserIds([]);
+                            setGroupTitle('');
+                            setUserSearch('');
+                        }
+                    }}>
+                        <DialogTrigger asChild>
+                            <Button className="gap-2">
+                                <Plus className="w-4 h-4" />
+                                Neuer Chat
+                            </Button>
+                        </DialogTrigger>
+                        <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col">
+                            <DialogHeader>
+                                <DialogTitle>Neuen Chat starten</DialogTitle>
+                            </DialogHeader>
+                            <div className="space-y-4 py-4 flex-1 overflow-hidden flex flex-col">
+                                {selectedUserIds.length > 1 && (
+                                    <div className="space-y-2">
+                                        <label className="text-sm font-medium">Gruppenname</label>
+                                        <Input
+                                            placeholder="z.B. Trompeten-Team"
+                                            value={groupTitle}
+                                            onChange={(e) => setGroupTitle(e.target.value)}
+                                        />
+                                    </div>
+                                )}
+
+                                <div className="flex flex-wrap gap-2 pb-2">
+                                    <Button size="sm" variant="outline" onClick={selectAdmins}>Nur Admins</Button>
+                                    {canReadRegisters && registers?.map((reg: any) => (
+                                        <Button key={reg.id} size="sm" variant="outline" onClick={() => selectRegister(reg.id)}>
+                                            {reg.name}
+                                        </Button>
+                                    ))}
+                                </div>
+
+                                <div className="relative">
+                                    <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
                                     <Input
-                                        placeholder="z.B. Trompeten-Team"
-                                        value={groupTitle}
-                                        onChange={(e) => setGroupTitle(e.target.value)}
+                                        placeholder="Nach Mitgliedern suchen..."
+                                        className="pl-8"
+                                        value={userSearch}
+                                        onChange={(e) => setUserSearch(e.target.value)}
                                     />
                                 </div>
-                            )}
 
-                            <div className="flex flex-wrap gap-2 pb-2">
-                                <Button size="sm" variant="outline" onClick={selectAdmins}>Nur Admins</Button>
-                                {registers?.map((reg: any) => (
-                                    <Button key={reg.id} size="sm" variant="outline" onClick={() => selectRegister(reg.id)}>
-                                        {reg.name}
-                                    </Button>
-                                ))}
-                            </div>
-
-                            <div className="relative">
-                                <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                                <Input
-                                    placeholder="Nach Mitgliedern suchen..."
-                                    className="pl-8"
-                                    value={userSearch}
-                                    onChange={(e) => setUserSearch(e.target.value)}
-                                />
-                            </div>
-
-                            <div className="space-y-1 overflow-y-auto border rounded-lg p-2 flex-1">
-                                {filteredUsers?.map((u: any) => (
-                                    <div
-                                        key={u.id}
-                                        className={cn(
-                                            "flex items-center justify-between p-2 hover:bg-muted rounded-lg cursor-pointer transition-colors",
-                                            selectedUserIds.includes(u.id) && "bg-primary/10 border-primary"
-                                        )}
-                                        onClick={() => toggleUserSelection(u.id)}
-                                    >
-                                        <div className="flex items-center gap-3">
-                                            <Avatar className="h-8 w-8">
-                                                <AvatarImage src={u.profilePicture} />
-                                                <AvatarFallback name={`${u.firstName} ${u.lastName}`} />
-                                            </Avatar>
-                                            <div>
-                                                <p className="text-sm font-medium">{u.firstName} {u.lastName}</p>
-                                                <p className="text-[10px] text-muted-foreground">{u.register?.name || 'Mitglied'}</p>
+                                <div className="space-y-1 overflow-y-auto border rounded-lg p-2 flex-1">
+                                    {filteredUsers?.map((u: any) => (
+                                        <div
+                                            key={u.id}
+                                            className={cn(
+                                                'flex items-center justify-between p-2 hover:bg-muted rounded-lg cursor-pointer transition-colors',
+                                                selectedUserIds.includes(u.id) && 'bg-primary/10 border-primary'
+                                            )}
+                                            onClick={() => toggleUserSelection(u.id)}
+                                        >
+                                            <div className="flex items-center gap-3">
+                                                <Avatar className="h-8 w-8">
+                                                    <AvatarImage src={u.profilePicture} />
+                                                    <AvatarFallback name={`${u.firstName} ${u.lastName}`} />
+                                                </Avatar>
+                                                <div>
+                                                    <p className="text-sm font-medium">{u.firstName} {u.lastName}</p>
+                                                    <p className="text-[10px] text-muted-foreground">{u.register?.name || 'Mitglied'}</p>
+                                                </div>
+                                            </div>
+                                            <div className={cn(
+                                                'w-5 h-5 rounded-full border flex items-center justify-center transition-colors',
+                                                selectedUserIds.includes(u.id) ? 'bg-primary border-primary' : 'border-muted-foreground/30'
+                                            )}>
+                                                {selectedUserIds.includes(u.id) && <div className="w-2 h-2 bg-white rounded-full" />}
                                             </div>
                                         </div>
-                                        <div className={cn(
-                                            "w-5 h-5 rounded-full border flex items-center justify-center transition-colors",
-                                            selectedUserIds.includes(u.id) ? "bg-primary border-primary" : "border-muted-foreground/30"
-                                        )}>
-                                            {selectedUserIds.includes(u.id) && <div className="w-2 h-2 bg-white rounded-full" />}
-                                        </div>
-                                    </div>
-                                ))}
+                                    ))}
+                                </div>
                             </div>
-                        </div>
-                        <div className="flex justify-between items-center pt-4 border-t mt-auto">
-                            <span className="text-sm text-muted-foreground">
-                                {selectedUserIds.length} ausgewählt
-                            </span>
-                            <div className="flex gap-2">
-                                <Button variant="ghost" onClick={() => setIsNewChatOpen(false)}>Abbrechen</Button>
-                                <Button 
-                                    onClick={handleCreateChat} 
-                                    disabled={selectedUserIds.length === 0 || (selectedUserIds.length > 1 && !groupTitle.trim())}
-                                >
-                                    {selectedUserIds.length > 1 ? 'Gruppe erstellen' : 'Chat starten'}
-                                </Button>
+                            <div className="flex justify-between items-center pt-4 border-t mt-auto">
+                                <span className="text-sm text-muted-foreground">
+                                    {selectedUserIds.length} ausgewählt
+                                </span>
+                                <div className="flex gap-2">
+                                    <Button variant="ghost" onClick={() => setIsNewChatOpen(false)}>Abbrechen</Button>
+                                    <Button
+                                        onClick={handleCreateChat}
+                                        disabled={selectedUserIds.length === 0 || (selectedUserIds.length > 1 && !groupTitle.trim())}
+                                    >
+                                        {selectedUserIds.length > 1 ? 'Gruppe erstellen' : 'Chat starten'}
+                                    </Button>
+                                </div>
                             </div>
-                        </div>
-                    </DialogContent>
-                </Dialog>
+                        </DialogContent>
+                    </Dialog>
+                )}
             </div>
 
             <div className="relative">
@@ -261,7 +267,7 @@ export function ChatPortalPage() {
                                 <p className="text-xl font-medium">Keine Chats gefunden</p>
                                 <p className="text-muted-foreground text-sm">Starte eine neue Unterhaltung mit einem Mitglied.</p>
                             </div>
-                            <Button onClick={() => setIsNewChatOpen(true)}>Ersten Chat starten</Button>
+                            {canCreateChat && <Button onClick={() => setIsNewChatOpen(true)}>Ersten Chat starten</Button>}
                         </CardContent>
                     </Card>
                 ) : (
@@ -300,7 +306,7 @@ export function ChatPortalPage() {
                                     </p>
                                 </div>
 
-                                {(chat.createdBy === user?.id || user?.role === 'admin') && (
+                                {canCreateChat && (chat.createdBy === user?.id || user?.role === 'admin') && (
                                     <Button
                                         variant="ghost"
                                         size="icon"

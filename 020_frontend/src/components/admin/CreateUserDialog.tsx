@@ -1,13 +1,14 @@
 import { useState } from 'react';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { registerService } from '@/services/registerService';
+import { userService } from '@/services/userService';
+import { useCan } from '@/context/AuthContext';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Loader2 } from 'lucide-react';
-
-import api from '@/lib/api'; // Using api directly as userService.create might not exist yet
+import type { UserType, AdminCreateUserDto } from '@/types';
 
 interface CreateUserDialogProps {
     open: boolean;
@@ -15,15 +16,19 @@ interface CreateUserDialogProps {
 }
 
 export function CreateUserDialog({ open, onOpenChange }: CreateUserDialogProps) {
+    const can = useCan();
+    const canReadRegisters = can('registers:read');
     const queryClient = useQueryClient();
-    const [formData, setFormData] = useState({
+    const [formData, setFormData] = useState<AdminCreateUserDto>({
         email: '',
         password: '',
         firstName: '',
         lastName: '',
         phoneNumber: '',
-        registerId: '' as string | number,
-        role: 'member'
+        registerId: null,
+        role: 'member',
+        type: 'REGULAR',
+        expiresAt: null
     });
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -31,22 +36,17 @@ export function CreateUserDialog({ open, onOpenChange }: CreateUserDialogProps) 
     const { data: registers } = useQuery({
         queryKey: ['registers'],
         queryFn: () => registerService.getAll(),
+        enabled: open && canReadRegisters,
     });
 
     const createMutation = useMutation({
-        mutationFn: async (data: any) => {
-            // We use the auth/register endpoint but as admin we might want a specific admin createUser endpoint
-            // to set roles directly. For now, let's assume /auth/register is public, 
-            // but we want to set registerId etc. 
-            // Ideally we have a userService.create(data) which calls POST /users (admin only)
-            // Let's implement that in userService later or now.
-            // Using api.post('/users') assuming we will add it to user.routes.js
-            // Wait, standard auth register is usually for self-signup. 
-            // Admin creation should use a protected route.
-            return api.post('/users', {
+        mutationFn: async (data: AdminCreateUserDto) => {
+            const payload = {
                 ...data,
-                registerId: data.registerId ? parseInt(data.registerId.toString()) : undefined
-            });
+                registerId: data.registerId ? parseInt(data.registerId.toString()) : null,
+                expiresAt: data.expiresAt ? new Date(data.expiresAt).toISOString() : null
+            };
+            return userService.create(payload);
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['users'] });
@@ -55,10 +55,7 @@ export function CreateUserDialog({ open, onOpenChange }: CreateUserDialogProps) 
         onError: (err: any) => {
             console.error('Create User Error:', err);
             const message = err.response?.data?.message || 'Fehler beim Erstellen';
-            const details = err.response?.data?.errors
-                ? ': ' + err.response.data.errors.map((e: any) => e.message).join(', ')
-                : '';
-            setError(message + details);
+            setError(message);
             setIsLoading(false);
         },
     });
@@ -72,8 +69,10 @@ export function CreateUserDialog({ open, onOpenChange }: CreateUserDialogProps) 
             firstName: '',
             lastName: '',
             phoneNumber: '',
-            registerId: '',
-            role: 'member'
+            registerId: null,
+            role: 'member',
+            type: 'REGULAR',
+            expiresAt: null
         });
         onOpenChange(false);
     };
@@ -86,11 +85,11 @@ export function CreateUserDialog({ open, onOpenChange }: CreateUserDialogProps) 
 
     return (
         <Dialog open={open} onOpenChange={handleClose}>
-            <DialogContent className="sm:max-w-lg">
+            <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
                     <DialogTitle>Neues Mitglied erstellen</DialogTitle>
                     <DialogDescription>
-                        Erstellen Sie ein neues Benutzerkonto für ein Vereinsmitglied.
+                        Erstellen Sie ein neues Benutzerkonto für ein Vereinsmitglied oder einen Gast.
                     </DialogDescription>
                 </DialogHeader>
 
@@ -114,17 +113,6 @@ export function CreateUserDialog({ open, onOpenChange }: CreateUserDialogProps) 
                                 required
                             />
                         </div>
-
-                        <div className="space-y-2">
-                            <Label htmlFor="phoneNumber">Telefonnummer</Label>
-                            <Input
-                                id="phoneNumber"
-                                type="tel"
-                                value={formData.phoneNumber}
-                                onChange={(e) => setFormData({ ...formData, phoneNumber: e.target.value })}
-                                placeholder="+41 79 123 45 67"
-                            />
-                        </div>
                     </div>
 
                     <div className="space-y-2">
@@ -138,17 +126,29 @@ export function CreateUserDialog({ open, onOpenChange }: CreateUserDialogProps) 
                         />
                     </div>
 
-                    <div className="space-y-2">
-                        <Label htmlFor="password">Initial-Passwort</Label>
-                        <Input
-                            id="password"
-                            type="password"
-                            value={formData.password}
-                            onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                            required
-                            minLength={8}
-                            placeholder="Mindestens 8 Zeichen"
-                        />
+                    <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="password">Initial-Passwort</Label>
+                            <Input
+                                id="password"
+                                type="password"
+                                value={formData.password || ''}
+                                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                                required
+                                minLength={8}
+                                placeholder="Mindestens 8 Zeichen"
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="phoneNumber">Telefonnummer</Label>
+                            <Input
+                                id="phoneNumber"
+                                type="tel"
+                                value={formData.phoneNumber || ''}
+                                onChange={(e) => setFormData({ ...formData, phoneNumber: e.target.value })}
+                                placeholder="+41 79 123 45 67"
+                            />
+                        </div>
                     </div>
 
                     <div className="grid grid-cols-2 gap-4">
@@ -157,7 +157,7 @@ export function CreateUserDialog({ open, onOpenChange }: CreateUserDialogProps) 
                             <select
                                 id="role"
                                 value={formData.role}
-                                onChange={(e) => setFormData({ ...formData, role: e.target.value })}
+                                onChange={(e) => setFormData({ ...formData, role: e.target.value as any })}
                                 className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background disabled:cursor-not-allowed disabled:opacity-50"
                             >
                                 <option value="member">Mitglied</option>
@@ -168,8 +168,9 @@ export function CreateUserDialog({ open, onOpenChange }: CreateUserDialogProps) 
                             <Label htmlFor="register">Register</Label>
                             <select
                                 id="register"
-                                value={formData.registerId}
-                                onChange={(e) => setFormData({ ...formData, registerId: e.target.value })}
+                                value={formData.registerId || ''}
+                                onChange={(e) => setFormData({ ...formData, registerId: e.target.value ? Number(e.target.value) : null })}
+                                disabled={!canReadRegisters}
                                 className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background disabled:cursor-not-allowed disabled:opacity-50"
                             >
                                 <option value="">Kein Register</option>
@@ -179,6 +180,30 @@ export function CreateUserDialog({ open, onOpenChange }: CreateUserDialogProps) 
                                     </option>
                                 ))}
                             </select>
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="type">Benutzertyp</Label>
+                            <select
+                                id="type"
+                                value={formData.type}
+                                onChange={(e) => setFormData({ ...formData, type: e.target.value as UserType })}
+                                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background disabled:cursor-not-allowed disabled:opacity-50"
+                            >
+                                <option value="REGULAR">Regulär</option>
+                                <option value="GUEST">Gast</option>
+                            </select>
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="expiresAt">Ablaufdatum (optional)</Label>
+                            <Input
+                                id="expiresAt"
+                                type="date"
+                                value={formData.expiresAt || ''}
+                                onChange={(e) => setFormData({ ...formData, expiresAt: e.target.value })}
+                            />
                         </div>
                     </div>
 

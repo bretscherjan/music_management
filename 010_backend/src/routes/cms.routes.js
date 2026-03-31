@@ -3,8 +3,8 @@ const router = express.Router();
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
-const { adminOnly } = require('../middlewares/roleCheck.middleware');
 const { authMiddleware } = require('../middlewares/auth.middleware');
+const { permissionCheck } = require('../middlewares/permission.middleware');
 const cmsController = require('../controllers/cms.controller');
 
 // Multer Storage Configuration
@@ -36,21 +36,21 @@ router.get('/flyers', cmsController.getFlyers);
 /**
  * Admin Routes (Protected)
  */
-router.use(authMiddleware, adminOnly);
+router.use(authMiddleware);
 
 // Sponsors
-router.post('/sponsors', upload.single('logo'), cmsController.createSponsor);
-router.put('/sponsors/:id', upload.single('logo'), cmsController.updateSponsor);
-router.delete('/sponsors/:id', cmsController.deleteSponsor);
+router.post('/sponsors', permissionCheck('cms:write'), upload.single('logo'), cmsController.createSponsor);
+router.put('/sponsors/:id', permissionCheck('cms:write'), upload.single('logo'), cmsController.updateSponsor);
+router.delete('/sponsors/:id', permissionCheck('cms:write'), cmsController.deleteSponsor);
 
 
 // Gallery
-router.post('/gallery', upload.single('image'), cmsController.createGalleryImage);
-router.put('/gallery/:id', cmsController.updateGalleryImage);
-router.delete('/gallery/:id', cmsController.deleteGalleryImage);
+router.post('/gallery', permissionCheck('cms:write'), upload.single('image'), cmsController.createGalleryImage);
+router.put('/gallery/:id', permissionCheck('cms:write'), cmsController.updateGalleryImage);
+router.delete('/gallery/:id', permissionCheck('cms:write'), cmsController.deleteGalleryImage);
 
 // Flyers
-router.post('/flyers', upload.single('image'), cmsController.createFlyer);
-router.delete('/flyers/:id', cmsController.deleteFlyer);
+router.post('/flyers', permissionCheck('cms:write'), upload.single('image'), cmsController.createFlyer);
+router.delete('/flyers/:id', permissionCheck('cms:write'), cmsController.deleteFlyer);
 
 module.exports = router;

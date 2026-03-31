@@ -1,7 +1,7 @@
 import { useMemo, useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { eventService } from '@/services/eventService';
-import { useAuth, useIsAdmin } from '@/context/AuthContext';
+import { useAuth, useCan } from '@/context/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -21,7 +21,8 @@ interface AttendanceSectionProps {
 
 export function AttendanceSection({ eventId }: AttendanceSectionProps) {
     const { user } = useAuth();
-    const isAdmin = useIsAdmin();
+    const can = useCan();
+    const canAdminAttendance = can('events:admin');
     const queryClient = useQueryClient();
     const [comment, setComment] = useState('');
     const [isCommentModified, setIsCommentModified] = useState(false);
@@ -34,7 +35,7 @@ export function AttendanceSection({ eventId }: AttendanceSectionProps) {
 
     // Check locking based on backend response
     const isLocked = useMemo(() => {
-        if (isAdmin) return false;
+        if (canAdminAttendance) return false;
         // Don't lock while loading
         if (!attendanceData) return false;
         // Use backend provided status
@@ -42,7 +43,7 @@ export function AttendanceSection({ eventId }: AttendanceSectionProps) {
             return attendanceData.isResponseLocked;
         }
         return false;
-    }, [attendanceData, isAdmin]);
+    }, [attendanceData, canAdminAttendance]);
 
     // For convenience, extract attendances array
     const attendances = attendanceData?.attendances || [];
@@ -233,7 +234,7 @@ export function AttendanceSection({ eventId }: AttendanceSectionProps) {
                                 <AttendanceRow
                                     key={attendance.id ?? `pending-${attendance.userId}`}
                                     attendance={attendance}
-                                    isAdmin={isAdmin}
+                                    isAdmin={canAdminAttendance}
                                     onStatusChange={(status) => handleStatusChange(status, attendance.userId)}
                                     onCommentChange={(newComment) => handleCommentChange(attendance.userId, newComment)}
                                     disabled={isPending}

@@ -15,6 +15,7 @@ const routes = require('./src/routes');
 const { errorHandler } = require('./src/middlewares/errorHandler.middleware');
 const { initializeDefaultSettings } = require('./src/controllers/settings.controller');
 const { initializeWebSocket, attachIO } = require('./src/services/websocket.service');
+const { seedPermissions, seedPermissionTemplates } = require('./src/utils/permissions.seed');
 
 const app = express();
 const PORT = process.env.PORT || 3004;
@@ -94,6 +95,14 @@ app.use(errorHandler);
 
 // Start Server (using http server instead of app.listen)
 server.listen(PORT, async () => {
+  try {
+    await seedPermissions();
+    await seedPermissionTemplates();
+    console.log('✅ Permissions seeded');
+  } catch (error) {
+    console.error('⚠️ Failed to seed permissions:', error.message);
+  }
+
   // Initialize default settings
   try {
     await initializeDefaultSettings();

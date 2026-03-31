@@ -102,6 +102,24 @@ export function useIsAdmin(): boolean {
     return user?.role === 'admin';
 }
 
+export function useCan(): (permission: string) => boolean {
+    const { user } = useAuth();
+    
+    return useCallback((permission: string) => {
+        if (!user) return false;
+        
+        // Admins have all permissions
+        if (user.role === 'admin') return true;
+        
+        // Check explicit permissions
+        const hasExplicitPermission = user.permissions?.some(
+            p => p.permission.key === permission
+        );
+
+        return Boolean(hasExplicitPermission);
+    }, [user]);
+}
+
 export function useIsAuthenticated(): boolean {
     return useAuth().isAuthenticated;
 }

@@ -74,29 +74,29 @@ function App() {
 
             <Route path="/member" element={<ProtectedRoute><MainLayout /></ProtectedRoute>}>
               <Route index element={<EventListPage />} />
-              <Route path="events" element={<EventListPage />} />
-              <Route path="events/:id" element={<EventDetailPage />} />
-              <Route path="files" element={<FileListPage />} />
-              <Route path="music-folders" element={<MusicFolderPage />} />
-              <Route path="music-folders/:id" element={<MusicFolderPage />} />
+              <Route path="events" element={<ProtectedRoute permission="calendar:read"><EventListPage /></ProtectedRoute>} />
+              <Route path="events/:id" element={<ProtectedRoute permission="calendar:read"><EventDetailPage /></ProtectedRoute>} />
+              <Route path="files" element={<ProtectedRoute permission="files:read"><FileListPage /></ProtectedRoute>} />
+              <Route path="music-folders" element={<ProtectedRoute permission="sheetMusic:read"><MusicFolderPage /></ProtectedRoute>} />
+              <Route path="music-folders/:id" element={<ProtectedRoute permission="sheetMusic:read"><MusicFolderPage /></ProtectedRoute>} />
               <Route path="settings" element={<UserSettingsPage />} />
               <Route path="members" element={<UserManagementPage />} />
-              <Route path="chat" element={<ChatPortalPage />} />
-              <Route path="chat/:chatId" element={<ChatDetailPage />} />
+              <Route path="chat" element={<ProtectedRoute permission="chat:read"><ChatPortalPage /></ProtectedRoute>} />
+              <Route path="chat/:chatId" element={<ProtectedRoute permission="chat:read"><ChatDetailPage /></ProtectedRoute>} />
 
               <Route path="grifftabelle" element={<ProtectedRoute requireAdmin><GrifftabellePage /></ProtectedRoute>} />
               <Route path="admin/toolkit" element={<ProtectedRoute requireAdmin><ToolkitPage /></ProtectedRoute>} />
               <Route path="admin/theory" element={<ProtectedRoute requireAdmin><TheoryPage /></ProtectedRoute>} />
-              <Route path="admin/events/new" element={<ProtectedRoute requireAdmin><CreateEventPage /></ProtectedRoute>} />
-              <Route path="admin/events/:id/edit" element={<ProtectedRoute requireAdmin><CreateEventPage /></ProtectedRoute>} />
+              <Route path="admin/events/new" element={<ProtectedRoute requireAdmin permission="calendar:write"><CreateEventPage /></ProtectedRoute>} />
+              <Route path="admin/events/:id/edit" element={<ProtectedRoute requireAdmin permission="calendar:write"><CreateEventPage /></ProtectedRoute>} />
               <Route path="admin/registers" element={<ProtectedRoute requireAdmin><RegisterManagementPage /></ProtectedRoute>} />
-              <Route path="admin/news" element={<ProtectedRoute requireAdmin><NewsManagementPage /></ProtectedRoute>} />
-              <Route path="admin/events" element={<ProtectedRoute requireAdmin><EventManagementPage /></ProtectedRoute>} />
-              <Route path="admin/sheet-music" element={<ProtectedRoute requireAdmin><SheetMusicManagementPage /></ProtectedRoute>} />
+              <Route path="admin/news" element={<ProtectedRoute requireAdmin permission="cms:write"><NewsManagementPage /></ProtectedRoute>} />
+              <Route path="admin/events" element={<ProtectedRoute requireAdmin permission="calendar:write"><EventManagementPage /></ProtectedRoute>} />
+              <Route path="admin/sheet-music" element={<ProtectedRoute requireAdmin permission="sheetMusic:write"><SheetMusicManagementPage /></ProtectedRoute>} />
               <Route path="admin/statistics" element={<ProtectedRoute requireAdmin><StatisticsPage /></ProtectedRoute>} />
               <Route path="admin/engagement" element={<ProtectedRoute requireAdmin><EngagementPage /></ProtectedRoute>} />
-              <Route path="admin/workspace" element={<ProtectedRoute requireAdmin><WorkspacePage /></ProtectedRoute>} />
-              <Route path="admin/cms" element={<ProtectedRoute requireAdmin><CmsManagementPage /></ProtectedRoute>} />
+              <Route path="admin/workspace" element={<ProtectedRoute requireAdmin permission="workspace:read"><WorkspacePage /></ProtectedRoute>} />
+              <Route path="admin/cms" element={<ProtectedRoute requireAdmin permission="cms:write"><CmsManagementPage /></ProtectedRoute>} />
               <Route path="admin/db" element={<ProtectedRoute requireAdmin><DatabasePreviewerPage /></ProtectedRoute>} />
               <Route path="admin/db/tables/:tableName" element={<ProtectedRoute requireAdmin><TableDetailPage /></ProtectedRoute>} />
               <Route path="admin/protokoll" element={<ProtectedRoute requireAdmin><ProtokollPage /></ProtectedRoute>} />

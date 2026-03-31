@@ -45,12 +45,19 @@ const authMiddleware = async (req, res, next) => {
                 lastName: true,
                 role: true,
                 status: true,
+                type: true,
+                expiresAt: true,
                 lastSeenAt: true,
                 registerId: true,
                 register: {
                     select: {
                         id: true,
                         name: true
+                    }
+                },
+                permissions: {
+                    include: {
+                        permission: true
                     }
                 }
             }
@@ -68,6 +75,14 @@ const authMiddleware = async (req, res, next) => {
             return res.status(403).json({
                 message: 'Account deactivated',
                 error: 'User account is no longer active'
+            });
+        }
+
+        // Check for guest expiration
+        if (user.type === 'GUEST' && user.expiresAt && new Date() > user.expiresAt) {
+            return res.status(403).json({
+                message: 'Guest account expired',
+                error: 'Your guest access has expired'
             });
         }
 

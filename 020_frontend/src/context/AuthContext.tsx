@@ -102,6 +102,34 @@ export function useIsAdmin(): boolean {
     return user?.role === 'admin';
 }
 
+export function useCan(): (permission: string) => boolean {
+    const { user } = useAuth();
+    
+    return useCallback((permission: string) => {
+        if (!user) return false;
+        
+        // Admins have all permissions
+        if (user.role === 'admin') return true;
+        
+        // Check explicit permissions
+        const hasExplicitPermission = user.permissions?.some(
+            p => p.permission.key === permission
+        );
+        if (hasExplicitPermission) return true;
+        
+        // Default permissions for regular members
+        if (user.type === 'REGULAR') {
+            // Regular members don't have admin access by default
+            if (permission === 'admin:access') return false;
+            // They have everything else
+            return true;
+        }
+        
+        // Guests only have explicit permissions
+        return false;
+    }, [user]);
+}
+
 export function useIsAuthenticated(): boolean {
     return useAuth().isAuthenticated;
 }

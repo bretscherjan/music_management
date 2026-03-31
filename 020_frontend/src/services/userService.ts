@@ -6,13 +6,16 @@ import type {
     UpdateUserStatusDto,
     UpdateUserRoleDto,
     AdminUpdateUserDto,
-    NotificationSettings
+    AdminCreateUserDto,
+    NotificationSettings,
+    Permission
 } from '@/types';
 
 interface UsersQueryParams {
     status?: string;
     registerId?: number;
     role?: string;
+    type?: string;
 }
 
 export const userService = {
@@ -49,6 +52,11 @@ export const userService = {
     },
 
     // Admin routes
+    async create(data: AdminCreateUserDto): Promise<User> {
+        const response = await api.post<{ user: User }>('/users', data);
+        return response.data.user;
+    },
+
     async getAll(params?: UsersQueryParams): Promise<User[]> {
         const response = await api.get<{ users: User[] }>('/users', { params });
         return response.data.users;
@@ -81,6 +89,15 @@ export const userService = {
 
     async delete(id: number): Promise<void> {
         await api.delete(`/users/${id}`);
+    },
+
+    async getAllPermissions(): Promise<Permission[]> {
+        const response = await api.get<{ permissions: Permission[] }>('/users/permissions');
+        return response.data.permissions;
+    },
+
+    async updatePermissions(userId: number, permissionKeys: string[]): Promise<void> {
+        await api.patch(`/users/${userId}/permissions`, { permissionKeys });
     },
 };
 

@@ -5,6 +5,7 @@ const { asyncHandler, AppError } = require('../middlewares/errorHandler.middlewa
 const { sendWelcomeEmail, sendPasswordResetEmail } = require('../services/email.service');
 const logger = require('../utils/logger');
 const crypto = require('crypto');
+const { assignDefaultPermissions } = require('../utils/permissions.seed');
 
 const prisma = new PrismaClient();
 
@@ -63,6 +64,7 @@ const register = asyncHandler(async (req, res) => {
             lastName,
             registerId,
             calendarToken: crypto.randomBytes(32).toString('hex'),
+            type: 'REGULAR',
         },
         select: {
             id: true,
@@ -81,6 +83,9 @@ const register = asyncHandler(async (req, res) => {
             createdAt: true,
         },
     });
+
+    // Assign default permissions for new users
+    await assignDefaultPermissions(user.id, 'member');
 
     // Generate JWTs
     const token = generateAccessToken(user.id);

@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
-import { useAuth, useIsAdmin } from '@/context/AuthContext';
+import { useAuth, useIsAdmin, useCan } from '@/context/AuthContext';
 import {
     Calendar,
     Users,
@@ -25,37 +25,49 @@ interface NavItem {
     href: string;
     icon: React.ReactNode;
     adminOnly?: boolean;
+    permission?: string;
 }
 
 const mainNavItems: NavItem[] = [
-    { label: 'Termine', href: '/member/events', icon: <Calendar className="h-5 w-5" /> },
-    { label: 'Dateien', href: '/member/files', icon: <FileText className="h-5 w-5" /> },
-    { label: 'Mappen', href: '/member/music-folders', icon: <Folder className="h-5 w-5" /> },
-    { label: 'Mitglieder', href: '/member/members', icon: <Users className="h-5 w-5" /> },
-    { label: 'Chat', href: '/member/chat', icon: <MessageSquare className="h-5 w-5" /> },
+    { label: 'Termine', href: '/member/events', icon: <Calendar className="h-5 w-5" />, permission: 'calendar:read' },
+    { label: 'Dateien', href: '/member/files', icon: <FileText className="h-5 w-5" />, permission: 'files:read' },
+    { label: 'Mappen', href: '/member/music-folders', icon: <Folder className="h-5 w-5" />, permission: 'sheetMusic:read' },
+    { label: 'Mitglieder', href: '/member/members', icon: <Users className="h-5 w-5" /> }, // Public list for members
+    { label: 'Chat', href: '/member/chat', icon: <MessageSquare className="h-5 w-5" />, permission: 'chat:read' },
 ];
 
 const adminNavItems: NavItem[] = [
     { label: 'Toolkit', href: '/member/admin/toolkit', icon: <Wrench className="h-5 w-5" />, adminOnly: true },
     { label: 'Theorie', href: '/member/admin/theory', icon: <BookOpen className="h-5 w-5" />, adminOnly: true },
     { label: 'Grifftabelle', href: '/member/grifftabelle', icon: <TableProperties className="h-5 w-5" />, adminOnly: true },
-    { label: 'Termine verwalten', href: '/member/admin/events', icon: <Calendar className="h-5 w-5" />, adminOnly: true },
-    { label: 'Workspace', href: '/member/admin/workspace', icon: <Folder className="h-5 w-5" />, adminOnly: true },
-    { label: 'Notenverwaltung', href: '/member/admin/sheet-music', icon: <Library className="h-5 w-5" />, adminOnly: true },
+    { label: 'Termine verwalten', href: '/member/admin/events', icon: <Calendar className="h-5 w-5" />, adminOnly: true, permission: 'calendar:write' },
+    { label: 'Workspace', href: '/member/admin/workspace', icon: <Folder className="h-5 w-5" />, adminOnly: true, permission: 'workspace:read' },
+    { label: 'Notenverwaltung', href: '/member/admin/sheet-music', icon: <Library className="h-5 w-5" />, adminOnly: true, permission: 'sheetMusic:write' },
     { label: 'Register', href: '/member/admin/registers', icon: <Music className="h-5 w-5" />, adminOnly: true },
-    { label: 'News', href: '/member/admin/news', icon: <Newspaper className="h-5 w-5" />, adminOnly: true },
+    { label: 'News', href: '/member/admin/news', icon: <Newspaper className="h-5 w-5" />, adminOnly: true, permission: 'cms:write' },
     { label: 'Statistiken', href: '/member/admin/statistics', icon: <BarChart className="h-5 w-5" />, adminOnly: true },
     { label: 'Engagement', href: '/member/admin/engagement', icon: <Activity className="h-5 w-5" />, adminOnly: true },
     { label: 'Protokoll', href: '/member/admin/protokoll', icon: <ClipboardList className="h-5 w-5" />, adminOnly: true },
     { label: 'Logs', href: '/member/admin/logs', icon: <ScrollText className="h-5 w-5" />, adminOnly: true },
-    { label: 'CMS', href: '/member/admin/cms', icon: <Newspaper className="h-5 w-5" />, adminOnly: true },
+    { label: 'CMS', href: '/member/admin/cms', icon: <Newspaper className="h-5 w-5" />, adminOnly: true, permission: 'cms:write' },
     { label: 'DB', href: '/member/admin/db', icon: <Database className="h-5 w-5" />, adminOnly: true },
 ];
 
 export function Sidebar() {
     const { user } = useAuth();
     const isAdmin = useIsAdmin();
+    const can = useCan();
     const location = useLocation();
+
+    const filteredMainNavItems = mainNavItems.filter(item => 
+        !item.permission || can(item.permission)
+    );
+
+    const filteredAdminNavItems = adminNavItems.filter(item => 
+        (!item.permission || can(item.permission)) && (isAdmin || !item.adminOnly)
+    );
+
+    const showAdminNav = isAdmin || filteredAdminNavItems.length > 0;
 
     return (
         <aside className="hidden md:flex flex-col w-[100px] bg-card border-r border-border h-[calc(100vh-4rem)] sticky top-16 shrink-0 z-30">
@@ -77,7 +89,7 @@ export function Sidebar() {
 
                 {/* Main Navigation */}
                 <nav className="flex flex-col gap-1">
-                    {mainNavItems.map((item) => {
+                    {filteredMainNavItems.map((item) => {
                         const isActive = location.pathname === item.href;
                         return (
                             <Link
@@ -106,14 +118,14 @@ export function Sidebar() {
                 </nav>
 
                 {/* Separator */}
-                {isAdmin && (
+                {showAdminNav && (
                     <div className="mx-4 my-1 border-t border-border/50" />
                 )}
 
                 {/* Administration */}
-                {isAdmin && (
+                {showAdminNav && (
                     <nav className="flex flex-col gap-1">
-                        {adminNavItems.map((item) => {
+                        {filteredAdminNavItems.map((item) => {
                             const isActive = location.pathname === item.href;
                             return (
                                 <Link

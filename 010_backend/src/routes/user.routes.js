@@ -14,6 +14,7 @@ const {
     getUserByIdSchema,
     queryUsersSchema,
     createUserSchema,
+    updateUserPermissionsSchema,
 } = require('../validations/user.validation');
 
 // ============================================
@@ -66,6 +67,20 @@ router.put('/me/notifications', authMiddleware, userController.updateNotificatio
 // ============================================
 // Admin routes
 // ============================================
+
+/**
+ * @route   GET /api/users/permissions
+ * @desc    Get all available permissions
+ * @access  Admin only
+ */
+router.get('/permissions', authMiddleware, adminOnly, userController.getAllPermissions);
+
+/**
+ * @route   PATCH /api/users/:id/permissions
+ * @desc    Update user permissions
+ * @access  Admin only
+ */
+router.patch('/:id/permissions', authMiddleware, adminOnly, validate(updateUserPermissionsSchema), userController.updateUserPermissions);
 
 /**
  * @route   POST /api/users

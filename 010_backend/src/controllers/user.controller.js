@@ -1,6 +1,7 @@
 const bcrypt = require('bcryptjs');
 const { PrismaClient } = require('@prisma/client');
 const { asyncHandler, AppError } = require('../middlewares/errorHandler.middleware');
+const { assignDefaultPermissions } = require('../utils/permissions.seed');
 
 const prisma = new PrismaClient();
 
@@ -243,7 +244,7 @@ const changePassword = asyncHandler(async (req, res) => {
  * POST /users
  */
 const createUser = asyncHandler(async (req, res) => {
-    const { firstName, lastName, email, phoneNumber, password, status, role, registerId } = req.body;
+    const { firstName, lastName, email, phoneNumber, password, status, role, type, expiresAt, registerId } = req.body;
 
     // Check if user exists
     const userExists = await prisma.user.findUnique({
@@ -278,6 +279,8 @@ const createUser = asyncHandler(async (req, res) => {
             password: hashedPassword,
             status: status || 'active',
             role: role || 'member',
+            type: type || 'REGULAR',
+            expiresAt: expiresAt ? new Date(expiresAt) : null,
             registerId,
         },
         select: {
@@ -287,6 +290,8 @@ const createUser = asyncHandler(async (req, res) => {
             email: true,
             role: true,
             status: true,
+            type: true,
+            expiresAt: true,
             registerId: true,
             register: {
                 select: { id: true, name: true },
@@ -294,6 +299,10 @@ const createUser = asyncHandler(async (req, res) => {
             createdAt: true,
         },
     });
+
+    // Assign default permissions based on role
+    const userRole = user.role === 'admin' ? 'admin' : 'member';
+    await assignDefaultPermissions(user.id, userRole);
 
     res.status(201).json({
         message: 'Benutzer erfolgreich erstellt',
@@ -306,7 +315,7 @@ const createUser = asyncHandler(async (req, res) => {
  * GET /users
  */
 const getAllUsers = asyncHandler(async (req, res) => {
-    const { status, role, registerId, search } = req.query;
+    const { status, role, type, registerId, search } = req.query;
 
     const whereClause = {};
 
@@ -316,6 +325,10 @@ const getAllUsers = asyncHandler(async (req, res) => {
 
     if (role) {
         whereClause.role = role;
+    }
+
+    if (type) {
+        whereClause.type = type;
     }
 
     if (registerId) {
@@ -341,6 +354,8 @@ const getAllUsers = asyncHandler(async (req, res) => {
             profilePicture: true,
             role: true,
             status: true,
+            type: true,
+            expiresAt: true,
             registerId: true,
             register: {
                 select: { id: true, name: true },
@@ -377,6 +392,8 @@ const getUserById = asyncHandler(async (req, res) => {
             profilePicture: true,
             role: true,
             status: true,
+            type: true,
+            expiresAt: true,
             registerId: true,
             register: {
                 select: { id: true, name: true },
@@ -392,6 +409,11 @@ const getUserById = asyncHandler(async (req, res) => {
                     },
                 },
             },
+            permissions: {
+                include: {
+                    permission: true
+                }
+            }
         },
     });
 
@@ -408,7 +430,7 @@ const getUserById = asyncHandler(async (req, res) => {
  */
 const updateUser = asyncHandler(async (req, res) => {
     const { id } = req.params;
-    const { firstName, lastName, email, phoneNumber, status, role, registerId } = req.body;
+    const { firstName, lastName, email, phoneNumber, status, role, type, expiresAt, registerId } = req.body;
 
     // Check if user exists
     const existingUser = await prisma.user.findUnique({
@@ -448,6 +470,8 @@ const updateUser = asyncHandler(async (req, res) => {
             ...(email && { email: email.toLowerCase() }),
             ...(status && { status }),
             ...(role && { role }),
+            ...(type && { type }),
+            ...(expiresAt !== undefined && { expiresAt: expiresAt ? new Date(expiresAt) : null }),
             ...(registerId !== undefined && { registerId }),
         },
         select: {
@@ -458,6 +482,8 @@ const updateUser = asyncHandler(async (req, res) => {
             phoneNumber: true,
             role: true,
             status: true,
+            type: true,
+            expiresAt: true,
             registerId: true,
             register: {
                 select: { id: true, name: true },
@@ -469,6 +495,76 @@ const updateUser = asyncHandler(async (req, res) => {
     res.json({
         message: 'Benutzer erfolgreich aktualisiert',
         user,
+    });
+});
+
+/**
+ * Get all available permissions
+ * GET /users/permissions
+ */
+const getAllPermissions = asyncHandler(async (req, res) => {
+    const permissions = await prisma.permission.findMany({
+        orderBy: [
+            { category: 'asc' },
+            { key: 'asc' }
+        ]
+    });
+
+    res.json({ permissions });
+});
+
+/**
+ * Update user permissions
+ * PATCH /users/:id/permissions
+ */
+const updateUserPermissions = asyncHandler(async (req, res) => {
+    const { id } = req.params;
+    const { permissionKeys } = req.body;
+
+    // Check if user exists
+    const user = await prisma.user.findUnique({
+        where: { id: parseInt(id) },
+    });
+
+    if (!user) {
+        throw new AppError('Benutzer nicht gefunden', 404);
+    }
+
+    // Get permission IDs for the keys
+    const permissions = await prisma.permission.findMany({
+        where: {
+            key: { in: permissionKeys }
+        }
+    });
+
+    // Delete existing permissions and create new ones in a transaction
+    await prisma.$transaction([
+        prisma.userPermission.deleteMany({
+            where: { userId: parseInt(id) }
+        }),
+        prisma.userPermission.createMany({
+            data: permissions.map(p => ({
+                userId: parseInt(id),
+                permissionId: p.id,
+                grantedBy: req.user.id
+            }))
+        })
+    ]);
+
+    // Log the change
+    const auditLogService = require('../utils/auditLog.service');
+    await auditLogService.logEvent({
+        action: 'guest_permissions_updated',
+        entity: 'User',
+        entityId: id,
+        userId: req.user.id,
+        newValue: { permissionKeys },
+        req
+    });
+
+    res.json({
+        message: 'Berechtigungen erfolgreich aktualisiert',
+        permissions: permissionKeys
     });
 });
 
@@ -623,4 +719,6 @@ module.exports = {
     createUser,
     getNotificationSettings,
     updateNotificationSettings,
+    getAllPermissions,
+    updateUserPermissions,
 };

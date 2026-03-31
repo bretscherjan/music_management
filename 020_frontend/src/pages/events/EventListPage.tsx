@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Link, useSearchParams } from 'react-router-dom';
 import { eventService } from '@/services/eventService';
-import { useIsAdmin } from '@/context/AuthContext';
+import { useCan } from '@/context/AuthContext';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -27,7 +27,7 @@ const categoryVariant: Record<string, 'default' | 'secondary' | 'warning'> = {
 };
 
 export function EventListPage() {
-    const isAdmin = useIsAdmin();
+    const can = useCan();
     const [searchParams] = useSearchParams();
     const eventIdParam = searchParams.get('id');
     const [selectedCategory, setSelectedCategory] = useState<EventCategory | 'all'>('all');
@@ -88,7 +88,7 @@ export function EventListPage() {
                 <div className="flex flex-wrap gap-3">
                     <CalendarExportDialog events={filteredEvents} />
 
-                    {isAdmin && (
+                    {can('calendar:write') && (
                         <Link to="/member/admin/events/new">
                             <Button className="shadow-sm">
                                 <Plus className="h-4 w-4 mr-2" />

@@ -40,6 +40,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { useIsAdmin } from '@/context/AuthContext';
+import { useFileAccess } from '@/hooks/useFileAccess';
 import { fileService } from '@/services/fileService';
 import { formatFileSize } from '@/lib/utils';
 import type { FileEntity } from '@/types';
@@ -57,6 +58,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 
 export function FileListPage() {
     const isAdmin = useIsAdmin();
+    const { checkFileAccess, checkFolderAccess } = useFileAccess();
     const queryClient = useQueryClient();
     const [searchParams, setSearchParams] = useSearchParams();
     const folderParam = searchParams.get('folder');
@@ -363,11 +365,13 @@ export function FileListPage() {
                             {folders.length > 0 && (
                                 <div className="space-y-2">
                                     <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-1">Ordner</h4>
-                                    {folders.map((folder: any) => (
+                                    {folders.map((folder: any) => {
+                                        const folderAccess = checkFolderAccess(folder);
+                                        return (
                                         <div
                                             key={folder.id}
                                             id={`folder-${folder.id}`}
-                                            className={`flex items-center justify-between p-3 rounded-lg transition-colors group relative border ${selectedFolderIds.includes(folder.id) ? 'bg-primary/10 border-primary/20' : 'bg-muted/30 hover:bg-muted/50 border-transparent'}`}
+                                            className={`flex items-center justify-between p-3 rounded-lg transition-colors group relative border ${selectedFolderIds.includes(folder.id) ? 'bg-primary/10 border-primary/20' : folderAccess.isRestricted ? 'bg-muted/20 border-muted' : 'bg-muted/30 hover:bg-muted/50 border-transparent'} ${!folderAccess.canAccess ? 'opacity-60' : ''}`}
                                         >
                                             <div className="flex items-center gap-3 flex-1 min-w-0">
                                                 {isAdmin && (
@@ -382,13 +386,25 @@ export function FileListPage() {
                                                 )}
                                                 <div
                                                     className="flex items-center gap-3 flex-1 cursor-pointer overflow-hidden"
-                                                    onClick={() => navigateToFolder(folder.id)}
+                                                    onClick={() => folderAccess.canAccess ? navigateToFolder(folder.id) : null}
                                                 >
-                                                    <Folder className="h-10 w-10 fill-primary/20 text-primary transition-transform group-hover:scale-110 shrink-0" />
+                                                    {folderAccess.isRestricted ? (
+                                                        <Shield className="h-8 w-8 text-amber-500 shrink-0" />
+                                                    ) : (
+                                                        <Folder className="h-10 w-10 fill-primary/20 text-primary transition-transform group-hover:scale-110 shrink-0" />
+                                                    )}
                                                     <div className="flex flex-col overflow-hidden">
-                                                        <span className="font-medium text-base truncate">{folder.name}</span>
+                                                        <span className="font-medium text-base truncate flex items-center gap-2">
+                                                            {folder.name}
+                                                            {folderAccess.isRestricted && !folderAccess.canAccess && (
+                                                                <Shield className="h-3 w-3 text-amber-500" />
+                                                            )}
+                                                        </span>
                                                         <span className="text-xs text-muted-foreground">
                                                             {(folder._count?.files || 0) + (folder._count?.children || 0)} Objekte
+                                                            {folderAccess.restrictionReason && (
+                                                                <span className="text-amber-600 ml-1">• {folderAccess.restrictionReason}</span>
+                                                            )}
                                                         </span>
                                                     </div>
                                                 </div>
@@ -430,7 +446,8 @@ export function FileListPage() {
                                                 )}
                                             </div>
                                         </div>
-                                    ))}
+                                        );
+                                    })}
                                 </div>
                             )}
 
@@ -438,14 +455,16 @@ export function FileListPage() {
                             {files.length > 0 && (
                                 <div className="space-y-2">
                                     <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-1">Dateien</h4>
-                                    {files.map((file: FileEntity) => (
+                                    {files.map((file: FileEntity) => {
+                                        const fileAccess = checkFileAccess(file);
+                                        return (
                                         <div
                                             key={file.id}
                                             id={`file-${file.id}`}
                                             className={`flex items-center justify-between p-3 rounded-lg transition-colors border group relative ${selectedFileIds.includes(file.id)
                                                 ? 'bg-primary/10 border-primary/30'
-                                                : 'hover:bg-accent/50 border-transparent hover:border-border'} cursor-pointer`}
-                                            onClick={() => handlePreview(file.id)}
+                                                : fileAccess.isRestricted ? 'bg-muted/20 border-muted' : 'hover:bg-accent/50 border-transparent hover:border-border'} ${!fileAccess.canAccess ? 'opacity-60' : ''} cursor-pointer`}
+                                            onClick={() => fileAccess.canAccess ? handlePreview(file.id) : null}
                                         >
                                             <div className="flex items-center gap-3 min-w-0 flex-1">
                                                 {isAdmin && (
@@ -459,11 +478,23 @@ export function FileListPage() {
                                                     </div>
                                                 )}
                                                 <div className="flex items-center gap-3 min-w-0 flex-1">
-                                                    <span className="text-2xl flex-shrink-0">{getFileIcon(file.mimetype)}</span>
+                                                    {fileAccess.isRestricted && !fileAccess.canAccess ? (
+                                                        <Shield className="h-8 w-8 text-amber-500 flex-shrink-0" />
+                                                    ) : (
+                                                        <span className="text-2xl flex-shrink-0">{getFileIcon(file.mimetype)}</span>
+                                                    )}
                                                     <div className="min-w-0 flex-1">
-                                                        <p className="font-medium truncate transition-colors">{file.originalName}</p>
-                                                        <div className="flex gap-2 text-xs text-muted-foreground">
+                                                        <p className="font-medium truncate transition-colors flex items-center gap-2">
+                                                            {file.originalName}
+                                                            {fileAccess.isRestricted && !fileAccess.canAccess && (
+                                                                <Shield className="h-3 w-3 text-amber-500" />
+                                                            )}
+                                                        </p>
+                                                        <div className="flex gap-2 text-xs text-muted-foreground flex-wrap">
                                                             <span>{formatFileSize(file.size)}</span>
+                                                            {fileAccess.restrictionReason && (
+                                                                <span className="text-amber-600">• {fileAccess.restrictionReason}</span>
+                                                            )}
                                                             {file.visibility !== 'all' && (
                                                                 <Badge variant="outline" className="text-[10px] h-4 py-0 flex items-center gap-1 border-primary/30">
                                                                     <Shield className="h-3 w-3" />
@@ -475,6 +506,7 @@ export function FileListPage() {
                                                 </div>
                                             </div>
                                             <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+                                                {fileAccess.canAccess && (
                                                 <Button
                                                     variant="ghost"
                                                     size="icon"
@@ -491,6 +523,7 @@ export function FileListPage() {
                                                         <Download className="h-4 w-4" />
                                                     )}
                                                 </Button>
+                                                )}
 
                                                 <DropdownMenu>
                                                     <DropdownMenuTrigger asChild>
@@ -501,21 +534,30 @@ export function FileListPage() {
                                                     <DropdownMenuContent align="end">
                                                         <DropdownMenuLabel>Aktionen</DropdownMenuLabel>
                                                         <DropdownMenuSeparator />
-                                                        <DropdownMenuItem onClick={() => handlePreview(file.id)}>
-                                                            <Eye className="mr-2 h-4 w-4" />
-                                                            Vorschau
-                                                        </DropdownMenuItem>
-                                                        <DropdownMenuItem
-                                                            onClick={() => handleDownload(file.id, file.originalName)}
-                                                            disabled={downloading === file.id}
-                                                        >
-                                                            {downloading === file.id ? (
-                                                                <Loader2 className="mr-2 h-4 w-4 animate-spin text-muted-foreground" />
-                                                            ) : (
-                                                                <Download className="mr-2 h-4 w-4" />
-                                                            )}
-                                                            Herunterladen
-                                                        </DropdownMenuItem>
+                                                        {fileAccess.canAccess ? (
+                                                            <>
+                                                                <DropdownMenuItem onClick={() => handlePreview(file.id)}>
+                                                                    <Eye className="mr-2 h-4 w-4" />
+                                                                    Vorschau
+                                                                </DropdownMenuItem>
+                                                                <DropdownMenuItem
+                                                                    onClick={() => handleDownload(file.id, file.originalName)}
+                                                                    disabled={downloading === file.id}
+                                                                >
+                                                                    {downloading === file.id ? (
+                                                                        <Loader2 className="mr-2 h-4 w-4 animate-spin text-muted-foreground" />
+                                                                    ) : (
+                                                                        <Download className="mr-2 h-4 w-4" />
+                                                                    )}
+                                                                    Herunterladen
+                                                                </DropdownMenuItem>
+                                                            </>
+                                                        ) : (
+                                                            <DropdownMenuItem disabled className="opacity-50">
+                                                                <Shield className="mr-2 h-4 w-4" />
+                                                                Kein Zugriff
+                                                            </DropdownMenuItem>
+                                                        )}
 
                                                         {isAdmin && (
                                                             <>
@@ -541,7 +583,8 @@ export function FileListPage() {
                                                 </DropdownMenu>
                                             </div>
                                         </div>
-                                    ))}
+                                        );
+                                    })}
                                 </div>
                             )}
 

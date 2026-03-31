@@ -1,90 +1,137 @@
+**User Story: Gastbenutzer mit einzeln gesetzten Berechtigungen**
 
-Hier ist dein **Implementation Plan**, um das Projekt in React/Vite/TS mit `tonal` und `vexflow` umzusetzen:
+Als Administrator möchte ich einen Gastbenutzer erstellen und für diesen Benutzer einzelne Berechtigungen gezielt aktivieren oder deaktivieren können, damit externe Personen (z. B. Aushilfen, Gäste, Fotografen, Noten-Viewer) nur exakt die Funktionen sehen und nutzen können, die sie wirklich brauchen.
 
----
+**Business Value**
+- Minimiert Sicherheitsrisiken durch Least-Privilege-Prinzip.
+- Erleichtert temporäre Zusammenarbeit ohne Vollzugriff.
+- Reduziert Supportaufwand, weil Rechte transparent und fein granuliert sind.
 
-### Schritt 1: Das Daten-Modell & Provider (State)
-
-Da die App instrumentenübergreifend funktionieren soll, benötigst du einen zentralen State, der weiß, welches Instrument gerade aktiv ist und welcher Ton ausgewählt wurde.
-
-1. **Context API oder Zustand:** Erstelle einen Store für `selectedInstrumentId` und `selectedNote` (z.B. "C4").
-2. **Data-Hook:** Schreibe einen Custom-Hook `useFingering`, der:
-* Das entsprechende Instrument aus der `grifftabellen.json` filtert.
-* Den aktuell gewählten Ton im `fingerings`-Array sucht.
-* Die `standard`-Griffe und `alternatives` zurückgibt.
-
-
-
-### Schritt 2: Musiktheorie mit `tonal` (Die Tonleiter)
-
-Du möchtest dem User alle chromatischen Töne innerhalb der Spannweite des Instruments anbieten.
-
-1. **Range-Generierung:**
-```typescript
-import { Range, Note } from "tonal";
-
-// Beispiel für Altsaxophon (Range: Db3 bis A6)
-const min = instrument.metadata.range.min;
-const max = instrument.metadata.range.max;
-const allNotes = Range.chromatic([min, max]); // Erstellt Array ["Db3", "D3", "Eb3", ...]
-
-```
-
-
-2. **Display-Logik:** Entscheide, ob du die Töne in einer Liste, einem Slider oder direkt als klickbare Noten in VexFlow anzeigst.
-
-### Schritt 3: Übersetzung & Mapping (JSON -> Text)
-
-Hier verknüpfst du die Codes (z.B. `lh1`) mit den lesbaren Beschreibungen aus deiner `DOCUMENTATION.md`.
-
-1. **Dictionary erstellen:** Erstelle ein Mapping-Objekt (am besten auch als JSON oder TS-Const), das die technischen Keys in "Klartext" übersetzt.
-```typescript
-const KEY_LABELS: Record<string, string> = {
-  lh1: "Linker Zeigefinger",
-  lh2: "Linker Mittelfinger",
-  rh_pinky_eb: "Rechter kleiner Finger (Es-Klappe)",
-  v1: "1. Ventil",
-  pos1: "1. Position (ganz eingefahren)"
-  // ... alle Keys aus der Doku
-};
-
-```
-
-
-2. **Formatter-Funktion:** Eine Funktion nimmt das Array `["lh1", "lh2"]` und gibt einen lesbaren String oder eine Liste zurück: *"Linker Zeigefinger, Linker Mittelfinger"*.
-
-### Schritt 4: Die Noten-Komponente (VexFlow)
-
-VexFlow ist mächtig, aber etwas sperrig in React.
-
-1. **VexFlow-Container:** Erstelle eine Komponente, die ein `canvas`- oder `svg`-Element rendert.
-2. **Dynamic Rendering:** Wenn sich `selectedNote` im State ändert, muss VexFlow die Note neu zeichnen.
-3. **Klick-Interaktion:** Du kannst über die Noten ein unsichtbares Overlay legen oder (einfacher) eine Tastatur/Liste unter der Notenzeile nutzen, um den Ton zu wählen.
-
-### Schritt 5: Triller-Logik implementieren
-
-Wenn der User auf "Triller" klickt:
-
-1. Suche im JSON das `trills`-Objekt für die aktuelle Note.
-2. Gib aus: "Halte [Standardgriff] und trillere mit [Action-Key]".
-3. Nutze das Mapping aus Schritt 3, um den `action`-Key (z.B. `trill_rh_side_c`) zu übersetzen.
+**Akzeptanzkriterien (Vorschlag)**
+1. Admin kann im Benutzer-Dialog den Typ `Gastbenutzer` auswählen.
+2. Beim Gastbenutzer kann Admin pro Berechtigung ein-/ausschalten (kein festes Rollenpaket nötig).
+3. Ein Gastbenutzer erhält standardmäßig nur Minimalrechte (z. B. Login + eigenes Profil sehen).
+4. UI blendet nicht erlaubte Funktionen aus oder deaktiviert sie eindeutig.
+5. Backend prüft Rechte serverseitig für jeden geschützten Endpoint.
+6. Rechteänderungen wirken sofort (spätestens nach Token-Refresh).
+7. Admin kann Gastbenutzer deaktivieren oder Ablaufdatum setzen.
+8. Alle Änderungen an Gast-Rechten werden protokolliert (wer, wann, was geändert).
+9. API liefert bei fehlender Berechtigung konsistent `403 Forbidden`.
+10. Bestehende Rollen (Admin, Mitglied etc.) funktionieren unverändert.
 
 ---
 
-### Zusammenfassung der Architektur (Frontend)
+**Scope-Schnitt (MVP)**
+- Gastbenutzer anlegen
+- Einzelrechte setzen (Checkbox-Liste)
+- Serverseitige Enforcement-Checks
+- UI-Sichtbarkeit anhand Rechte
+- Audit-Log für Rechteänderung
 
-* **`InstrumentSelector.tsx`**: Dropdown für Saxophon, Trompete, etc.
-* **`NoteStaff.tsx`**: Die VexFlow-Notenzeile.
-* **`FingeringDisplay.tsx`**: Hier passiert die Magie.
-* Input: `["lh1", "lh2"]`
-* Logik: `fingering.map(key => KEY_LABELS[key])`
-* Output: Eine Liste von Anweisungen ("Drücke: ...").
+Später:
+- Rechte-Vorlagen (Templates)
+- zeitgesteuerte Rechte
+- Delegation/Freigabe-Workflow
 
+---
 
-* **`TheoryService.ts`**: Enthält die `tonal`-Logik für Transposition und Ambitus.
+**Domänenmodell (konzeptionell)**
+- `User`
+  - `type`: `REGULAR | GUEST`
+  - `isActive`
+  - optional `expiresAt`
+- `Permission`
+  - Schlüssel, z. B. `calendar.read`, `setlist.write`, `cms.gallery.manage`
+- `UserPermission`
+  - direkte Zuordnung User ↔ Permission
+  - optional `grantedBy`, `grantedAt`
+- `AuditLog`
+  - Event `guest_permissions_updated`, inkl. Diff alt/neu
 
-### Nächster konkreter Schritt für dich:
+Wichtig: Für Gäste direkte Berechtigungen priorisieren, keine impliziten breiten Rollen.
 
-Erstelle in deinem Projekt das `KEY_LABELS`-Objekt basierend auf deiner Dokumentation. Das ist die Brücke, damit aus dem "Code" im JSON echte Sprache wird.
+---
 
-**Soll ich dir zeigen, wie man die VexFlow-Komponente so in React einbindet, dass sie auf Ton-Änderungen reagiert?**
+**Implementation Plan**
+
+1. **Fachliche Rechte-Matrix definieren**
+- Alle Feature-Bereiche als Permission-Keys festlegen.
+- Für jede Permission klar beschreiben: Lesen, Schreiben, Löschen, Admin.
+- Ergebnis als zentrale Konstante (Backend + Frontend geteilt oder synchron gehalten).
+
+2. **Backend Datenmodell erweitern (Prisma)**
+- `User.type`, `User.expiresAt` ergänzen.
+- Neue Tabellen/Modelle für direkte User-Rechte.
+- Migration + Seed für initiale Permission-Keys.
+- Guard gegen Löschung von Permissions, die produktiv genutzt werden.
+
+3. **AuthN/AuthZ Layer anpassen**
+- Beim Login Rechte in Claims/Session laden.
+- Helper wie `requirePermission('cms.gallery.read')`.
+- Einheitliche 401/403-Fehlerstruktur.
+- Middleware auf kritische Endpoints anwenden.
+
+4. **Admin-API für Gastbenutzer**
+- `POST /admin/users/guest` (anlegen)
+- `PATCH /admin/users/:id/permissions` (Einzelrechte setzen)
+- `PATCH /admin/users/:id/status` (aktiv/deaktiviert, Ablauf)
+- Validierung: nur bekannte Permission-Keys, keine Duplikate.
+
+5. **Frontend Admin UI**
+- Im User-Management Option „Gastbenutzer erstellen“.
+- Rechte-Editor mit Gruppen:
+  - Kalender
+  - Setlist
+  - Dateien/Noten
+  - CMS/Galerie
+  - Kommunikation
+- Suche/Filter in Rechte-Liste bei vielen Permissions.
+- Speichern mit Diff-Anzeige („+3 / -1 Rechte“).
+
+6. **Feature-Gating im Frontend**
+- Zentraler Hook/Utility `can(permission)`.
+- Navigation, Buttons, Actions dynamisch nach Rechte.
+- Kein reines UI-Gating: Backend bleibt führend.
+
+7. **Audit & Monitoring**
+- Rechteänderungen mit Admin-ID, User-ID, altem/neuem Zustand loggen.
+- Optional: täglicher Report „aktive Gastkonten“.
+- Warnung bei abgelaufenen aber noch aktiven Sessions.
+
+8. **Tests**
+- Backend:
+  - Unit: Permission-Resolver
+  - Integration: 403 bei fehlendem Recht
+  - Migration-Test
+- Frontend:
+  - UI-Tests für Sichtbarkeit/Disablement
+- E2E:
+  - Gastkonto mit minimalen Rechten
+  - Rechte ändern, sofortige Wirkung prüfen
+
+9. **Rollout**
+- Hinter Feature-Flag `guest_user_permissions`.
+- Erst Staging mit 2-3 realen Gast-Szenarien.
+- Dokumentation für Admins (welches Recht macht was).
+- Danach produktiv schalten.
+
+---
+
+**Technische Risiken und Gegenmaßnahmen**
+- Inkonsistente Rechte zwischen Frontend/Backend:
+  - Single Source of Truth für Permission-Keys.
+- Zu grobe Berechtigungen:
+  - früh in Read/Write/Admin aufteilen.
+- Legacy-Endpunkte ohne AuthZ:
+  - Endpoint-Inventur + Pflicht-Checkliste in PR-Template.
+- Token-Caching-Effekte:
+  - kurze TTL oder Refresh nach Rechteänderung.
+
+---
+
+**Definition of Done**
+- Admin kann Gastbenutzer vollständig anlegen und fein granular berechtigen.
+- Alle relevanten Endpoints prüfen Berechtigung serverseitig.
+- UI verhält sich korrekt für mindestens 3 Gastprofile.
+- Audit-Log vorhanden und nachvollziehbar.
+- Tests grün, Doku aktualisiert.

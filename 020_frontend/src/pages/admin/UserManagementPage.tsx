@@ -280,6 +280,7 @@ export function UserManagementPage() {
             {/* Dialogs */}
             {isAdmin && selectedUser && (
                 <AdminEditUserDialog
+                    key={selectedUser.id}
                     user={selectedUser}
                     open={isEditDialogOpen}
                     onOpenChange={setIsEditDialogOpen}

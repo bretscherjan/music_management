@@ -25,9 +25,7 @@ export function ProtectedRoute({ children, requireAdmin = false, permission }: P
         return <Navigate to="/login" state={{ from: location }} replace />;
     }
 
-    // Check admin requirement
-    // Either the role is admin OR the user has admin:access permission
-    if (requireAdmin && user?.role !== 'admin' && !can('admin:access')) {
+    if (requireAdmin && user?.role !== 'admin') {
         return <Navigate to="/member" replace />;
     }
 

@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useEffect, useState } from 'react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { userService } from '@/services/userService';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -19,6 +19,12 @@ interface AdminEditUserDialogProps {
 
 export function AdminEditUserDialog({ open, onOpenChange, user, registers }: AdminEditUserDialogProps) {
     const queryClient = useQueryClient();
+    const { data: detailedUser } = useQuery({
+        queryKey: ['users', user?.id],
+        queryFn: () => userService.getById(user!.id),
+        enabled: open && !!user,
+    });
+    const currentUser = detailedUser ?? user;
     const [formData, setFormData] = useState<AdminUpdateUserDto>(() => ({
         firstName: user?.firstName || '',
         lastName: user?.lastName || '',
@@ -33,15 +39,33 @@ export function AdminEditUserDialog({ open, onOpenChange, user, registers }: Adm
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
+    useEffect(() => {
+        if (!currentUser) {
+            return;
+        }
+
+        setFormData({
+            firstName: currentUser.firstName || '',
+            lastName: currentUser.lastName || '',
+            email: currentUser.email || '',
+            phoneNumber: currentUser.phoneNumber || '',
+            status: currentUser.status || 'active',
+            role: currentUser.role || 'member',
+            type: currentUser.type || 'REGULAR',
+            expiresAt: currentUser.expiresAt ? currentUser.expiresAt.split('T')[0] : '',
+            registerId: currentUser.registerId || null,
+        });
+    }, [currentUser]);
+
     const updateMutation = useMutation({
         mutationFn: (data: AdminUpdateUserDto) => {
-            if (!user) throw new Error('No user selected');
+            if (!currentUser) throw new Error('No user selected');
             // Convert empty string to null for date
             const payload = {
                 ...data,
                 expiresAt: data.expiresAt ? new Date(data.expiresAt).toISOString() : null
             };
-            return userService.updateUser(user.id, payload);
+            return userService.updateUser(currentUser.id, payload);
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['users'] });
@@ -213,7 +237,7 @@ export function AdminEditUserDialog({ open, onOpenChange, user, registers }: Adm
                     </TabsContent>
 
                     <TabsContent value="permissions">
-                        <AdminUserPermissionsEditor user={user} />
+                            {currentUser && <AdminUserPermissionsEditor user={currentUser} />}
                     </TabsContent>
                 </Tabs>
             </DialogContent>

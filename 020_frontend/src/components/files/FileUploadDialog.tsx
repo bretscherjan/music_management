@@ -3,6 +3,7 @@ import { useQueryClient, useQuery } from '@tanstack/react-query';
 import { fileService } from '@/services/fileService';
 import { registerService } from '@/services/registerService';
 import { userService } from '@/services/userService';
+import { useCan } from '@/context/AuthContext';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -26,6 +27,9 @@ interface FileUploadStatus {
 }
 
 export function FileUploadDialog({ open, onOpenChange, currentFolderId, currentFolderName }: FileUploadDialogProps) {
+    const can = useCan();
+    const canReadRegisters = can('registers:read');
+    const canReadMembers = can('members:read');
     const queryClient = useQueryClient();
     const [fileStatuses, setFileStatuses] = useState<FileUploadStatus[]>([]);
     const [isUploading, setIsUploading] = useState(false);
@@ -38,10 +42,15 @@ export function FileUploadDialog({ open, onOpenChange, currentFolderId, currentF
     const [deniedUsers, setDeniedUsers] = useState<number[]>([]);
 
     // Fetch master data
-    const { data: registers = [] } = useQuery({ queryKey: ['registers'], queryFn: registerService.getAll });
+    const { data: registers = [] } = useQuery({
+        queryKey: ['registers'],
+        queryFn: registerService.getAll,
+        enabled: open && canReadRegisters,
+    });
     const { data: users = [] } = useQuery({
         queryKey: ['users'],
-        queryFn: () => userService.getAll()
+        queryFn: () => userService.getAll(),
+        enabled: open && canReadMembers,
     });
 
     // --- Smart Dropdown Filtering ---

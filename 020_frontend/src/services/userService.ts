@@ -8,7 +8,8 @@ import type {
     AdminUpdateUserDto,
     AdminCreateUserDto,
     NotificationSettings,
-    Permission
+    Permission,
+    PermissionTemplate,
 } from '@/types';
 
 interface UsersQueryParams {
@@ -96,8 +97,28 @@ export const userService = {
         return response.data.permissions;
     },
 
-    async updatePermissions(userId: number, permissionKeys: string[]): Promise<void> {
-        await api.patch(`/users/${userId}/permissions`, { permissionKeys });
+    async getPermissionTemplates(): Promise<PermissionTemplate[]> {
+        const response = await api.get<{ templates: PermissionTemplate[] }>('/users/permission-templates');
+        return response.data.templates;
+    },
+
+    async createPermissionTemplate(data: { name: string; description?: string | null; permissionKeys: string[] }): Promise<PermissionTemplate> {
+        const response = await api.post<{ template: PermissionTemplate }>('/users/permission-templates', data);
+        return response.data.template;
+    },
+
+    async updatePermissionTemplate(id: number, data: { name: string; description?: string | null; permissionKeys: string[] }): Promise<PermissionTemplate> {
+        const response = await api.put<{ template: PermissionTemplate }>(`/users/permission-templates/${id}`, data);
+        return response.data.template;
+    },
+
+    async deletePermissionTemplate(id: number): Promise<void> {
+        await api.delete(`/users/permission-templates/${id}`);
+    },
+
+    async updatePermissions(userId: number, permissionKeys: string[]): Promise<User> {
+        const response = await api.patch<{ user: User }>(`/users/${userId}/permissions`, { permissionKeys });
+        return response.data.user;
     },
 };
 

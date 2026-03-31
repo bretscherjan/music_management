@@ -11,6 +11,19 @@ export interface Permission {
     category?: string | null;
 }
 
+export interface PermissionTemplate {
+    id: number;
+    systemKey?: string | null;
+    name: string;
+    description?: string | null;
+    permissionKeys: string[];
+    isSystem: boolean;
+    createdBy?: number | null;
+    updatedBy?: number | null;
+    createdAt: string;
+    updatedAt: string;
+}
+
 export interface UserPermission {
     userId: number;
     permissionId: number;

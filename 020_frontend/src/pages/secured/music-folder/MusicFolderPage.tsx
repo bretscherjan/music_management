@@ -4,7 +4,7 @@ import { useParams, Link } from 'react-router-dom';
 import { Folder, Music, Plus, Loader2, Menu } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { musicFolderService } from '@/services/musicFolderService';
-import { useIsAdmin } from '@/context/AuthContext';
+import { useCan } from '@/context/AuthContext';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -19,7 +19,7 @@ interface FolderListProps {
     folders: any[] | undefined;
     isLoading: boolean;
     currentId: string | undefined;
-    isAdmin: boolean;
+    canManageFolders: boolean;
     createOpen: boolean;
     setCreateOpen: (open: boolean) => void;
     newFolderName: string;
@@ -32,7 +32,7 @@ const FolderList = ({
     folders,
     isLoading,
     currentId,
-    isAdmin,
+    canManageFolders,
     createOpen,
     setCreateOpen,
     newFolderName,
@@ -46,7 +46,7 @@ const FolderList = ({
                 <Folder className="h-5 w-5" />
                 Mappen
             </h2>
-            {isAdmin && (
+            {canManageFolders && (
                 <Dialog open={createOpen} onOpenChange={setCreateOpen}>
                     <DialogTrigger asChild>
                         <Button size="icon" variant="ghost" className="h-8 w-8">
@@ -117,7 +117,8 @@ const FolderList = ({
 
 export const MusicFolderPage = () => {
     const { id } = useParams();
-    const isAdmin = useIsAdmin();
+    const can = useCan();
+    const canManageFolders = can('folders:write');
     const [createOpen, setCreateOpen] = useState(false);
     const [newFolderName, setNewFolderName] = useState('');
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -144,7 +145,7 @@ export const MusicFolderPage = () => {
         folders,
         isLoading,
         currentId: id,
-        isAdmin,
+        canManageFolders,
         createOpen,
         setCreateOpen,
         newFolderName,

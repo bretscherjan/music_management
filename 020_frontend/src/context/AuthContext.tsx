@@ -115,18 +115,8 @@ export function useCan(): (permission: string) => boolean {
         const hasExplicitPermission = user.permissions?.some(
             p => p.permission.key === permission
         );
-        if (hasExplicitPermission) return true;
-        
-        // Default permissions for regular members
-        if (user.type === 'REGULAR') {
-            // Regular members don't have admin access by default
-            if (permission === 'admin:access') return false;
-            // They have everything else
-            return true;
-        }
-        
-        // Guests only have explicit permissions
-        return false;
+
+        return Boolean(hasExplicitPermission);
     }, [user]);
 }
 

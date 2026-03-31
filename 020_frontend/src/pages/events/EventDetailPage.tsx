@@ -1,7 +1,7 @@
 import { useParams, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { eventService } from '@/services/eventService';
-import { useIsAdmin } from '@/context/AuthContext';
+import { useCan } from '@/context/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -15,7 +15,9 @@ import { EventSetlistSection } from '@/components/events/EventSetlistSection';
 
 export function EventDetailPage() {
     const { id } = useParams<{ id: string }>();
-    const isAdmin = useIsAdmin();
+    const can = useCan();
+    const canManageEvent = can('events:write');
+    const canAdminEvent = can('events:admin');
     const eventId = parseInt(id || '0', 10);
 
     const { data: event, isLoading, error } = useQuery({
@@ -74,7 +76,7 @@ export function EventDetailPage() {
                     </Button>
                 </Link>
 
-                {isAdmin && (
+                {canManageEvent && (
                     <Link to={`/member/admin/events/${event.id}/edit`}>
                         <Button variant="outline" size="sm">
                             <Edit className="h-4 w-4 mr-2" />
@@ -142,7 +144,7 @@ export function EventDetailPage() {
 
             {/* Setlist Section - Only if enabled */}
             {event.setlistEnabled && (
-                <EventSetlistSection event={event} isAdmin={isAdmin} />
+                <EventSetlistSection event={event} isAdmin={canManageEvent} />
             )}
 
             {/* Attendance Section */}
@@ -154,7 +156,7 @@ export function EventDetailPage() {
             />
 
             {/* Verification Section (Admin Only) */}
-            {isAdmin && (
+            {canAdminEvent && (
                 <div className="mt-8">
                     <VerificationSection eventId={event.id} eventDate={event.date} />
                 </div>

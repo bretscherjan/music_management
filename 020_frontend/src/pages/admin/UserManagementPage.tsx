@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useSearchParams } from 'react-router-dom';
 import { userService } from '@/services/userService';
 import { registerService } from '@/services/registerService';
-import { useIsAdmin } from '@/context/AuthContext';
+import { useCan } from '@/context/AuthContext';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -27,7 +27,11 @@ import { ConfirmDialog } from '@/components/common/ConfirmDialog';
 import { toast } from 'sonner';
 
 export function UserManagementPage() {
-    const isAdmin = useIsAdmin();
+    const can = useCan();
+    const canReadRegisters = can('registers:read');
+    const canWriteMembers = can('members:write');
+    const canManageMemberPermissions = can('members:permissions');
+    const canManageMembers = canWriteMembers || canManageMemberPermissions;
     const [searchParams] = useSearchParams();
     const searchParam = searchParams.get('search');
     const queryClient = useQueryClient();
@@ -49,6 +53,7 @@ export function UserManagementPage() {
     const { data: registers } = useQuery({
         queryKey: ['registers'],
         queryFn: () => registerService.getAll(),
+        enabled: canReadRegisters,
     });
 
     useEffect(() => {
@@ -58,7 +63,7 @@ export function UserManagementPage() {
     }, [searchParam]);
 
     const handleEditUser = (user: User) => {
-        if (!isAdmin) return;
+        if (!canManageMembers) return;
         setSelectedUser(user);
         setIsEditDialogOpen(true);
     };
@@ -76,7 +81,7 @@ export function UserManagementPage() {
     });
 
     const handleDeleteUser = (user: User) => {
-        if (!isAdmin) return;
+        if (!canWriteMembers) return;
         setSelectedUser(user);
         setIsDeleteDialogOpen(true);
     };
@@ -126,17 +131,17 @@ export function UserManagementPage() {
                 <div>
                     <h1 className="text-3xl font-bold tracking-tight flex items-center gap-2">
                         <Users className="h-8 w-8" />
-                        {isAdmin ? 'Mitglieder-Verwaltung' : 'Mitgliederliste'}
+                        {canManageMembers ? 'Mitglieder-Verwaltung' : 'Mitgliederliste'}
                     </h1>
                     <p className="text-muted-foreground">
-                        {isAdmin
+                        {canManageMembers
                             ? 'Verwalte die Vereinsmitglieder, Status und Register-Zuordnungen'
                             : 'Übersicht aller Vereinsmitglieder'
                         }
                     </p>
                 </div>
 
-                {isAdmin && (
+                {canWriteMembers && (
                     <div className="flex gap-2">
                         <Button onClick={() => setIsCreateDialogOpen(true)}>
                             <Plus className="mr-2 h-4 w-4" />
@@ -162,6 +167,7 @@ export function UserManagementPage() {
                         </div>
 
                         {/* Register Filter */}
+                        {canReadRegisters && (
                         <div className="flex gap-2 items-center">
                             <span className="text-sm text-muted-foreground whitespace-nowrap">Register:</span>
                             <select
@@ -177,6 +183,7 @@ export function UserManagementPage() {
                                 ))}
                             </select>
                         </div>
+                        )}
 
                         {/* Status Filter */}
                         <div className="flex gap-2 items-center">
@@ -206,7 +213,7 @@ export function UserManagementPage() {
                                 <TableHead>Register</TableHead>
                                 <TableHead>Status</TableHead>
                                 <TableHead>E-Mail</TableHead>
-                                {isAdmin && <TableHead className="text-right">Aktionen</TableHead>}
+                                {canManageMembers && <TableHead className="text-right">Aktionen</TableHead>}
                             </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -217,12 +224,12 @@ export function UserManagementPage() {
                                         <TableCell><Skeleton className="h-4 w-24" /></TableCell>
                                         <TableCell><Skeleton className="h-4 w-16" /></TableCell>
                                         <TableCell><Skeleton className="h-4 w-40" /></TableCell>
-                                        {isAdmin && <TableCell><Skeleton className="h-4 w-12 ml-auto" /></TableCell>}
+                                        {canManageMembers && <TableCell><Skeleton className="h-4 w-12 ml-auto" /></TableCell>}
                                     </TableRow>
                                 ))
                             ) : filteredUsers.length === 0 ? (
                                 <TableRow>
-                                    <TableCell colSpan={isAdmin ? 5 : 4} className="h-32 text-center text-muted-foreground">
+                                    <TableCell colSpan={canManageMembers ? 5 : 4} className="h-32 text-center text-muted-foreground">
                                         Keine Mitglieder gefunden
                                     </TableCell>
                                 </TableRow>
@@ -243,7 +250,7 @@ export function UserManagementPage() {
                                         <TableCell className="text-muted-foreground">
                                             {user.email}
                                         </TableCell>
-                                        {isAdmin && (
+                                        {canManageMembers && (
                                             <TableCell className="text-right">
                                                 <div className="flex justify-end gap-2">
                                                     <Button
@@ -253,14 +260,16 @@ export function UserManagementPage() {
                                                     >
                                                         <Pencil className="h-4 w-4" />
                                                     </Button>
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="icon"
-                                                        className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                                                        onClick={() => handleDeleteUser(user)}
-                                                    >
-                                                        <Trash2 className="h-4 w-4" />
-                                                    </Button>
+                                                    {canWriteMembers && (
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="icon"
+                                                            className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                                                            onClick={() => handleDeleteUser(user)}
+                                                        >
+                                                            <Trash2 className="h-4 w-4" />
+                                                        </Button>
+                                                    )}
                                                 </div>
                                             </TableCell>
                                         )}
@@ -278,7 +287,7 @@ export function UserManagementPage() {
             </div>
 
             {/* Dialogs */}
-            {isAdmin && selectedUser && (
+            {canManageMembers && selectedUser && (
                 <AdminEditUserDialog
                     key={selectedUser.id}
                     user={selectedUser}
@@ -288,7 +297,7 @@ export function UserManagementPage() {
                 />
             )}
 
-            {isAdmin && (
+            {canWriteMembers && (
                 <CreateUserDialog
                     open={isCreateDialogOpen}
                     onOpenChange={setIsCreateDialogOpen}

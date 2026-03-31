@@ -3,6 +3,7 @@ import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { fileService } from '@/services/fileService';
 import { registerService } from '@/services/registerService';
 import { userService } from '@/services/userService';
+import { useCan } from '@/context/AuthContext';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -17,6 +18,9 @@ interface ManageFolderAccessDialogProps {
 }
 
 export function ManageFolderAccessDialog({ open, onOpenChange, folder }: ManageFolderAccessDialogProps) {
+    const can = useCan();
+    const canReadRegisters = can('registers:read');
+    const canReadMembers = can('members:read');
     const queryClient = useQueryClient();
     const [mode, setMode] = useState<'all' | 'admin' | 'custom'>('all');
     const [allowedRegisters, setAllowedRegisters] = useState<number[]>([]);
@@ -25,10 +29,15 @@ export function ManageFolderAccessDialog({ open, onOpenChange, folder }: ManageF
     const [error, setError] = useState<string | null>(null);
 
     // Fetch master data
-    const { data: registers = [] } = useQuery({ queryKey: ['registers'], queryFn: registerService.getAll });
+    const { data: registers = [] } = useQuery({
+        queryKey: ['registers'],
+        queryFn: registerService.getAll,
+        enabled: open && canReadRegisters,
+    });
     const { data: users = [] } = useQuery({
         queryKey: ['users'],
-        queryFn: () => userService.getAll()
+        queryFn: () => userService.getAll(),
+        enabled: open && canReadMembers,
     });
 
     // Initialize state when folder opens

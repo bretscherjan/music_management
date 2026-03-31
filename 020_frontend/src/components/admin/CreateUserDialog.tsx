@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { registerService } from '@/services/registerService';
 import { userService } from '@/services/userService';
+import { useCan } from '@/context/AuthContext';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -15,6 +16,8 @@ interface CreateUserDialogProps {
 }
 
 export function CreateUserDialog({ open, onOpenChange }: CreateUserDialogProps) {
+    const can = useCan();
+    const canReadRegisters = can('registers:read');
     const queryClient = useQueryClient();
     const [formData, setFormData] = useState<AdminCreateUserDto>({
         email: '',
@@ -33,6 +36,7 @@ export function CreateUserDialog({ open, onOpenChange }: CreateUserDialogProps) 
     const { data: registers } = useQuery({
         queryKey: ['registers'],
         queryFn: () => registerService.getAll(),
+        enabled: open && canReadRegisters,
     });
 
     const createMutation = useMutation({
@@ -166,6 +170,7 @@ export function CreateUserDialog({ open, onOpenChange }: CreateUserDialogProps) 
                                 id="register"
                                 value={formData.registerId || ''}
                                 onChange={(e) => setFormData({ ...formData, registerId: e.target.value ? Number(e.target.value) : null })}
+                                disabled={!canReadRegisters}
                                 className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background disabled:cursor-not-allowed disabled:opacity-50"
                             >
                                 <option value="">Kein Register</option>

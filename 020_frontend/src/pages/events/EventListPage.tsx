@@ -88,7 +88,7 @@ export function EventListPage() {
                 <div className="flex flex-wrap gap-3">
                     <CalendarExportDialog events={filteredEvents} />
 
-                    {can('calendar:write') && (
+                    {can('events:write') && (
                         <Link to="/member/admin/events/new">
                             <Button className="shadow-sm">
                                 <Plus className="h-4 w-4 mr-2" />

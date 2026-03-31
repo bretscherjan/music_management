@@ -3,6 +3,14 @@ import { storage } from './storage';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3004/api';
 
+const normalizeMediaPath = (path: string): string => {
+    if (path.startsWith('/api/uploads/')) return path;
+    if (path.startsWith('/uploads/')) return `/api${path}`;
+    if (path.startsWith('api/uploads/')) return `/${path}`;
+    if (path.startsWith('uploads/')) return `/api/${path}`;
+    return path.startsWith('/') ? path : `/${path}`;
+};
+
 export const resolveMediaUrl = (url: string | null | undefined): string => {
     if (!url) return '';
     const trimmed = url.trim();
@@ -11,11 +19,26 @@ export const resolveMediaUrl = (url: string | null | undefined): string => {
         trimmed.startsWith('data:') || trimmed.startsWith('blob:')) {
         return trimmed;
     }
-    const cleanPath = trimmed.startsWith('/') ? trimmed.substring(1) : trimmed;
-    return `${API_BASE_URL}/${cleanPath}`;
+    return normalizeMediaPath(trimmed);
 };
 
 export const getMediaUrl = (path: string) => resolveMediaUrl(path);
+
+export const getSponsorLogoUrl = (logoUrl: string | null | undefined): string => {
+    if (!logoUrl) return '';
+    const trimmed = logoUrl.trim();
+    if (!trimmed) return '';
+    if (trimmed.includes('/')) return resolveMediaUrl(trimmed);
+    return resolveMediaUrl(`/uploads/cms/sponsors/${trimmed}`);
+};
+
+export const getFlyerUrl = (filename: string | null | undefined): string => {
+    if (!filename) return '';
+    const trimmed = filename.trim();
+    if (!trimmed) return '';
+    if (trimmed.includes('/')) return resolveMediaUrl(trimmed);
+    return resolveMediaUrl(`/uploads/cms/flyers/${trimmed}`);
+};
 
 const api = axios.create({
     baseURL: API_BASE_URL,

@@ -81,20 +81,51 @@ LEFT JOIN `UserPermission`
 WHERE `User`.`role` = 'admin'
   AND `UserPermission`.`userId` IS NULL;
 
-INSERT INTO `UserPermission` (`userId`, `permissionId`)
+SET @has_user_type_column := (
+        SELECT COUNT(*)
+        FROM `INFORMATION_SCHEMA`.`COLUMNS`
+        WHERE `TABLE_SCHEMA` = DATABASE()
+            AND `TABLE_NAME` = 'User'
+            AND `COLUMN_NAME` = 'type'
+);
+
+SET @member_permission_backfill_sql := IF(
+        @has_user_type_column > 0,
+        'INSERT INTO `UserPermission` (`userId`, `permissionId`)
 SELECT `User`.`id`, `Permission`.`id`
 FROM `User`
 JOIN `Permission` ON `Permission`.`key` IN (
-    'calendar:read',
-    'files:read',
-    'sheetMusic:read',
-    'chat:read',
-    'chat:write',
-    'members:read'
+        ''calendar:read'',
+        ''files:read'',
+        ''sheetMusic:read'',
+        ''chat:read'',
+        ''chat:write'',
+        ''members:read''
 )
 LEFT JOIN `UserPermission`
-    ON `UserPermission`.`userId` = `User`.`id`
-    AND `UserPermission`.`permissionId` = `Permission`.`id`
-WHERE `User`.`role` <> 'admin'
-  AND `User`.`type` = 'REGULAR'
-  AND `UserPermission`.`userId` IS NULL;
+        ON `UserPermission`.`userId` = `User`.`id`
+        AND `UserPermission`.`permissionId` = `Permission`.`id`
+WHERE `User`.`role` <> ''admin''
+    AND `User`.`type` = ''REGULAR''
+    AND `UserPermission`.`userId` IS NULL',
+        'INSERT INTO `UserPermission` (`userId`, `permissionId`)
+SELECT `User`.`id`, `Permission`.`id`
+FROM `User`
+JOIN `Permission` ON `Permission`.`key` IN (
+        ''calendar:read'',
+        ''files:read'',
+        ''sheetMusic:read'',
+        ''chat:read'',
+        ''chat:write'',
+        ''members:read''
+)
+LEFT JOIN `UserPermission`
+        ON `UserPermission`.`userId` = `User`.`id`
+        AND `UserPermission`.`permissionId` = `Permission`.`id`
+WHERE `User`.`role` <> ''admin''
+    AND `UserPermission`.`userId` IS NULL'
+);
+
+PREPARE member_permission_backfill_stmt FROM @member_permission_backfill_sql;
+EXECUTE member_permission_backfill_stmt;
+DEALLOCATE PREPARE member_permission_backfill_stmt;

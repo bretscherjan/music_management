@@ -4,7 +4,7 @@ const { z } = require('zod');
 
 const newsController = require('../controllers/news.controller');
 const { authMiddleware, optionalAuth } = require('../middlewares/auth.middleware');
-const { adminOnly } = require('../middlewares/roleCheck.middleware');
+const { permissionCheck } = require('../middlewares/permission.middleware');
 const { validate } = require('../middlewares/validate.middleware');
 
 // Validation schemas
@@ -62,20 +62,20 @@ router.get('/:id', validate(getNewsByIdSchema), newsController.getNewsById);
  * @desc    Create news
  * @access  Admin only
  */
-router.post('/', authMiddleware, adminOnly, validate(createNewsSchema), newsController.createNews);
+router.post('/', authMiddleware, permissionCheck('news:write'), validate(createNewsSchema), newsController.createNews);
 
 /**
  * @route   PUT /api/news/:id
  * @desc    Update news
  * @access  Admin only
  */
-router.put('/:id', authMiddleware, adminOnly, validate(updateNewsSchema), newsController.updateNews);
+router.put('/:id', authMiddleware, permissionCheck('news:write'), validate(updateNewsSchema), newsController.updateNews);
 
 /**
  * @route   DELETE /api/news/:id
  * @desc    Delete news
  * @access  Admin only
  */
-router.delete('/:id', authMiddleware, adminOnly, validate(getNewsByIdSchema), newsController.deleteNews);
+router.delete('/:id', authMiddleware, permissionCheck('news:write'), validate(getNewsByIdSchema), newsController.deleteNews);
 
 module.exports = router;

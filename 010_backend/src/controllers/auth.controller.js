@@ -73,6 +73,8 @@ const register = asyncHandler(async (req, res) => {
             lastName: true,
             role: true,
             status: true,
+            type: true,
+            expiresAt: true,
             registerId: true,
             register: {
                 select: {
@@ -81,11 +83,43 @@ const register = asyncHandler(async (req, res) => {
                 },
             },
             createdAt: true,
+            permissions: {
+                include: {
+                    permission: true,
+                },
+            },
         },
     });
 
     // Assign default permissions for new users
-    await assignDefaultPermissions(user.id, 'member');
+    await assignDefaultPermissions(user.id, user);
+
+    const userWithPermissions = await prisma.user.findUnique({
+        where: { id: user.id },
+        select: {
+            id: true,
+            email: true,
+            firstName: true,
+            lastName: true,
+            role: true,
+            status: true,
+            type: true,
+            expiresAt: true,
+            registerId: true,
+            register: {
+                select: {
+                    id: true,
+                    name: true,
+                },
+            },
+            createdAt: true,
+            permissions: {
+                include: {
+                    permission: true,
+                },
+            },
+        },
+    });
 
     // Generate JWTs
     const token = generateAccessToken(user.id);
@@ -98,7 +132,7 @@ const register = asyncHandler(async (req, res) => {
 
     res.status(201).json({
         message: 'Registrierung erfolgreich',
-        user,
+        user: userWithPermissions,
         token,
         refreshToken,
     });
@@ -120,6 +154,11 @@ const login = asyncHandler(async (req, res) => {
                     select: {
                         id: true,
                         name: true,
+                    },
+                },
+                permissions: {
+                    include: {
+                        permission: true,
                     },
                 },
             },
@@ -219,6 +258,9 @@ const getMe = asyncHandler(async (req, res) => {
             profilePicture: true,
             role: true,
             status: true,
+            type: true,
+            expiresAt: true,
+            phoneNumber: true,
             registerId: true,
             register: {
                 select: {
@@ -229,6 +271,11 @@ const getMe = asyncHandler(async (req, res) => {
             createdAt: true,
             updatedAt: true,
             calendarToken: true,
+            permissions: {
+                include: {
+                    permission: true,
+                },
+            },
         },
     });
 

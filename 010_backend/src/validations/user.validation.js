@@ -126,6 +126,31 @@ const updateUserPermissionsSchema = {
     }),
 };
 
+const createPermissionTemplateSchema = {
+    body: z.object({
+        name: z.string().min(1, 'Name ist erforderlich').max(100, 'Name darf maximal 100 Zeichen lang sein'),
+        description: z.string().max(1000, 'Beschreibung darf maximal 1000 Zeichen lang sein').optional().nullable(),
+        permissionKeys: z.array(z.string()).default([]),
+    }),
+};
+
+const updatePermissionTemplateSchema = {
+    params: z.object({
+        id: z.string().regex(/^\d+$/, 'Ungültige Vorlagen-ID'),
+    }),
+    body: z.object({
+        name: z.string().min(1, 'Name ist erforderlich').max(100, 'Name darf maximal 100 Zeichen lang sein'),
+        description: z.string().max(1000, 'Beschreibung darf maximal 1000 Zeichen lang sein').optional().nullable(),
+        permissionKeys: z.array(z.string()).default([]),
+    }),
+};
+
+const deletePermissionTemplateSchema = {
+    params: z.object({
+        id: z.string().regex(/^\d+$/, 'Ungültige Vorlagen-ID'),
+    }),
+};
+
 // Get user by ID
 const getUserByIdSchema = {
     params: z.object({
@@ -188,6 +213,9 @@ module.exports = {
     updateUserStatusSchema,
     updateUserRoleSchema,
     updateUserPermissionsSchema,
+    createPermissionTemplateSchema,
+    updatePermissionTemplateSchema,
+    deletePermissionTemplateSchema,
     adminUpdateUserSchema,
     getUserByIdSchema,
     queryUsersSchema,

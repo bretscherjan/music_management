@@ -2,8 +2,55 @@ const bcrypt = require('bcryptjs');
 const { PrismaClient } = require('@prisma/client');
 const { asyncHandler, AppError } = require('../middlewares/errorHandler.middleware');
 const { assignDefaultPermissions } = require('../utils/permissions.seed');
+const { expandPermissionKeys } = require('../utils/permissions');
 
 const prisma = new PrismaClient();
+
+function normalizePermissionKeys(permissionKeys = []) {
+    return expandPermissionKeys(Array.from(new Set((permissionKeys || []).filter(Boolean))));
+}
+
+async function resolvePermissionKeys(permissionKeys = []) {
+    const uniquePermissionKeys = normalizePermissionKeys(permissionKeys);
+
+    const permissions = await prisma.permission.findMany({
+        where: {
+            key: { in: uniquePermissionKeys }
+        }
+    });
+
+    if (permissions.length !== uniquePermissionKeys.length) {
+        const foundKeys = new Set(permissions.map((permission) => permission.key));
+        const missingKeys = uniquePermissionKeys.filter((key) => !foundKeys.has(key));
+        throw new AppError(`Unbekannte Berechtigungen: ${missingKeys.join(', ')}`, 400);
+    }
+
+    return uniquePermissionKeys;
+}
+
+const userWithPermissionsSelect = {
+    id: true,
+    email: true,
+    firstName: true,
+    lastName: true,
+    phoneNumber: true,
+    profilePicture: true,
+    role: true,
+    status: true,
+    type: true,
+    expiresAt: true,
+    registerId: true,
+    register: {
+        select: { id: true, name: true },
+    },
+    createdAt: true,
+    updatedAt: true,
+    permissions: {
+        include: {
+            permission: true,
+        },
+    },
+};
 
 /**
  * Get own profile
@@ -13,20 +60,7 @@ const getProfile = asyncHandler(async (req, res) => {
     const user = await prisma.user.findUnique({
         where: { id: req.user.id },
         select: {
-            id: true,
-            email: true,
-            firstName: true,
-            lastName: true,
-            phoneNumber: true,
-            profilePicture: true,
-            role: true,
-            status: true,
-            registerId: true,
-            register: {
-                select: { id: true, name: true },
-            },
-            createdAt: true,
-            updatedAt: true,
+            ...userWithPermissionsSelect,
             _count: {
                 select: { attendances: true },
             },
@@ -284,29 +318,21 @@ const createUser = asyncHandler(async (req, res) => {
             registerId,
         },
         select: {
-            id: true,
-            firstName: true,
-            lastName: true,
-            email: true,
-            role: true,
-            status: true,
-            type: true,
-            expiresAt: true,
-            registerId: true,
-            register: {
-                select: { id: true, name: true },
-            },
-            createdAt: true,
+            ...userWithPermissionsSelect,
         },
     });
 
     // Assign default permissions based on role
-    const userRole = user.role === 'admin' ? 'admin' : 'member';
-    await assignDefaultPermissions(user.id, userRole);
+    await assignDefaultPermissions(user.id, user, { grantedBy: req.user.id });
+
+    const createdUser = await prisma.user.findUnique({
+        where: { id: user.id },
+        select: userWithPermissionsSelect,
+    });
 
     res.status(201).json({
         message: 'Benutzer erfolgreich erstellt',
-        user,
+        user: createdUser,
     });
 });
 
@@ -384,22 +410,7 @@ const getUserById = asyncHandler(async (req, res) => {
     const user = await prisma.user.findUnique({
         where: { id: parseInt(id) },
         select: {
-            id: true,
-            email: true,
-            firstName: true,
-            lastName: true,
-            phoneNumber: true,
-            profilePicture: true,
-            role: true,
-            status: true,
-            type: true,
-            expiresAt: true,
-            registerId: true,
-            register: {
-                select: { id: true, name: true },
-            },
-            createdAt: true,
-            updatedAt: true,
+            ...userWithPermissionsSelect,
             attendances: {
                 take: 10,
                 orderBy: { createdAt: 'desc' },
@@ -408,11 +419,6 @@ const getUserById = asyncHandler(async (req, res) => {
                         select: { id: true, title: true, date: true },
                     },
                 },
-            },
-            permissions: {
-                include: {
-                    permission: true
-                }
             }
         },
     });
@@ -451,6 +457,10 @@ const updateUser = asyncHandler(async (req, res) => {
         }
     }
 
+    if (parseInt(id) === req.user.id && role && role !== 'admin') {
+        throw new AppError('Sie können Ihre eigene Rolle nicht ändern', 400);
+    }
+
     // Validate registerId if provided
     if (registerId !== undefined && registerId !== null) {
         const register = await prisma.register.findUnique({
@@ -466,7 +476,7 @@ const updateUser = asyncHandler(async (req, res) => {
         data: {
             ...(firstName && { firstName }),
             ...(lastName && { lastName }),
-            ...(phoneNumber && { phoneNumber }),
+            ...(phoneNumber !== undefined && { phoneNumber }),
             ...(email && { email: email.toLowerCase() }),
             ...(status && { status }),
             ...(role && { role }),
@@ -474,27 +484,24 @@ const updateUser = asyncHandler(async (req, res) => {
             ...(expiresAt !== undefined && { expiresAt: expiresAt ? new Date(expiresAt) : null }),
             ...(registerId !== undefined && { registerId }),
         },
-        select: {
-            id: true,
-            email: true,
-            firstName: true,
-            lastName: true,
-            phoneNumber: true,
-            role: true,
-            status: true,
-            type: true,
-            expiresAt: true,
-            registerId: true,
-            register: {
-                select: { id: true, name: true },
-            },
-            updatedAt: true,
-        },
+        select: userWithPermissionsSelect,
+    });
+
+    const roleChanged = role !== undefined && role !== existingUser.role;
+    const typeChanged = type !== undefined && type !== existingUser.type;
+
+    if (roleChanged || typeChanged) {
+        await assignDefaultPermissions(user.id, user, { grantedBy: req.user.id });
+    }
+
+    const updatedUser = await prisma.user.findUnique({
+        where: { id: user.id },
+        select: userWithPermissionsSelect,
     });
 
     res.json({
         message: 'Benutzer erfolgreich aktualisiert',
-        user,
+        user: updatedUser,
     });
 });
 
@@ -513,6 +520,93 @@ const getAllPermissions = asyncHandler(async (req, res) => {
     res.json({ permissions });
 });
 
+const getPermissionTemplates = asyncHandler(async (req, res) => {
+    const templates = await prisma.permissionTemplate.findMany({
+        orderBy: [
+            { isSystem: 'desc' },
+            { name: 'asc' },
+        ],
+    });
+
+    res.json({ templates });
+});
+
+const createPermissionTemplate = asyncHandler(async (req, res) => {
+    const { name, description, permissionKeys = [] } = req.body;
+    const resolvedPermissionKeys = await resolvePermissionKeys(permissionKeys);
+
+    const template = await prisma.permissionTemplate.create({
+        data: {
+            name,
+            description,
+            permissionKeys: resolvedPermissionKeys,
+            createdBy: req.user.id,
+            updatedBy: req.user.id,
+        },
+    });
+
+    res.status(201).json({
+        message: 'Vorlage erfolgreich erstellt',
+        template,
+    });
+});
+
+const updatePermissionTemplate = asyncHandler(async (req, res) => {
+    const { id } = req.params;
+    const { name, description, permissionKeys = [] } = req.body;
+    const templateId = parseInt(id, 10);
+
+    const existingTemplate = await prisma.permissionTemplate.findUnique({
+        where: { id: templateId },
+    });
+
+    if (!existingTemplate) {
+        throw new AppError('Vorlage nicht gefunden', 404);
+    }
+
+    const resolvedPermissionKeys = await resolvePermissionKeys(permissionKeys);
+
+    const template = await prisma.permissionTemplate.update({
+        where: { id: templateId },
+        data: {
+            name,
+            description,
+            permissionKeys: resolvedPermissionKeys,
+            updatedBy: req.user.id,
+        },
+    });
+
+    res.json({
+        message: 'Vorlage erfolgreich aktualisiert',
+        template,
+    });
+});
+
+const deletePermissionTemplate = asyncHandler(async (req, res) => {
+    const { id } = req.params;
+    const templateId = parseInt(id, 10);
+
+    const existingTemplate = await prisma.permissionTemplate.findUnique({
+        where: { id: templateId },
+    });
+
+    if (!existingTemplate) {
+        throw new AppError('Vorlage nicht gefunden', 404);
+    }
+
+    if (existingTemplate.isSystem) {
+        throw new AppError('System-Vorlagen konnen nicht geloscht werden', 400);
+    }
+
+    await prisma.permissionTemplate.delete({
+        where: { id: templateId },
+    });
+
+    res.json({
+        message: 'Vorlage erfolgreich geloscht',
+    });
+});
+
 /**
  * Update user permissions
  * PATCH /users/:id/permissions
@@ -520,51 +614,61 @@ const getAllPermissions = asyncHandler(async (req, res) => {
 const updateUserPermissions = asyncHandler(async (req, res) => {
     const { id } = req.params;
     const { permissionKeys } = req.body;
+    const userId = parseInt(id);
+    const uniquePermissionKeys = await resolvePermissionKeys(permissionKeys);
 
     // Check if user exists
     const user = await prisma.user.findUnique({
-        where: { id: parseInt(id) },
+        where: { id: userId },
     });
 
     if (!user) {
         throw new AppError('Benutzer nicht gefunden', 404);
     }
 
-    // Get permission IDs for the keys
     const permissions = await prisma.permission.findMany({
         where: {
-            key: { in: permissionKeys }
+            key: { in: uniquePermissionKeys }
         }
     });
 
     // Delete existing permissions and create new ones in a transaction
-    await prisma.$transaction([
-        prisma.userPermission.deleteMany({
-            where: { userId: parseInt(id) }
-        }),
-        prisma.userPermission.createMany({
-            data: permissions.map(p => ({
-                userId: parseInt(id),
-                permissionId: p.id,
-                grantedBy: req.user.id
-            }))
-        })
-    ]);
+    await prisma.$transaction(async (tx) => {
+        await tx.userPermission.deleteMany({
+            where: { userId }
+        });
+
+        if (permissions.length > 0) {
+            await tx.userPermission.createMany({
+                data: permissions.map((permission) => ({
+                    userId,
+                    permissionId: permission.id,
+                    grantedBy: req.user.id,
+                }))
+            });
+        }
+    });
+
+    const updatedUser = await prisma.user.findUnique({
+        where: { id: userId },
+        select: userWithPermissionsSelect,
+    });
 
     // Log the change
     const auditLogService = require('../utils/auditLog.service');
     await auditLogService.logEvent({
-        action: 'guest_permissions_updated',
+        action: 'user_permissions_updated',
         entity: 'User',
         entityId: id,
         userId: req.user.id,
-        newValue: { permissionKeys },
+        newValue: { permissionKeys: uniquePermissionKeys },
         req
     });
 
     res.json({
         message: 'Berechtigungen erfolgreich aktualisiert',
-        permissions: permissionKeys
+        user: updatedUser,
+        permissions: uniquePermissionKeys
     });
 });
 
@@ -610,18 +714,19 @@ const updateUserRole = asyncHandler(async (req, res) => {
     const user = await prisma.user.update({
         where: { id: parseInt(id) },
         data: { role },
-        select: {
-            id: true,
-            email: true,
-            firstName: true,
-            lastName: true,
-            role: true,
-        },
+        select: userWithPermissionsSelect,
+    });
+
+    await assignDefaultPermissions(user.id, user, { grantedBy: req.user.id });
+
+    const updatedUser = await prisma.user.findUnique({
+        where: { id: user.id },
+        select: userWithPermissionsSelect,
     });
 
     res.json({
         message: 'Rolle erfolgreich aktualisiert',
-        user,
+        user: updatedUser,
     });
 });
 
@@ -720,5 +825,9 @@ module.exports = {
     getNotificationSettings,
     updateNotificationSettings,
     getAllPermissions,
+    getPermissionTemplates,
+    createPermissionTemplate,
+    updatePermissionTemplate,
+    deletePermissionTemplate,
     updateUserPermissions,
 };

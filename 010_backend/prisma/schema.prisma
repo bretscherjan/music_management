@@ -58,6 +58,22 @@ model Permission {
   users       UserPermission[]
 }
 
+model PermissionTemplate {
+  id             Int      @id @default(autoincrement())
+  systemKey      String?  @unique
+  name           String
+  description    String?  @db.Text
+  permissionKeys Json
+  isSystem       Boolean  @default(false)
+  createdBy      Int?
+  updatedBy      Int?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([name])
+  @@index([isSystem])
+}
+
 model UserPermission {
   userId       Int
   permissionId Int

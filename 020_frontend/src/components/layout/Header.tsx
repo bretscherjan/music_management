@@ -1,8 +1,10 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Capacitor } from '@capacitor/core';
 import { useAuth, useCan } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
 import {
     Calendar,
+    Download,
     Users,
     FileText,
     LogOut,
@@ -65,7 +67,12 @@ export function Header() {
     const location = useLocation();
     const navigate = useNavigate();
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-    const filteredMainNavItems = mainNavItems.filter((item) => !item.permission || can(item.permission));
+    const isAppMode = Capacitor.isNativePlatform();
+    const downloadNavItem: NavItem = { label: 'Downloads', href: '/member/download', icon: <Download className="h-5 w-5" /> };
+    const memberNavItems: NavItem[] = isAppMode
+        ? mainNavItems
+        : [...mainNavItems, downloadNavItem];
+    const filteredMainNavItems = memberNavItems.filter((item) => !item.permission || can(item.permission));
     const filteredAdminNavItems = adminNavItems.filter((item) => !item.permission || can(item.permission));
 
     return (

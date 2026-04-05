@@ -1,5 +1,8 @@
 import { useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { Capacitor } from '@capacitor/core';
+
+const isAppMode = Capacitor.isNativePlatform() || import.meta.env.VITE_APP_MODE === 'app';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider } from '@/context/AuthContext';
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
@@ -11,6 +14,7 @@ import { Toaster } from 'sonner';
 // Public Pages
 import { HomePage } from '@/pages/public/HomePage';
 import { AboutPage } from '@/pages/public/AboutPage';
+import { AppDownloadPage } from '@/pages/public/AppDownloadPage';
 import { ContactPage } from '@/pages/public/ContactPage';
 import { GalleryPage } from '@/pages/public/GalleryPage';
 import { LoginPage } from '@/pages/LoginPage';
@@ -49,7 +53,8 @@ const queryClient = new QueryClient();
 
 function App() {
   useEffect(() => {
-    if ('serviceWorker' in navigator) {
+    // Skip service-worker in native app mode (Capacitor handles it)
+    if (!isAppMode && 'serviceWorker' in navigator) {
       navigator.serviceWorker.register('/service-worker.js').catch(() => { });
     }
   }, []);
@@ -60,13 +65,20 @@ function App() {
         <ScrollToTop />
         <AuthProvider>
           <Routes>
-            <Route element={<PublicLayout />}>
-              <Route path="/" element={<HomePage />} />
-              <Route path="/about" element={<AboutPage />} />
-              <Route path="/contact" element={<ContactPage />} />
-              <Route path="/gallery" element={<GalleryPage />} />
-              <Route path="/events" element={<UpcommingEvents />} />
-            </Route>
+            {/* ── Public website routes (skipped in app mode) ── */}
+            {!isAppMode && (
+              <Route element={<PublicLayout />}>
+                <Route path="/" element={<HomePage />} />
+                <Route path="/about" element={<AboutPage />} />
+                <Route path="/contact" element={<ContactPage />} />
+                <Route path="/gallery" element={<GalleryPage />} />
+                <Route path="/events" element={<UpcommingEvents />} />
+              </Route>
+            )}
+
+            {/* In app mode "/" immediately redirects to the protected area */}
+            {isAppMode && <Route path="/" element={<Navigate to="/member" replace />} />}
+            {isAppMode && <Route path="/member/download" element={<Navigate to="/member" replace/>} />}
 
             <Route path="/login" element={<LoginPage />} />
             <Route path="/forgot-password" element={<ForgotPasswordPage />} />
@@ -74,6 +86,7 @@ function App() {
 
             <Route path="/member" element={<ProtectedRoute><MainLayout /></ProtectedRoute>}>
               <Route index element={<EventListPage />} />
+              {!isAppMode && <Route path="download" element={<AppDownloadPage />} />}
               <Route path="events" element={<ProtectedRoute permission="events:read"><EventListPage /></ProtectedRoute>} />
               <Route path="events/:id" element={<ProtectedRoute permission="events:read"><EventDetailPage /></ProtectedRoute>} />
               <Route path="files" element={<ProtectedRoute permission="files:read"><FileListPage /></ProtectedRoute>} />

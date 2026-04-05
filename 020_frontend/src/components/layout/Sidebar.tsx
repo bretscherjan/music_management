@@ -1,7 +1,9 @@
 import { Link, useLocation } from 'react-router-dom';
+import { Capacitor } from '@capacitor/core';
 import { useAuth, useCan } from '@/context/AuthContext';
 import {
     Calendar,
+    Download,
     Users,
     FileText,
     Music,
@@ -56,8 +58,14 @@ export function Sidebar() {
     const { user } = useAuth();
     const can = useCan();
     const location = useLocation();
+    const isAppMode = Capacitor.isNativePlatform();
+    const downloadNavItem: NavItem = { label: 'Downloads', href: '/member/download', icon: <Download className="h-5 w-5" /> };
 
-    const filteredMainNavItems = mainNavItems.filter(item => 
+    const memberNavItems: NavItem[] = isAppMode
+        ? mainNavItems
+        : [...mainNavItems, downloadNavItem];
+
+    const filteredMainNavItems = memberNavItems.filter(item => 
         !item.permission || can(item.permission)
     );
 

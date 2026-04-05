@@ -3,8 +3,9 @@ generator client {
 }
 
 datasource db {
-  provider = "mysql"
-  url      = env("DATABASE_URL")
+  provider          = "mysql"
+  url               = env("DATABASE_URL")
+  shadowDatabaseUrl = env("SHADOW_DATABASE_URL")
 }
 
 model User {
@@ -42,6 +43,7 @@ model User {
   taskHistory          TaskHistory[]
   register             Register?             @relation(fields: [registerId], references: [id])
   verifiedAttendances  VerifiedAttendance[]
+  deviceTokens         DeviceToken[]
   chatParticipants     ChatParticipant[]
   chatReadStates       ChatReadState[]
   permissions          UserPermission[]
@@ -690,3 +692,16 @@ model AuditLog {
   @@index([userId])
   @@index([createdAt])
 }
+
+model DeviceToken {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  fcmToken  String   @unique @db.VarChar(500)
+  platform  String   @db.VarChar(10)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+

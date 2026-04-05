@@ -1,72 +1,89 @@
 # Deployment Instructions
 
-This folder contains Systemd service files to deploy the Musig Elgg application on a Linux server (e.g., Ubuntu/Debian).
+This folder contains the Linux deployment artifacts for Musig Elgg.
+
+## Server Paths
+
+- Repository root: `/var/www/jan-bretscher/04_musig-elgg/musig_elgg`
+- Deploy script target: `/var/www/jan-bretscher/04_musig-elgg/deploy.sh`
+- Public APK directory: `/var/www/jan-bretscher/04_musig-elgg/public/downloads`
+- Android SDK: `/opt/android-sdk`
 
 ## Prerequisites
 
-- **Node.js** (v18 or higher)
-- **MySQL** Server
-- **Nginx** (Reverse Proxy)
+- Node.js with npm
+- Java 21
+- Android SDK at `/opt/android-sdk`
+- MySQL
+- Nginx
+- `www-data` access for the frontend and backend services
 
-## 1. Backend Setup
+## One-Command Deployment
 
-1.  Copy the backend code to `/var/www/musig_elgg/010_backend`.
-2.  Install dependencies:
-    ```bash
-    cd /var/www/musig_elgg/010_backend
-    npm install
-    ```
-3.  Configure `.env` file with your database credentials.
-4.  Run Prisma migrations:
-    ```bash
-    npx prisma migrate deploy
-    ```
-5.  Setup Systemd:
-    ```bash
-    sudo cp deployment/musig_elgg-backend.service /etc/systemd/system/
-    sudo systemctl daemon-reload
-    sudo systemctl enable musig_elgg-backend
-    sudo systemctl start musig_elgg-backend
-    ```
+1. Copy the repository to `/var/www/jan-bretscher/04_musig-elgg/musig_elgg`.
+2. Copy the repo root script to `/var/www/jan-bretscher/04_musig-elgg/deploy.sh` and make it executable:
 
-## 2. Frontend Setup
+```bash
+sudo cp /var/www/jan-bretscher/04_musig-elgg/musig_elgg/deploy.sh /var/www/jan-bretscher/04_musig-elgg/deploy.sh
+sudo chmod +x /var/www/jan-bretscher/04_musig-elgg/deploy.sh
+```
 
-1.  Copy the frontend code to `/var/www/musig_elgg/020_frontend`.
-2.  Install dependencies:
-    ```bash
-    cd /var/www/musig_elgg/020_frontend
-    npm install
-    # Build the project
-    npm run build
-    ```
-3.  Setup Systemd:
-    ```bash
-    sudo cp deployment/musig_elgg-frontend.service /etc/systemd/system/
-    sudo systemctl daemon-reload
-    sudo systemctl enable musig_elgg-frontend
-    sudo systemctl start musig_elgg-frontend
-    ```
-    *Note: The frontend service uses `npx serve` to host the `dist` folder on port 4000.*
+3. Run the deployment:
 
-## 3. Nginx Configuration (Example)
+```bash
+sudo /var/www/jan-bretscher/04_musig-elgg/deploy.sh
+```
 
-You should configure Nginx to proxy requests to these services.
+The script performs these steps:
+
+- pulls the latest code from `origin/main`
+- installs backend dependencies with `npm ci --omit=dev`
+- runs Prisma generate and deploy migrations
+- installs frontend dependencies with `npm ci`
+- builds the live web frontend
+- syncs the Capacitor Android project
+- builds `app-debug.apk`
+- publishes the APK as `/downloads/musig-elgg-admin.apk`
+- restarts `musig-elgg-backend.service` and `musig-elgg-frontend.service`
+
+The public download page is available at `/download` and links to the generated APK.
+
+## Systemd Services
+
+Install the included unit files:
+
+```bash
+sudo cp deployment/musig_elgg-backend.service /etc/systemd/system/
+sudo cp deployment/musig_elgg-frontend.service /etc/systemd/system/
+sudo systemctl daemon-reload
+sudo systemctl enable musig-elgg-backend.service
+sudo systemctl enable musig-elgg-frontend.service
+```
+
+## Nginx Configuration Example
 
 ```nginx
 server {
     listen 80;
-    server_name your-domain.com;
+    server_name musig-elgg.ch;
 
-    # Frontend
+    location /downloads/ {
+        alias /var/www/jan-bretscher/04_musig-elgg/public/downloads/;
+        add_header Cache-Control "no-store";
+        types {
+            application/vnd.android.package-archive apk;
+        }
+        default_type application/octet-stream;
+    }
+
     location / {
-        proxy_pass http://localhost:4000;
+        proxy_pass http://localhost:3003;
         proxy_http_version 1.1;
         proxy_set_header Upgrade $http_upgrade;
         proxy_set_header Connection 'upgrade';
         proxy_set_header Host $host;
     }
 
-    # Backend API
     location /api {
         proxy_pass http://localhost:3000;
         proxy_http_version 1.1;
@@ -75,26 +92,20 @@ server {
         proxy_set_header Host $host;
     }
 }
+```
 
-## 4. Redis Queue Setup
+## Redis Queue Setup
 
-The application uses Redis for background job processing (Event Reminders).
+The application uses Redis for background job processing.
 
-1.  Start Redis:
-    If you are using Docker, you can use the provided `docker-compose.redis.yml`:
-    ```bash
-    docker-compose -f deployment/docker-compose.redis.yml up -d
-    ```
-    Or install Redis server on your host:
-    ```bash
-    sudo apt install redis-server
-    sudo systemctl enable redis-server
-    sudo systemctl start redis-server
-    ```
+```bash
+docker compose -f deployment/docker-compose.redis.yml up -d
+```
 
-2.  Configure `.env` in `010_backend`:
-    ```
-    REDIS_HOST=localhost
-    REDIS_PORT=6379
-    ```
+Or install Redis directly on the host:
+
+```bash
+sudo apt install redis-server
+sudo systemctl enable redis-server
+sudo systemctl start redis-server
 ```

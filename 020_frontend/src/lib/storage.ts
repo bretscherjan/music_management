@@ -1,4 +1,10 @@
+import { Capacitor } from '@capacitor/core';
+import { Preferences } from '@capacitor/preferences';
+
+// In-memory cache shared by both web (fallback) and native (primary sync store)
 const memoryStore = new Map<string, string>();
+
+const isNative = Capacitor.isNativePlatform();
 
 function canUseLocalStorage(): boolean {
     try {
@@ -11,10 +17,18 @@ function canUseLocalStorage(): boolean {
     }
 }
 
-const hasLocalStorage = typeof window !== 'undefined' && canUseLocalStorage();
+const hasLocalStorage = !isNative && typeof window !== 'undefined' && canUseLocalStorage();
 
 export const storage = {
+    /**
+     * Synchronous read.
+     * - Native: returns from in-memory cache (must call initFromPreferences first).
+     * - Web: reads from localStorage, falls back to memory.
+     */
     getItem(key: string): string | null {
+        if (isNative) {
+            return memoryStore.get(key) ?? null;
+        }
         if (hasLocalStorage) {
             try {
                 return window.localStorage.getItem(key);
@@ -25,30 +39,57 @@ export const storage = {
         return memoryStore.get(key) ?? null;
     },
 
+    /**
+     * Synchronous write.
+     * - Native: writes to memory cache immediately + async to Capacitor Preferences.
+     * - Web: writes to localStorage + memory cache.
+     */
     setItem(key: string, value: string): void {
-        if (hasLocalStorage) {
+        memoryStore.set(key, value);
+        if (isNative) {
+            Preferences.set({ key, value }).catch((err) =>
+                console.error('[storage] Preferences.set failed:', err)
+            );
+        } else if (hasLocalStorage) {
             try {
                 window.localStorage.setItem(key, value);
-                return;
-            } catch {
-                memoryStore.set(key, value);
-                return;
-            }
+            } catch { /* memory already written */ }
         }
-        memoryStore.set(key, value);
     },
 
     removeItem(key: string): void {
-        if (hasLocalStorage) {
+        memoryStore.delete(key);
+        if (isNative) {
+            Preferences.remove({ key }).catch((err) =>
+                console.error('[storage] Preferences.remove failed:', err)
+            );
+        } else if (hasLocalStorage) {
             try {
                 window.localStorage.removeItem(key);
-            } catch {
-                memoryStore.delete(key);
-            }
-            return;
+            } catch { /* ignore */ }
         }
-        memoryStore.delete(key);
-    }
+    },
+
+    /**
+     * Async startup init: loads the given keys from Capacitor Preferences into
+     * the memory cache. Must be awaited before any getItem() call on native.
+     * No-op on web.
+     */
+    async initFromPreferences(keys: string[]): Promise<void> {
+        if (!isNative) return;
+        await Promise.all(
+            keys.map(async (key) => {
+                try {
+                    const { value } = await Preferences.get({ key });
+                    if (value !== null) {
+                        memoryStore.set(key, value);
+                    }
+                } catch (err) {
+                    console.error(`[storage] Failed to load "${key}" from Preferences:`, err);
+                }
+            })
+        );
+    },
 };
 
 export default storage;

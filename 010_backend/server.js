@@ -37,7 +37,13 @@ const corsOrigins = (process.env.CORS_ORIGIN || '')
   .split(',')
   .map(origin => origin.trim())
   .filter(Boolean);
-const resolvedCorsOrigins = corsOrigins.length ? corsOrigins : ['http://localhost:5173'];
+
+// Always allow native Capacitor app origins regardless of env config
+const nativeAppOrigins = ['capacitor://localhost', 'http://localhost'];
+const resolvedCorsOrigins = [
+  ...(corsOrigins.length ? corsOrigins : ['http://localhost:5173']),
+  ...nativeAppOrigins,
+];
 
 if (!corsOrigins.length) {
   console.warn('⚠️  CORS_ORIGIN not set — defaulting to http://localhost:5173');

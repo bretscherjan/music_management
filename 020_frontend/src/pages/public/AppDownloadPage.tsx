@@ -1,4 +1,4 @@
-import { Download, ExternalLink, Smartphone } from 'lucide-react';
+import { Download, Smartphone } from 'lucide-react';
 import { Reveal } from '@/components/ui/Reveal';
 
 const apkUrl = '/downloads/musig-elgg-admin.apk';
@@ -47,15 +47,6 @@ export function AppDownloadPage() {
                                     >
                                         <Download className="h-5 w-5" />
                                         APK herunterladen
-                                    </a>
-                                    <a
-                                        href={apkUrl}
-                                        target="_blank"
-                                        rel="noreferrer"
-                                        className="inline-flex items-center justify-center gap-3 rounded-2xl border border-foreground/10 bg-background px-6 py-4 text-base font-semibold text-foreground transition-colors hover:bg-foreground/5"
-                                    >
-                                        <ExternalLink className="h-5 w-5" />
-                                        Download-Link öffnen
                                     </a>
                                 </div>
 

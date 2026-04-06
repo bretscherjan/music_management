@@ -6,8 +6,10 @@ BACKEND_DIR="$REPO_DIR/010_backend"
 FRONTEND_DIR="$REPO_DIR/020_frontend"
 ANDROID_DIR="$FRONTEND_DIR/android"
 PUBLIC_DOWNLOAD_DIR="${PUBLIC_DOWNLOAD_DIR:-/var/www/jan-bretscher/04_musig-elgg/public/downloads}"
+FRONTEND_DOWNLOAD_DIR="$FRONTEND_DIR/dist/downloads"
 APK_SOURCE="$ANDROID_DIR/app/build/outputs/apk/debug/app-debug.apk"
 APK_TARGET="$PUBLIC_DOWNLOAD_DIR/musig-elgg-admin.apk"
+FRONTEND_APK_TARGET="$FRONTEND_DOWNLOAD_DIR/musig-elgg-admin.apk"
 
 ANDROID_SDK_ROOT="${ANDROID_SDK_ROOT:-/opt/android-sdk}"
 ANDROID_HOME="${ANDROID_HOME:-$ANDROID_SDK_ROOT}"
@@ -41,10 +43,6 @@ if [ ! -d "$ANDROID_SDK_ROOT" ]; then
     exit 1
 fi
 
-if [ ! -x "$ANDROID_DIR/gradlew" ]; then
-    chmod +x "$ANDROID_DIR/gradlew"
-fi
-
 echo "--- Starting full deployment including Android APK ---"
 echo "Repository: $REPO_DIR"
 echo "Android SDK: $ANDROID_SDK_ROOT"
@@ -75,6 +73,7 @@ npx cap sync android
 
 log_step "Building Android debug APK"
 cd "$ANDROID_DIR"
+chmod +x ./gradlew
 ./gradlew --no-daemon clean assembleDebug
 
 if [ ! -f "$APK_SOURCE" ]; then
@@ -83,6 +82,8 @@ if [ ! -f "$APK_SOURCE" ]; then
 fi
 
 log_step "Publishing APK"
+install -d "$FRONTEND_DOWNLOAD_DIR"
+install -m 0644 "$APK_SOURCE" "$FRONTEND_APK_TARGET"
 sudo install -d -o www-data -g www-data "$PUBLIC_DOWNLOAD_DIR"
 sudo install -m 0644 -o www-data -g www-data "$APK_SOURCE" "$APK_TARGET"
 

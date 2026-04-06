@@ -44,9 +44,12 @@ The script performs these steps:
 - syncs the Capacitor Android project
 - builds `app-debug.apk`
 - publishes the APK as `/downloads/musig-elgg-admin.apk`
+- copies the APK both into `020_frontend/dist/downloads` and into `/var/www/jan-bretscher/04_musig-elgg/public/downloads`
 - restarts `musig-elgg-backend.service` and `musig-elgg-frontend.service`
 
 The public download page is available at `/download` and links to the generated APK.
+
+If `/downloads/musig-elgg-admin.apk` ever returns the frontend `index.html`, the request is hitting the SPA fallback instead of a real file. Copying the APK into `dist/downloads` avoids that problem even when the Nginx `location /downloads/` alias is missing or misconfigured.
 
 ## Systemd Services
 

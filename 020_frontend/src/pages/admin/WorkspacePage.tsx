@@ -55,6 +55,7 @@ import {
     TooltipProvider,
 } from '@/components/ui/tooltip';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { cn } from '@/lib/utils';
 
 import { CategoryManager } from '@/components/workspace/CategoryManager';
 import { DraggableTaskItem } from '@/components/workspace/DraggableTaskItem';
@@ -418,33 +419,33 @@ export function WorkspacePage() {
                 </div>
 
                 {/* Tab Navigation */}
-                <div className="flex gap-2 mb-6 border-b border-border pb-2">
-                    <Button
-                        variant={activeTab === 'tasks' ? 'default' : 'ghost'}
-                        onClick={() => setActiveTab('tasks')}
-                        className="gap-2"
-                    >
-                        <ListTodo className="h-4 w-4" />
-                        Tasks
-                        {tasks.length > 0 && (
-                            <span className="ml-1 px-1.5 py-0.5 text-xs bg-white/20 rounded">
-                                {tasks.filter((t: Task) => !t.completed).length}
-                            </span>
-                        )}
-                    </Button>
-                    <Button
-                        variant={activeTab === 'notes' ? 'default' : 'ghost'}
-                        onClick={() => setActiveTab('notes')}
-                        className="gap-2"
-                    >
-                        <FileText className="h-4 w-4" />
-                        Notizen
-                        {notes.length > 0 && (
-                            <span className="ml-1 px-1.5 py-0.5 text-xs bg-white/20 rounded">
-                                {notes.length}
-                            </span>
-                        )}
-                    </Button>
+                <div className="flex items-center gap-2 mb-6">
+                    <div className="segmented-control flex-1 max-w-xs">
+                        <button
+                            onClick={() => setActiveTab('tasks')}
+                            className={cn('segmented-control-option flex items-center gap-1.5', activeTab === 'tasks' && 'is-active')}
+                        >
+                            <ListTodo className="h-3.5 w-3.5" />
+                            Tasks
+                            {tasks.filter((t: Task) => !t.completed).length > 0 && (
+                                <span className="ml-0.5 px-1.5 py-0.5 text-xs bg-primary/15 text-primary rounded-full leading-none">
+                                    {tasks.filter((t: Task) => !t.completed).length}
+                                </span>
+                            )}
+                        </button>
+                        <button
+                            onClick={() => setActiveTab('notes')}
+                            className={cn('segmented-control-option flex items-center gap-1.5', activeTab === 'notes' && 'is-active')}
+                        >
+                            <FileText className="h-3.5 w-3.5" />
+                            Notizen
+                            {notes.length > 0 && (
+                                <span className="ml-0.5 px-1.5 py-0.5 text-xs bg-primary/15 text-primary rounded-full leading-none">
+                                    {notes.length}
+                                </span>
+                            )}
+                        </button>
+                    </div>
 
                     {/* Recording button – visible only when on notes tab */}
                     {activeTab === 'notes' && (
@@ -540,8 +541,14 @@ export function WorkspacePage() {
                                 <div className="animate-spin h-8 w-8 border-2 border-primary border-t-transparent rounded-full" />
                             </div>
                         ) : tasks.length === 0 ? (
-                            <div className="text-center py-12 text-muted-foreground">
-                                Keine Tasks vorhanden. Erstelle einen neuen Task!
+                            <div className="flex flex-col items-center justify-center py-16 gap-4 text-center">
+                                <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center">
+                                    <ListTodo className="h-8 w-8 text-primary" />
+                                </div>
+                                <div>
+                                    <p className="font-semibold text-base">Keine Tasks vorhanden</p>
+                                    <p className="text-sm text-muted-foreground mt-1">Erstelle oben deinen ersten Task!</p>
+                                </div>
                             </div>
                         ) : (
                             <DndContext
@@ -581,7 +588,7 @@ export function WorkspacePage() {
                     activeTab === 'notes' && (
                         <div className="space-y-4">
                             {/* Inline Add Note */}
-                            <div className="p-4 border rounded-lg bg-card space-y-2">
+                            <div className="native-group p-4 space-y-3">
                                 <FormattedInput
                                     value={newNoteTitle}
                                     onChange={setNewNoteTitle}
@@ -614,8 +621,14 @@ export function WorkspacePage() {
                                     <div className="animate-spin h-8 w-8 border-2 border-primary border-t-transparent rounded-full" />
                                 </div>
                             ) : notes.length === 0 ? (
-                                <div className="text-center py-12 text-muted-foreground">
-                                    Keine Notizen vorhanden. Erstelle eine neue Notiz!
+                                <div className="flex flex-col items-center justify-center py-16 gap-4 text-center">
+                                    <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center">
+                                        <FileText className="h-8 w-8 text-primary" />
+                                    </div>
+                                    <div>
+                                        <p className="font-semibold text-base">Keine Notizen vorhanden</p>
+                                        <p className="text-sm text-muted-foreground mt-1">Erstelle oben eine neue Notiz!</p>
+                                    </div>
                                 </div>
                             ) : (
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -687,7 +700,7 @@ export function WorkspacePage() {
                                                 {searchResults.results.tasks.map((task: Task) => (
                                                     <div
                                                         key={task.id}
-                                                        className="p-2 rounded border hover:bg-accent cursor-pointer"
+                                                        className="p-3 rounded-xl border hover:bg-muted/50 cursor-pointer transition-colors"
                                                         onClick={() => {
                                                             setShowSearch(false);
                                                             setActiveTab('tasks');
@@ -711,7 +724,7 @@ export function WorkspacePage() {
                                                 {searchResults.results.notes.map((note: AdminNote) => (
                                                     <div
                                                         key={note.id}
-                                                        className="p-2 rounded border hover:bg-accent cursor-pointer"
+                                                        className="p-3 rounded-xl border hover:bg-muted/50 cursor-pointer transition-colors"
                                                         onClick={() => {
                                                             setShowSearch(false);
                                                             setActiveTab('notes');

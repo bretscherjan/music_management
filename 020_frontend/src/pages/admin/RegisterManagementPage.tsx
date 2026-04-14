@@ -5,10 +5,10 @@ import { userService } from '@/services/userService';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Loader2, Plus, Pencil, Trash2, Users } from 'lucide-react';
+import { Loader2, Plus, Pencil, Trash2, Users, MoreVertical } from 'lucide-react';
 import type { Register } from '@/types/register';
 import { ZoomableTableWrapper } from '@/components/common/ZoomableTableWrapper';
 import { ConfirmDialog } from '@/components/common/ConfirmDialog';
@@ -23,6 +23,7 @@ export function RegisterManagementPage() {
     const [name, setName] = useState('');
     const [assignedUserIds, setAssignedUserIds] = useState<number[]>([]);
     const [error, setError] = useState<string | null>(null);
+    const [actionDrawerRegister, setActionDrawerRegister] = useState<Register | null>(null);
 
     // Fetch Registers
     const { data: registers, isLoading: registersLoading } = useQuery({
@@ -139,86 +140,153 @@ export function RegisterManagementPage() {
     };
 
     return (
-        <div className="space-y-6">
-            <div className="flex items-center justify-between">
+        <div className="space-y-5">
+            {/* Header */}
+            <div className="flex items-center justify-between gap-4 pt-1">
                 <div>
-                    <h1 className="text-3xl font-bold tracking-tight">Registerverwaltung</h1>
-                    <p className="text-muted-foreground">
-                        Stimmen und Instrumentengruppen verwalten
-                    </p>
+                    <h1 className="text-2xl font-bold tracking-tight">Registerverwaltung</h1>
+                    <p className="text-sm text-muted-foreground mt-0.5">Stimmen und Instrumentengruppen verwalten</p>
                 </div>
-                <Button onClick={handleOpenCreate}>
-                    <Plus className="mr-2 h-4 w-4" />
-                    Neues Register
+                <Button onClick={handleOpenCreate} className="gap-1.5 h-11 px-4">
+                    <Plus className="h-4 w-4" />
+                    <span className="hidden sm:inline">Neues Register</span>
                 </Button>
             </div>
 
-            <Card>
-                <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                        <Users className="h-5 w-5" />
-                        Alle Register
-                    </CardTitle>
-                    <CardDescription>
-                        Auflistung aller aktiven Register im Verein
-                    </CardDescription>
-                </CardHeader>
-                <CardContent>
-                    {registersLoading ? (
-                        <div className="text-center py-6">
-                            <Loader2 className="mx-auto h-8 w-8 animate-spin text-primary" />
-                        </div>
-                    ) : (
-                        <ZoomableTableWrapper title="Registerliste">
-                            <Table className="min-w-[500px]">
-                                <TableHeader>
-                                    <TableRow>
-                                        <TableHead>Name</TableHead>
-                                        <TableHead>Mitglieder</TableHead>
-                                        <TableHead className="w-[100px] text-right">Aktionen</TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {registers?.map((register) => (
-                                        <TableRow key={register.id}>
-                                            <TableCell className="font-medium">{register.name}</TableCell>
-                                            <TableCell>{(register as any).memberCount || 0} Mitglieder</TableCell>
-                                            <TableCell className="text-right">
-                                                <div className="flex justify-end gap-2">
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="icon"
-                                                        onClick={() => handleOpenEdit(register)}
-                                                        className="h-8 w-8"
-                                                    >
-                                                        <Pencil className="h-4 w-4" />
-                                                    </Button>
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="icon"
-                                                        onClick={() => handleDelete(register.id)}
-                                                        className="h-8 w-8 text-destructive hover:text-destructive"
-                                                    >
-                                                        <Trash2 className="h-4 w-4" />
-                                                    </Button>
-                                                </div>
-                                            </TableCell>
-                                        </TableRow>
-                                    ))}
-                                    {registers?.length === 0 && (
-                                        <TableRow>
-                                            <TableCell colSpan={3} className="text-center text-muted-foreground">
-                                                Keine Register gefunden
-                                            </TableCell>
-                                        </TableRow>
-                                    )}
-                                </TableBody>
-                            </Table>
-                        </ZoomableTableWrapper>
-                    )}
-                </CardContent>
-            </Card>
+            {/* Mobile card list */}
+            <div className="md:hidden">
+                {registersLoading ? (
+                    <div className="native-group divide-y divide-border/40">
+                        {[1, 2, 3].map((i) => (
+                            <div key={i} className="flex items-center gap-3 p-4">
+                                <div className="h-10 w-10 rounded-xl bg-muted flex-shrink-0" />
+                                <div className="flex-1 space-y-1.5">
+                                    <div className="h-4 bg-muted rounded w-28" />
+                                    <div className="h-3 bg-muted rounded w-20" />
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                ) : !registers?.length ? (
+                    <div className="native-group p-8 text-center text-sm text-muted-foreground">
+                        Keine Register gefunden
+                    </div>
+                ) : (
+                    <div className="native-group divide-y divide-border/40">
+                        {registers.map((register) => (
+                            <div key={register.id} className="flex items-center gap-3 px-4 py-3">
+                                {/* Left: icon */}
+                                <div className="inset-icon bg-primary/10 flex-shrink-0">
+                                    <Users className="h-4 w-4 text-primary" />
+                                </div>
+                                {/* Center */}
+                                <div className="flex-1 min-w-0">
+                                    <p className="font-semibold text-sm">{register.name}</p>
+                                    <p className="text-xs text-muted-foreground">
+                                        {(register as any).memberCount || 0} Mitglieder
+                                    </p>
+                                </div>
+                                {/* Right: 3-dots */}
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-9 w-9 flex-shrink-0"
+                                    onClick={() => setActionDrawerRegister(register)}
+                                >
+                                    <MoreVertical className="h-4 w-4" />
+                                </Button>
+                            </div>
+                        ))}
+                    </div>
+                )}
+            </div>
 
+            {/* Mobile action drawer */}
+            <Sheet open={!!actionDrawerRegister} onOpenChange={(open) => { if (!open) setActionDrawerRegister(null); }}>
+                <SheetContent side="bottom" className="pb-safe-nav">
+                    <SheetHeader className="mb-2">
+                        <SheetTitle className="text-left text-base">{actionDrawerRegister?.name}</SheetTitle>
+                        <p className="text-xs text-muted-foreground text-left">
+                            {(actionDrawerRegister as any)?.memberCount || 0} Mitglieder
+                        </p>
+                    </SheetHeader>
+                    <div className="divide-y divide-border/40">
+                        <Button
+                            variant="ghost"
+                            className="w-full h-12 justify-start gap-3 text-base font-normal"
+                            onClick={() => { if (actionDrawerRegister) { handleOpenEdit(actionDrawerRegister); setActionDrawerRegister(null); } }}
+                        >
+                            <Pencil className="h-4 w-4 text-muted-foreground" />
+                            Bearbeiten
+                        </Button>
+                        <Button
+                            variant="ghost"
+                            className="w-full h-12 justify-start gap-3 text-base font-normal text-destructive hover:text-destructive hover:bg-destructive/10"
+                            onClick={() => { if (actionDrawerRegister) { handleDelete(actionDrawerRegister.id); setActionDrawerRegister(null); } }}
+                        >
+                            <Trash2 className="h-4 w-4" />
+                            Löschen
+                        </Button>
+                    </div>
+                </SheetContent>
+            </Sheet>
+
+            {/* Desktop table */}
+            <div className="hidden md:block native-group overflow-hidden">
+                {registersLoading ? (
+                    <div className="p-6 flex justify-center">
+                        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                    </div>
+                ) : (
+                    <ZoomableTableWrapper title="Registerliste">
+                        <Table className="min-w-[400px]">
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead>Name</TableHead>
+                                    <TableHead>Mitglieder</TableHead>
+                                    <TableHead className="w-[100px] text-right">Aktionen</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {registers?.map((register) => (
+                                    <TableRow key={register.id} className="h-12">
+                                        <TableCell className="font-medium">{register.name}</TableCell>
+                                        <TableCell>{(register as any).memberCount || 0} Mitglieder</TableCell>
+                                        <TableCell className="text-right">
+                                            <div className="flex justify-end gap-2">
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    onClick={() => handleOpenEdit(register)}
+                                                >
+                                                    <Pencil className="h-4 w-4" />
+                                                </Button>
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    onClick={() => handleDelete(register.id)}
+                                                    className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                                                >
+                                                    <Trash2 className="h-4 w-4" />
+                                                </Button>
+                                            </div>
+                                        </TableCell>
+                                    </TableRow>
+                                ))}
+                                {!registers?.length && (
+                                    <TableRow>
+                                        <TableCell colSpan={3} className="h-32 text-center text-muted-foreground">
+                                            Keine Register gefunden
+                                        </TableCell>
+                                    </TableRow>
+                                )}
+                            </TableBody>
+                        </Table>
+                    </ZoomableTableWrapper>
+                )}
+            </div>
+
+            {/* Create / Edit Dialog */}
             <Dialog open={isDialogOpen} onOpenChange={handleClose}>
                 <DialogContent className="max-w-xl max-h-[80vh] overflow-y-auto">
                     <DialogHeader>
@@ -240,11 +308,11 @@ export function RegisterManagementPage() {
 
                         <div className="space-y-2">
                             <Label>Mitglieder zuweisen</Label>
-                            <div className="border rounded-md p-2 h-60 overflow-y-auto space-y-1">
+                            <div className="border rounded-xl p-2 h-60 overflow-y-auto space-y-1">
                                 {users?.map(user => (
                                     <div
                                         key={user.id}
-                                        className={`flex items-center gap-2 p-2 rounded cursor-pointer transition-colors ${assignedUserIds.includes(user.id)
+                                        className={`flex items-center gap-2 p-2 rounded-lg cursor-pointer transition-colors ${assignedUserIds.includes(user.id)
                                             ? 'bg-primary/20 hover:bg-primary/30'
                                             : 'hover:bg-muted'
                                             }`}
@@ -273,7 +341,7 @@ export function RegisterManagementPage() {
                         </div>
 
                         {error && (
-                            <div className="p-3 text-sm text-destructive bg-destructive/10 rounded">
+                            <div className="p-3 text-sm text-destructive bg-destructive/10 rounded-xl">
                                 {error}
                             </div>
                         )}

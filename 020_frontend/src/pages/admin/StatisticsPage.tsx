@@ -1,19 +1,24 @@
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { statsService, type RepertoireStatsParams } from '@/services/statsService';
+import { eventService } from '@/services/eventService';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
-import { Download, Calendar, Filter } from 'lucide-react';
+import {
+    BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend,
+    ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line,
+} from 'recharts';
+import { Download, Calendar, Filter, Music, TrendingUp, BarChart2, Clock, Users, Award, UserX, CalendarDays } from 'lucide-react';
 import { toast } from 'sonner';
 import { ZoomableTableWrapper } from '@/components/common/ZoomableTableWrapper';
 import { PdfExportDialog } from '@/components/ui/PdfExportDialog';
 import type { PdfOptions } from '@/utils/pdfTheme';
+import { cn } from '@/lib/utils';
 
 export function StatisticsPage() {
-    const [activeTab, setActiveTab] = useState<'repertoire' | 'attendance'>('repertoire');
+    const [activeTab, setActiveTab] = useState<'repertoire' | 'attendance' | 'termine'>('repertoire');
     // State for filters
     const [timeRange, setTimeRange] = useState('all'); // all, lastyear, currentyear
     const [eventCategory, setEventCategory] = useState<string>('all');
@@ -51,6 +56,65 @@ export function StatisticsPage() {
         queryFn: () => statsService.getAttendanceStats({ ...getDateParams() }), // Passing category too if needed, though backend currently only uses date for attendance in my impl.
         enabled: activeTab === 'attendance'
     });
+
+    // Fetch all events for Termine Analyse (client-side derived stats)
+    const { data: allEvents, isLoading: isLoadingTermine } = useQuery({
+        queryKey: ['events-stats-all'],
+        queryFn: () => eventService.getAll(),
+        enabled: activeTab === 'termine',
+        staleTime: 5 * 60 * 1000,
+    });
+
+    // ── Derived: Termine Analyse stats ──────────────────────────────────────
+    const todayForStats = new Date();
+    todayForStats.setHours(0, 0, 0, 0);
+
+    const termineKpis = useMemo(() => {
+        if (!allEvents) return null;
+        return {
+            total: allEvents.length,
+            upcoming: allEvents.filter(e => new Date(e.date) >= todayForStats).length,
+            past: allEvents.filter(e => new Date(e.date) < todayForStats).length,
+        };
+    }, [allEvents]);
+
+    const typeDistData = useMemo(() => {
+        if (!allEvents) return [];
+        return [
+            { name: 'Proben', value: allEvents.filter(e => e.category === 'rehearsal').length, color: 'hsl(var(--chart-2))' },
+            { name: 'Auftritte', value: allEvents.filter(e => e.category === 'performance').length, color: 'hsl(var(--chart-1))' },
+            { name: 'Sonstiges', value: allEvents.filter(e => e.category === 'other').length, color: 'hsl(var(--chart-3))' },
+        ].filter(d => d.value > 0);
+    }, [allEvents]);
+
+    const weekdayData = useMemo(() => {
+        const DAYS = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'];
+        return DAYS.map((day, idx) => ({
+            day,
+            count: allEvents?.filter(e => {
+                const d = new Date(e.date).getDay(); // 0=Sun..6=Sat
+                const mon0 = d === 0 ? 6 : d - 1;   // 0=Mon..6=Sun
+                return mon0 === idx;
+            }).length ?? 0,
+        }));
+    }, [allEvents]);
+
+    const monthlyVolumeData = useMemo(() => {
+        if (!allEvents) return [];
+        const counts: Record<string, number> = {};
+        for (const event of allEvents) {
+            const d = new Date(event.date);
+            const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+            counts[key] = (counts[key] ?? 0) + 1;
+        }
+        return Object.entries(counts)
+            .sort(([a], [b]) => a.localeCompare(b))
+            .slice(-24)
+            .map(([month, count]) => ({
+                month: month.substring(5) + '/' + month.substring(2, 4),
+                count,
+            }));
+    }, [allEvents]);
 
     const handleDownloadPdf = async (opts: PdfOptions) => {
         try {
@@ -91,22 +155,29 @@ export function StatisticsPage() {
     // Backend now returns 'topAttendees' pre-sorted for us
     const top10Attendance = attendanceStats?.topAttendees || [];
 
-    // Colors
-    const COLORS = ['var(--color-red-500)', '#f59e0b', '#3b82f6', '#10b981'];
+    // Chart color palette — maps to CSS chart tokens for brand consistency
+    const COLORS = [
+        'hsl(var(--chart-1))',   // Brand Red
+        'hsl(var(--chart-3))',   // Amber
+        'hsl(var(--chart-2))',   // Indigo
+        'hsl(var(--chart-4))',   // Emerald
+    ];
     const ATTENDANCE_COLORS = {
-        'PRESENT': '#10b981', // Green
-        'EXCUSED': '#f59e0b', // Orange
-        'UNEXCUSED': 'var(--color-red-500)' // Red
+        'PRESENT':  'hsl(var(--chart-4))',   // Emerald
+        'EXCUSED':  'hsl(var(--chart-3))',   // Amber
+        'UNEXCUSED':'hsl(var(--chart-1))',   // Brand Red
     };
 
-    const isLoading = activeTab === 'repertoire' ? isLoadingRepertoire : isLoadingAttendance;
+    const isLoading = activeTab === 'repertoire' ? isLoadingRepertoire :
+                      activeTab === 'attendance' ? isLoadingAttendance :
+                      isLoadingTermine;
 
     return (
         <div className="space-y-6 max-w-7xl mx-auto pb-12">
             <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-3xl font-bold tracking-tight">Statistiken</h1>
-                    <p className="text-gray-500">Auswertung von Repertoire und Anwesenheit</p>
+                    <h1 className="text-2xl font-bold tracking-tight">Statistiken</h1>
+                    <p className="text-muted-foreground text-sm">Auswertung von Repertoire und Anwesenheit</p>
                 </div>
                 <div className="flex gap-2 items-center flex-wrap">
                     <Select value={timeRange} onValueChange={setTimeRange}>
@@ -148,35 +219,71 @@ export function StatisticsPage() {
                 </div>
             </div>
 
-            {/* Tabs Navigation */}
-            <div className="flex space-x-1 rounded-xl bg-slate-100 p-1 w-fit">
-                <button
-                    onClick={() => setActiveTab('repertoire')}
-                    className={`w-full rounded-lg py-2.5 px-4 text-sm font-medium leading-5 ring-white ring-opacity-60 ring-offset-2 ring-offset-primary/30 focus:outline-none focus:ring-2 ${activeTab === 'repertoire'
-                        ? 'bg-white text-primary shadow'
-                        : 'text-slate-600 hover:bg-white/[0.12] hover:text-slate-800'
-                        }`}
-                >
-                    Repertoire
-                </button>
-                <button
-                    onClick={() => setActiveTab('attendance')}
-                    className={`w-full rounded-lg py-2.5 px-4 text-sm font-medium leading-5 ring-white ring-opacity-60 ring-offset-2 ring-offset-primary/30 focus:outline-none focus:ring-2 ${activeTab === 'attendance'
-                        ? 'bg-white text-primary shadow'
-                        : 'text-slate-600 hover:bg-white/[0.12] hover:text-slate-800'
-                        }`}
-                >
-                    Anwesenheit
-                </button>
+            {/* Tabs Navigation – Segmented Control */}
+            <div className="overflow-x-auto">
+                <div className="segmented-control">
+                    <button
+                        onClick={() => setActiveTab('repertoire')}
+                        className={`segmented-control-option${activeTab === 'repertoire' ? ' is-active' : ''}`}
+                    >
+                        Repertoire
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('attendance')}
+                        className={`segmented-control-option${activeTab === 'attendance' ? ' is-active' : ''}`}
+                    >
+                        Anwesenheit
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('termine')}
+                        className={`segmented-control-option${activeTab === 'termine' ? ' is-active' : ''}`}
+                    >
+                        Termine
+                    </button>
+                </div>
             </div>
 
-            {isLoading && <div className="p-8 text-center text-gray-500">Laden...</div>}
+            {isLoading && (
+                <div className="flex items-center justify-center py-16">
+                    <div className="flex flex-col items-center gap-3 text-muted-foreground">
+                        <div className="animate-spin h-8 w-8 border-2 border-primary border-t-transparent rounded-full" />
+                        <p className="text-sm">Lade Statistiken...</p>
+                    </div>
+                </div>
+            )}
 
             {!isLoading && activeTab === 'repertoire' && (
                 <div className="space-y-6 animate-in fade-in duration-500">
+
+                    {/* ── KPI Summary Cards ── */}
+                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                        <KpiCard
+                            icon={Music}
+                            label="Stücke im Archiv"
+                            value={repertoireStats?.length ?? 0}
+                            accent
+                        />
+                        <KpiCard
+                            icon={TrendingUp}
+                            label="Meistgespielt"
+                            value={repertoireStats?.[0]?.playCount ?? 0}
+                            sub={repertoireStats?.[0]?.title}
+                        />
+                        <KpiCard
+                            icon={BarChart2}
+                            label="Probe-Einsätze"
+                            value={repertoireStats?.reduce((s, r) => s + r.rehearsalCount, 0) ?? 0}
+                        />
+                        <KpiCard
+                            icon={Award}
+                            label="Auftritte gesamt"
+                            value={repertoireStats?.reduce((s, r) => s + r.performanceCount, 0) ?? 0}
+                        />
+                    </div>
+
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                         {/* Top 10 Chart */}
-                        <Card className="lg:col-span-2">
+                        <Card className="lg:col-span-2 shadow-sm rounded-2xl border-slate-100 bg-white">
                             <CardHeader>
                                 <CardTitle>Top 10 Meistgespielte Stücke</CardTitle>
                                 <CardDescription>Basierend auf der Anzahl Einträge in Setlisten</CardDescription>
@@ -197,15 +304,15 @@ export function StatisticsPage() {
                                             labelFormatter={(label, payload) => payload[0]?.payload.fullTitle || label}
                                         />
                                         <Legend />
-                                        <Bar dataKey="rehearsal" stackId="a" fill="#3b82f6" name="Proben" radius={[0, 4, 4, 0]} />
-                                        <Bar dataKey="performance" stackId="a" fill="var(--color-success)" name="Auftritte" radius={[0, 4, 4, 0]} />
+                                        <Bar dataKey="rehearsal" stackId="a" fill="hsl(var(--chart-2))" name="Proben" radius={[0, 4, 4, 0]} />
+                                        <Bar dataKey="performance" stackId="a" fill="hsl(var(--chart-1))" name="Auftritte" radius={[0, 4, 4, 0]} />
                                     </BarChart>
                                 </ResponsiveContainer>
                             </CardContent>
                         </Card>
 
                         {/* Distribution Chart */}
-                        <Card>
+                        <Card className="shadow-sm rounded-2xl border-slate-100 bg-white">
                             <CardHeader>
                                 <CardTitle>Nutzungsverteilung</CardTitle>
                                 <CardDescription>Wie viele Stücke werden wie oft gespielt?</CardDescription>
@@ -219,7 +326,7 @@ export function StatisticsPage() {
                                             cy="50%"
                                             innerRadius={60}
                                             outerRadius={100}
-                                            fill="#8884d8"
+                                            fill="hsl(var(--chart-1))"
                                             paddingAngle={5}
                                             dataKey="value"
                                         >
@@ -236,29 +343,47 @@ export function StatisticsPage() {
                     </div>
 
                     {/* Data Table */}
-                    <Card>
+                    <Card className="shadow-sm rounded-2xl border-slate-100">
                         <CardContent className="p-0">
                             <ZoomableTableWrapper title="Detailliste: Repertoire">
                                 <table className="w-full text-sm">
-                                    <thead className="bg-slate-50 border-b">
+                                    <thead className="bg-muted/40 border-b">
                                         <tr>
-                                            <th className="h-12 px-4 text-left font-medium text-slate-500">Titel</th>
-                                            <th className="h-12 px-4 text-left font-medium text-slate-500">Komponist</th>
-                                            <th className="h-12 px-4 text-right font-medium text-slate-500">Proben</th>
-                                            <th className="h-12 px-4 text-right font-medium text-slate-500">Auftritte</th>
-                                            <th className="h-12 px-4 text-right font-medium text-slate-500">Gesamt</th>
-                                            <th className="h-12 px-4 text-right font-medium text-slate-500">Zuletzt</th>
+                                            <th className="h-11 px-4 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">Titel</th>
+                                            <th className="h-11 px-4 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground hidden sm:table-cell">Komponist</th>
+                                            <th className="h-11 px-4 text-right text-xs font-semibold uppercase tracking-wide text-muted-foreground">Proben</th>
+                                            <th className="h-11 px-4 text-right text-xs font-semibold uppercase tracking-wide text-muted-foreground hidden sm:table-cell">Auftritte</th>
+                                            <th className="h-11 px-4 text-right text-xs font-semibold uppercase tracking-wide text-muted-foreground">Gesamt</th>
+                                            <th className="h-11 px-4 text-right text-xs font-semibold uppercase tracking-wide text-muted-foreground hidden md:table-cell">Zuletzt</th>
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        {repertoireStats?.slice(0, 50).map((item) => (
-                                            <tr key={item.id} className="border-b transition-colors hover:bg-muted/50 even:bg-muted/30">
-                                                <td className="p-4 font-medium">{item.title}</td>
-                                                <td className="p-4 text-slate-500">{item.composer || '-'}</td>
-                                                <td className="p-4 text-right">{item.rehearsalCount}</td>
-                                                <td className="p-4 text-right">{item.performanceCount}</td>
-                                                <td className="p-4 text-right font-bold">{item.playCount}</td>
-                                                <td className="p-4 text-right text-slate-500">
+                                        {repertoireStats?.slice(0, 50).map((item, idx) => (
+                                            <tr key={item.id} className={cn(
+                                                "border-b transition-colors hover:bg-muted/50",
+                                                idx % 2 === 0 ? '' : 'bg-muted/20'
+                                            )}>
+                                                <td className="p-4 font-medium max-w-[160px]">
+                                                    <div className="flex items-start gap-2">
+                                                        <span className="w-5 h-5 flex-shrink-0 rounded-full bg-primary/10 text-primary text-[10px] font-bold flex items-center justify-center mt-0.5">
+                                                            {idx + 1}
+                                                        </span>
+                                                        <div className="min-w-0">
+                                                            <p className="truncate">{item.title}</p>
+                                                            <p className="text-xs text-muted-foreground sm:hidden">{item.composer || '-'}</p>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td className="p-4 text-muted-foreground hidden sm:table-cell">{item.composer || '-'}</td>
+                                                <td className="p-4 text-right tabular-nums">{item.rehearsalCount}</td>
+                                                <td className="p-4 text-right tabular-nums hidden sm:table-cell">{item.performanceCount}</td>
+                                                <td className="p-4 text-right">
+                                                    <span className={cn(
+                                                        "font-bold tabular-nums",
+                                                        item.playCount >= 10 ? "text-primary" : "text-foreground"
+                                                    )}>{item.playCount}</span>
+                                                </td>
+                                                <td className="p-4 text-right text-muted-foreground hidden md:table-cell">
                                                     {item.lastPlayed ? new Date(item.lastPlayed).toLocaleDateString('de-CH') : '-'}
                                                 </td>
                                             </tr>
@@ -267,7 +392,7 @@ export function StatisticsPage() {
                                 </table>
                             </ZoomableTableWrapper>
                             {repertoireStats && repertoireStats.length > 50 && (
-                                <div className="text-center p-4 text-xs text-slate-400">
+                                <div className="text-center p-4 text-xs text-muted-foreground">
                                     Zeige die ersten 50 von {repertoireStats.length} Einträgen. Nutzen Sie den PDF Export für die volle Liste.
                                 </div>
                             )}
@@ -278,9 +403,27 @@ export function StatisticsPage() {
 
             {!isLoading && activeTab === 'attendance' && (
                 <div className="space-y-6 animate-in fade-in duration-500">
+
+                    {/* ── KPI Summary Cards ── */}
+                    {attendanceStats?.attendees && attendanceStats.attendees.length > 0 && (() => {
+                        const attendees = attendanceStats.attendees;
+                        const avgRate = Math.round(attendees.reduce((s, a) => s + a.rate, 0) / attendees.length);
+                        const totalPresent = attendees.reduce((s, a) => s + a.present, 0);
+                        const totalExcused = attendees.reduce((s, a) => s + a.excused, 0);
+                        const totalUnexcused = attendees.reduce((s, a) => s + a.unexcused, 0);
+                        return (
+                            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                                <KpiCard icon={Users} label="⌀ Anwesenheitsquote" value={`${avgRate}%`} accent />
+                                <KpiCard icon={Award} label="Anwesend gesamt" value={totalPresent} />
+                                <KpiCard icon={Clock} label="Entschuldigt" value={totalExcused} />
+                                <KpiCard icon={UserX} label="Unentschuldigt" value={totalUnexcused} warn={totalUnexcused > 0} />
+                            </div>
+                        );
+                    })()}
+
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                         {/* Attendance Distribution */}
-                        <Card>
+                        <Card className="shadow-sm rounded-2xl border-slate-100 bg-white">
                             <CardHeader>
                                 <CardTitle>Anwesenheitsquote</CardTitle>
                                 <CardDescription>Verteilung der verifizierten Anwesenheiten</CardDescription>
@@ -308,7 +451,7 @@ export function StatisticsPage() {
                                         </PieChart>
                                     </ResponsiveContainer>
                                 ) : (
-                                    <div className="h-full flex items-center justify-center text-gray-400">
+                                    <div className="h-full flex items-center justify-center text-muted-foreground">
                                         Keine Daten verfügbar
                                     </div>
                                 )}
@@ -316,7 +459,7 @@ export function StatisticsPage() {
                         </Card>
 
                         {/* Top Attendees Chart (still relevant to visualize "top") */}
-                        <Card className="lg:col-span-2">
+                        <Card className="lg:col-span-2 shadow-sm rounded-2xl border-slate-100 bg-white">
                             <CardHeader>
                                 <CardTitle>Top Anwesende</CardTitle>
                                 <CardDescription>Mitglieder mit den meisten verifizierten Anwesenheiten</CardDescription>
@@ -337,7 +480,7 @@ export function StatisticsPage() {
                                         </BarChart>
                                     </ResponsiveContainer>
                                 ) : (
-                                    <div className="h-full flex items-center justify-center text-gray-400">
+                                    <div className="h-full flex items-center justify-center text-muted-foreground">
                                         Keine Daten verfügbar
                                     </div>
                                 )}
@@ -346,35 +489,45 @@ export function StatisticsPage() {
                     </div>
 
                     {/* NEW: Full Attendance Table */}
-                    <Card>
+                    <Card className="shadow-sm rounded-2xl border-slate-100">
                         <CardContent className="p-0">
                             <ZoomableTableWrapper title="Detailliste: Anwesenheit">
                                 <table className="w-full text-sm">
-                                    <thead className="bg-[#2B75A0] text-white">
+                                    <thead className="bg-muted/40 border-b">
                                         <tr>
-                                            <th className="h-10 px-4 text-left font-bold">Name</th>
-                                            <th className="h-10 px-4 text-left font-bold">Register</th>
-                                            <th className="h-10 px-4 text-left font-bold">Rate</th>
-                                            <th className="h-10 px-4 text-right font-bold">Anwesend</th>
-                                            <th className="h-10 px-4 text-right font-bold">Entschuldigt</th>
-                                            <th className="h-10 px-4 text-right font-bold">Unentschuldigt</th>
-                                            <th className="h-10 px-4 text-right font-bold">Total</th>
+                                            <th className="h-11 px-4 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">Name</th>
+                                            <th className="h-11 px-4 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground hidden sm:table-cell">Register</th>
+                                            <th className="h-11 px-4 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">Rate</th>
+                                            <th className="h-11 px-4 text-right text-xs font-semibold uppercase tracking-wide text-muted-foreground">Anwesend</th>
+                                            <th className="h-11 px-4 text-right text-xs font-semibold uppercase tracking-wide text-muted-foreground hidden sm:table-cell">Entschuldigt</th>
+                                            <th className="h-11 px-4 text-right text-xs font-semibold uppercase tracking-wide text-muted-foreground hidden sm:table-cell">Unentschuldigt</th>
+                                            <th className="h-11 px-4 text-right text-xs font-semibold uppercase tracking-wide text-muted-foreground hidden md:table-cell">Total</th>
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        {attendanceStats?.attendees?.map((item) => (
-                                            <tr key={item.id} className="border-b transition-colors hover:bg-muted/50 even:bg-muted/30">
-                                                <td className="p-3 font-medium flex items-center gap-3">
-                                                    {item.name}
-                                                </td>
-                                                <td className="p-3 text-slate-700">{item.register || '-'}</td>
-                                                <td className="p-3 font-medium">{item.rate}%</td>
-                                                <td className="p-3 text-right">{item.present}</td>
-                                                <td className="p-3 text-right">{item.excused}</td>
-                                                <td className="p-3 text-right">{item.unexcused}</td>
-                                                <td className="p-3 text-right font-bold text-slate-900">{item.total}</td>
-                                            </tr>
-                                        ))}
+                                        {attendanceStats?.attendees?.map((item) => {
+                                            const rateColor = item.rate >= 80 ? 'text-emerald-600' : item.rate >= 60 ? 'text-amber-600' : 'text-red-500';
+                                            return (
+                                                <tr key={item.id} className="border-b transition-colors hover:bg-muted/50">
+                                                    <td className="p-3 font-medium">
+                                                        <div>
+                                                            <p>{item.name}</p>
+                                                            <p className="text-xs text-muted-foreground sm:hidden">{item.register || '-'}</p>
+                                                        </div>
+                                                    </td>
+                                                    <td className="p-3 text-muted-foreground hidden sm:table-cell">{item.register || '-'}</td>
+                                                    <td className="p-3">
+                                                        <span className={cn("font-semibold tabular-nums", rateColor)}>
+                                                            {item.rate}%
+                                                        </span>
+                                                    </td>
+                                                    <td className="p-3 text-right tabular-nums text-emerald-700 font-medium">{item.present}</td>
+                                                    <td className="p-3 text-right tabular-nums text-amber-600 hidden sm:table-cell">{item.excused}</td>
+                                                    <td className="p-3 text-right tabular-nums text-red-500 hidden sm:table-cell">{item.unexcused}</td>
+                                                    <td className="p-3 text-right font-bold text-foreground hidden md:table-cell">{item.total}</td>
+                                                </tr>
+                                            );
+                                        })}
                                     </tbody>
                                 </table>
                             </ZoomableTableWrapper>
@@ -382,6 +535,162 @@ export function StatisticsPage() {
                     </Card>
                 </div>
             )}
+
+            {!isLoading && activeTab === 'termine' && (
+                <div className="space-y-6 animate-in fade-in duration-500">
+
+                    {/* ── KPI Summary Cards ── */}
+                    {termineKpis && (
+                        <div className="grid grid-cols-3 gap-3">
+                            <KpiCard
+                                icon={CalendarDays}
+                                label="Termine gesamt"
+                                value={termineKpis.total}
+                                accent
+                            />
+                            <KpiCard
+                                icon={Clock}
+                                label="Bevorstehend"
+                                value={termineKpis.upcoming}
+                            />
+                            <KpiCard
+                                icon={Award}
+                                label="Vergangen"
+                                value={termineKpis.past}
+                            />
+                        </div>
+                    )}
+
+                    {/* Event type distribution + Weekday analysis */}
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <Card className="shadow-sm rounded-2xl border-slate-100 bg-white">
+                            <CardHeader>
+                                <CardTitle>Termintypen</CardTitle>
+                                <CardDescription>Verteilung der Veranstaltungstypen</CardDescription>
+                            </CardHeader>
+                            <CardContent className="h-[300px]">
+                                {typeDistData.length > 0 ? (
+                                    <ResponsiveContainer width="100%" height="100%">
+                                        <PieChart>
+                                            <Pie
+                                                data={typeDistData}
+                                                cx="50%"
+                                                cy="45%"
+                                                innerRadius={60}
+                                                outerRadius={100}
+                                                paddingAngle={4}
+                                                dataKey="value"
+                                            >
+                                                {typeDistData.map((entry, index) => (
+                                                    <Cell key={`cell-${index}`} fill={entry.color} />
+                                                ))}
+                                            </Pie>
+                                            <RechartsTooltip formatter={(v: any, name: any) => [v, name]} />
+                                            <Legend layout="horizontal" verticalAlign="bottom" align="center" />
+                                        </PieChart>
+                                    </ResponsiveContainer>
+                                ) : (
+                                    <div className="h-full flex items-center justify-center text-muted-foreground text-sm">
+                                        Keine Daten verfügbar
+                                    </div>
+                                )}
+                            </CardContent>
+                        </Card>
+
+                        <Card className="shadow-sm rounded-2xl border-slate-100 bg-white">
+                            <CardHeader>
+                                <CardTitle>Wochentag-Analyse</CardTitle>
+                                <CardDescription>An welchen Wochentagen finden die meisten Termine statt?</CardDescription>
+                            </CardHeader>
+                            <CardContent className="h-[300px]">
+                                <ResponsiveContainer width="100%" height="100%">
+                                    <BarChart data={weekdayData} margin={{ top: 5, right: 16, left: -16, bottom: 5 }}>
+                                        <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                                        <XAxis dataKey="day" tick={{ fontSize: 12 }} />
+                                        <YAxis allowDecimals={false} tick={{ fontSize: 11 }} />
+                                        <RechartsTooltip formatter={(v: any) => [v, 'Termine']} />
+                                        <Bar dataKey="count" name="Termine" radius={[4, 4, 0, 0]}>
+                                            {weekdayData.map((entry, index) => (
+                                                <Cell
+                                                    key={`cell-${index}`}
+                                                    fill={entry.count === Math.max(...weekdayData.map(d => d.count))
+                                                        ? 'hsl(var(--chart-1))'
+                                                        : 'hsl(var(--chart-1) / 0.45)'}
+                                                />
+                                            ))}
+                                        </Bar>
+                                    </BarChart>
+                                </ResponsiveContainer>
+                            </CardContent>
+                        </Card>
+                    </div>
+
+                    {/* Monthly Volume Line Chart */}
+                    <Card className="shadow-sm rounded-2xl border-slate-100 bg-white">
+                        <CardHeader>
+                            <CardTitle>Monatliches Volumen</CardTitle>
+                            <CardDescription>Anzahl Termine pro Monat (letzte 24 Monate)</CardDescription>
+                        </CardHeader>
+                        <CardContent className="h-[260px]">
+                            {monthlyVolumeData.length > 0 ? (
+                                <ResponsiveContainer width="100%" height="100%">
+                                    <LineChart data={monthlyVolumeData} margin={{ top: 5, right: 16, left: -16, bottom: 5 }}>
+                                        <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                                        <XAxis dataKey="month" tick={{ fontSize: 11 }} interval="preserveStartEnd" />
+                                        <YAxis allowDecimals={false} tick={{ fontSize: 11 }} />
+                                        <RechartsTooltip formatter={(v: any) => [v, 'Termine']} />
+                                        <Line
+                                            type="monotone"
+                                            dataKey="count"
+                                            stroke="hsl(var(--chart-1))"
+                                            strokeWidth={2.5}
+                                            dot={{ r: 3, fill: 'hsl(var(--chart-1))' }}
+                                            activeDot={{ r: 5 }}
+                                            name="Termine"
+                                        />
+                                    </LineChart>
+                                </ResponsiveContainer>
+                            ) : (
+                                <div className="h-full flex items-center justify-center text-muted-foreground text-sm">
+                                    Keine Daten verfügbar
+                                </div>
+                            )}
+                        </CardContent>
+                    </Card>
+                </div>
+            )}
+        </div>
+    );
+}
+
+// ── KPI Card sub-component ─────────────────────────────────────────────────────
+
+interface KpiCardProps {
+    icon: React.ElementType;
+    label: string;
+    value: string | number;
+    sub?: string;
+    accent?: boolean;
+    warn?: boolean;
+}
+
+function KpiCard({ icon: Icon, label, value, sub, accent, warn }: KpiCardProps) {
+    return (
+        <div className={cn(
+            "rounded-2xl border border-slate-100 shadow-sm p-4 flex flex-col gap-1 bg-white",
+            accent && "border-primary/20 bg-primary/5"
+        )}>
+            <div className="flex items-center gap-2 text-muted-foreground">
+                <Icon className={cn("w-4 h-4", accent && "text-primary", warn && "text-red-500")} />
+                <span className="text-xs font-medium uppercase tracking-wide truncate">{label}</span>
+            </div>
+            <p className={cn(
+                "text-2xl font-extrabold tracking-tight tabular-nums",
+                accent ? "text-primary" : warn ? "text-red-500" : "text-foreground"
+            )}>
+                {value}
+            </p>
+            {sub && <p className="text-xs text-muted-foreground truncate">{sub}</p>}
         </div>
     );
 }

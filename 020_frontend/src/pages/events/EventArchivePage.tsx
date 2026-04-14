@@ -1,14 +1,12 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Link, useSearchParams } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { eventService } from '@/services/eventService';
-import { useCan } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
-import { Clock, Plus, HelpCircle, Archive } from 'lucide-react';
+import { Clock, HelpCircle, ChevronLeft, Archive } from 'lucide-react';
 import type { Event, EventCategory } from '@/types';
-import { CalendarExportDialog } from '@/components/events/CalendarExportDialog';
 import { EventListItem } from '@/components/events/EventListItem';
 
 const categories: { value: EventCategory | 'all'; label: string }[] = [
@@ -28,10 +26,7 @@ function groupByMonth(events: Event[]): Array<{ monthLabel: string; events: Even
     return Array.from(groups.entries()).map(([monthLabel, evs]) => ({ monthLabel, events: evs }));
 }
 
-export function EventListPage() {
-    const can = useCan();
-    const [searchParams] = useSearchParams();
-    const eventIdParam = searchParams.get('id');
+export function EventArchivePage() {
     const [selectedCategory, setSelectedCategory] = useState<EventCategory | 'all'>('all');
 
     const { data: events, isLoading, error } = useQuery({
@@ -41,60 +36,32 @@ export function EventListPage() {
         ),
     });
 
-    useEffect(() => {
-        if (eventIdParam && events) {
-            const timer = setTimeout(() => {
-                const element = document.getElementById(`event-${eventIdParam}`);
-                if (element) {
-                    element.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                    element.classList.add('ring-2', 'ring-primary', 'ring-offset-2', 'transition-all');
-                    setTimeout(() => {
-                        element.classList.remove('ring-2', 'ring-primary', 'ring-offset-2');
-                    }, 5000);
-                }
-            }, 500);
-            return () => clearTimeout(timer);
-        }
-    }, [eventIdParam, events]);
-
-    const filteredEvents = events?.filter(event => {
-        if (selectedCategory === 'all') return true;
-        return event.category === selectedCategory;
-    }) || [];
-
-    const sortedEvents = [...filteredEvents].sort(
-        (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
-    );
-
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    const upcomingEvents = sortedEvents.filter(e => new Date(e.date) >= today);
-    const pastEvents = sortedEvents.filter(e => new Date(e.date) < today).reverse();
-    const recentPastEvents = pastEvents.slice(0, 3);
-    const upcomingByMonth = groupByMonth(upcomingEvents);
+
+    const pastEvents = [...(events?.filter(e => new Date(e.date) < today) || [])]
+        .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
+    const groupedByMonth = groupByMonth(pastEvents);
 
     return (
         <div className="space-y-5">
             {/* Header */}
-            <div className="flex items-center justify-between gap-4 pt-1">
+            <div className="flex items-center gap-3 pt-1">
+                <Link to="/member/events">
+                    <Button variant="ghost" size="icon" className="h-8 w-8 -ml-2">
+                        <ChevronLeft className="h-5 w-5" />
+                    </Button>
+                </Link>
                 <div>
-                    <h1 className="text-2xl font-bold tracking-tight">Termine</h1>
-                    <p className="text-sm text-muted-foreground mt-0.5">Veranstaltungen &amp; Proben</p>
-                </div>
-                <div className="flex items-center gap-2 flex-shrink-0">
-                    <CalendarExportDialog events={filteredEvents} />
-                    {can('events:write') && (
-                        <Link to="/member/admin/events/new">
-                            <Button size="sm" className="gap-1.5">
-                                <Plus className="h-4 w-4" />
-                                <span className="hidden sm:inline">Neuer Termin</span>
-                            </Button>
-                        </Link>
-                    )}
+                    <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2">
+                        <Archive className="h-6 w-6 text-muted-foreground" /> Archiv
+                    </h1>
+                    <p className="text-sm text-muted-foreground mt-0.5">Alle vergangenen Termine</p>
                 </div>
             </div>
 
-            {/* Category Filter – Segmented Control */}
+            {/* Category Filter */}
             <div className="overflow-x-auto">
                 <div className="segmented-control">
                     {categories.map((cat) => (
@@ -109,10 +76,10 @@ export function EventListPage() {
                 </div>
             </div>
 
-            {/* Events List */}
+            {/* Archive List */}
             {isLoading ? (
                 <div className="native-group divide-y divide-border/50">
-                    {[1, 2, 3, 4].map((i) => (
+                    {[1, 2, 3, 4, 5].map((i) => (
                         <div key={i} className="flex items-center gap-4 p-4">
                             <Skeleton className="h-14 w-12 rounded-xl flex-shrink-0" />
                             <div className="flex-1 space-y-2">
@@ -130,36 +97,26 @@ export function EventListPage() {
                         Erneut versuchen
                     </Button>
                 </div>
-            ) : upcomingEvents.length === 0 && pastEvents.length === 0 ? (
+            ) : groupedByMonth.length === 0 ? (
                 <div className="native-group p-10 text-center">
                     <Clock className="h-10 w-10 text-muted-foreground mx-auto mb-3 opacity-20" />
-                    <p className="text-sm text-muted-foreground">Keine Termine in dieser Kategorie</p>
+                    <p className="text-sm text-muted-foreground">Keine vergangenen Termine in dieser Kategorie</p>
                 </div>
             ) : (
                 <div className="space-y-6">
-                    {/* Upcoming events grouped by month */}
-                    {upcomingByMonth.map(({ monthLabel, events: monthEvents }) => (
+                    {groupedByMonth.map(({ monthLabel, events: monthEvents }) => (
                         <section key={monthLabel} className="space-y-2">
                             <p className="native-section-label">{monthLabel}</p>
                             <div className="native-group divide-y divide-border/40">
                                 {monthEvents.map((event) => (
-                                    <EventListItem key={event.id} event={event} isLocked={false} />
+                                    <EventListItem key={event.id} event={event} isLocked={true} />
                                 ))}
                             </div>
                         </section>
                     ))}
-
-                    {/* Last 3 past events + archive link */}
-                    {recentPastEvents.length > 0 && (
-                        <section className="space-y-2">
-                            <Link to="/member/events/archiv">
-                                <div className="flex items-center justify-center gap-2 py-3 text-sm font-medium text-primary hover:underline">
-                                    <Archive className="h-4 w-4" />
-                                    Archiv – alle {pastEvents.length} vergangenen Termine
-                                </div>
-                            </Link>
-                        </section>
-                    )}
+                    <p className="text-center text-xs text-muted-foreground pb-4">
+                        {pastEvents.length} vergangene Termine
+                    </p>
                 </div>
             )}
         </div>

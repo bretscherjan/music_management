@@ -44,7 +44,7 @@ export function GalleryPage() {
             <div className="container-app">
                 <header className="mb-20 text-center px-4">
                     <h1 className="text-4xl md:text-6xl font-extrabold text-foreground mb-6 tracking-tighter">
-                        Unsere Galerie
+                        Galerie
                     </h1>
                     <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
                         Ein kleiner Einblick in unser Vereinsleben, unsere Proben und unsere Auftritte.

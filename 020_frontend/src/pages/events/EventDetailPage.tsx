@@ -2,7 +2,6 @@ import { useParams, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { eventService } from '@/services/eventService';
 import { useCan } from '@/context/AuthContext';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -28,33 +27,29 @@ export function EventDetailPage() {
 
     if (isLoading) {
         return (
-            <div className="space-y-6">
+            <div className="space-y-4">
                 <Skeleton className="h-8 w-48" />
-                <Card>
-                    <CardContent className="p-6">
-                        <Skeleton className="h-6 w-3/4 mb-4" />
-                        <Skeleton className="h-4 w-1/2 mb-2" />
-                        <Skeleton className="h-4 w-1/3" />
-                    </CardContent>
-                </Card>
+                <div className="native-group p-6 space-y-4">
+                    <Skeleton className="h-6 w-3/4" />
+                    <Skeleton className="h-4 w-1/2" />
+                    <Skeleton className="h-4 w-1/3" />
+                </div>
             </div>
         );
     }
 
     if (error || !event) {
         return (
-            <div className="space-y-6">
+            <div className="space-y-4">
                 <Link to="/member/events">
-                    <Button variant="ghost">
+                    <Button variant="ghost" size="sm" className="text-primary">
                         <ArrowLeft className="h-4 w-4 mr-2" />
                         Zurück
                     </Button>
                 </Link>
-                <Card>
-                    <CardContent className="p-6 text-center text-destructive">
-                        Termin nicht gefunden
-                    </CardContent>
-                </Card>
+                <div className="native-group p-6 text-center text-destructive text-sm">
+                    Termin nicht gefunden
+                </div>
             </div>
         );
     }
@@ -66,81 +61,83 @@ export function EventDetailPage() {
     };
 
     return (
-        <div className="space-y-6">
-            {/* Header */}
-            <div className="flex items-center justify-between flex-wrap gap-4">
+        <div className="space-y-4">
+            {/* Navigation */}
+            <div className="flex items-center justify-between gap-4">
                 <Link to="/member/events">
-                    <Button variant="ghost" size="sm">
-                        <ArrowLeft className="h-4 w-4 mr-2" />
-                        Zurück zur Liste
+                    <Button variant="ghost" size="sm" className="text-primary gap-1.5">
+                        <ArrowLeft className="h-4 w-4" />
+                        Zurück
                     </Button>
                 </Link>
-
                 {canManageEvent && (
                     <Link to={`/member/admin/events/${event.id}/edit`}>
-                        <Button variant="outline" size="sm">
-                            <Edit className="h-4 w-4 mr-2" />
+                        <Button variant="ghost" size="sm" className="btn-tinted-primary gap-1.5">
+                            <Edit className="h-4 w-4" />
                             Bearbeiten
                         </Button>
                     </Link>
                 )}
             </div>
 
-            {/* Event Details */}
-            <Card>
-                <CardHeader>
-                    <div className="flex items-start justify-between gap-4">
-                        <div className="space-y-2">
-                            <div className="flex items-center gap-2 flex-wrap">
-                                <CardTitle className="text-2xl">{event.title}</CardTitle>
-                                <Badge variant={categoryVariant[event.category]}>
-                                    {getCategoryLabel(event.category)}
-                                </Badge>
+            {/* Event Details Card */}
+            <div className="native-group">
+                {/* Title */}
+                <div className="px-4 pt-4 pb-3 border-b border-border/40">
+                    <div className="flex items-start gap-3 flex-wrap">
+                        <h1 className="text-xl font-bold flex-1">{event.title}</h1>
+                        <Badge variant={categoryVariant[event.category]}>
+                            {getCategoryLabel(event.category)}
+                        </Badge>
+                    </div>
+                </div>
+
+                {/* Info Rows */}
+                <div className="divide-y divide-border/40">
+                    <div className="flex items-center gap-3 px-4 py-3">
+                        <div className="inset-icon bg-primary/10">
+                            <Calendar className="h-4 w-4 text-primary" />
+                        </div>
+                        <div>
+                            <div className="text-xs text-muted-foreground">Datum</div>
+                            <div className="font-medium text-sm">{formatDate(event.date)}</div>
+                        </div>
+                    </div>
+
+                    <div className="flex items-center gap-3 px-4 py-3">
+                        <div className="inset-icon bg-primary/10">
+                            <Clock className="h-4 w-4 text-primary" />
+                        </div>
+                        <div>
+                            <div className="text-xs text-muted-foreground">Uhrzeit</div>
+                            <div className="font-medium text-sm">
+                                {formatTime(event.startTime)} – {formatTime(event.endTime)}
                             </div>
                         </div>
                     </div>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                    {/* Date & Time */}
-                    <div className="grid gap-4 sm:grid-cols-2">
-                        <div className="flex items-center gap-3 text-muted-foreground">
-                            <Calendar className="h-5 w-5 text-primary" />
+
+                    {event.location && (
+                        <div className="flex items-center gap-3 px-4 py-3">
+                            <div className="inset-icon bg-primary/10">
+                                <MapPin className="h-4 w-4 text-primary" />
+                            </div>
                             <div>
-                                <div className="font-medium text-foreground">{formatDate(event.date)}</div>
-                                <div className="text-sm">Datum</div>
+                                <div className="text-xs text-muted-foreground">Ort</div>
+                                <div className="font-medium text-sm">{event.location}</div>
                             </div>
-                        </div>
-
-                        <div className="flex items-center gap-3 text-muted-foreground">
-                            <Clock className="h-5 w-5 text-primary" />
-                            <div>
-                                <div className="font-medium text-foreground">
-                                    {formatTime(event.startTime)} - {formatTime(event.endTime)}
-                                </div>
-                                <div className="text-sm">Uhrzeit</div>
-                            </div>
-                        </div>
-
-                        {event.location && (
-                            <div className="flex items-center gap-3 text-muted-foreground sm:col-span-2">
-                                <MapPin className="h-5 w-5 text-primary" />
-                                <div>
-                                    <div className="font-medium text-foreground">{event.location}</div>
-                                    <div className="text-sm">Ort</div>
-                                </div>
-                            </div>
-                        )}
-                    </div>
-
-                    {/* Description */}
-                    {event.description && (
-                        <div className="pt-4 border-t">
-                            <h3 className="font-medium mb-2">Beschreibung</h3>
-                            <div className="text-muted-foreground whitespace-pre-wrap">{renderMarkdown(event.description)}</div>
                         </div>
                     )}
-                </CardContent>
-            </Card>
+
+                    {event.description && (
+                        <div className="px-4 py-4">
+                            <p className="native-section-label mb-2">Beschreibung</p>
+                            <div className="text-sm text-muted-foreground leading-relaxed">
+                                {renderMarkdown(event.description)}
+                            </div>
+                        </div>
+                    )}
+                </div>
+            </div>
 
             {/* Setlist Section - Only if enabled */}
             {event.setlistEnabled && (
@@ -157,7 +154,7 @@ export function EventDetailPage() {
 
             {/* Verification Section (Admin Only) */}
             {canAdminEvent && (
-                <div className="mt-8">
+                <div className="mt-4">
                     <VerificationSection eventId={event.id} eventDate={event.date} />
                 </div>
             )}

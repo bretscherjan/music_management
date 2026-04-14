@@ -34,7 +34,13 @@ import {
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { Folder, Plus, FileUp, FileDown, Search, Star, Edit2, Trash2 } from 'lucide-react';
+import { Folder, Plus, FileUp, FileDown, Search, Star, Edit2, Trash2, MoreVertical, SlidersHorizontal, Music } from 'lucide-react';
+import {
+    Sheet,
+    SheetContent,
+    SheetHeader,
+    SheetTitle,
+} from '@/components/ui/sheet';
 import { PdfExportDialog } from '@/components/ui/PdfExportDialog';
 import type { PdfOptions } from '@/utils/pdfTheme';
 import { toast } from 'sonner';
@@ -63,6 +69,10 @@ export function SheetMusicManagementPage() {
     const [editDialogOpen, setEditDialogOpen] = useState(false);
     const [csvDialogOpen, setCsvDialogOpen] = useState(false);
     const [selectedSheet, setSelectedSheet] = useState<SheetMusic | null>(null);
+
+    // Mobile UI state (presentation only)
+    const [actionDrawerItem, setActionDrawerItem] = useState<SheetMusic | null>(null);
+    const [filterSheetOpen, setFilterSheetOpen] = useState(false);
 
     // Folder Add Logic
     const [addToFolderDialogOpen, setAddToFolderDialogOpen] = useState(false);
@@ -247,96 +257,23 @@ export function SheetMusicManagementPage() {
     };
 
     return (
-        <div className="container-app py-8">
-            <div className="mb-6">
-                <h1 className="text-3xl font-bold mb-2">Noten-Verwaltung</h1>
-                <p className="text-muted-foreground">
-                    Verwalten Sie das Notenarchiv der Musikgesellschaft
-                </p>
-            </div>
-
-            {/* Filters & Actions */}
-            <div className="mb-6 space-y-4">
-                <div className="flex flex-col md:flex-row gap-4">
-                    {/* Search */}
-                    <div className="flex-1 relative">
-                        <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                        <Input
-                            placeholder="Titel, Komponist, Arrangeur suchen..."
-                            value={search}
-                            onChange={(e) => {
-                                setSearch(e.target.value);
-                                setCurrentPage(1);
-                            }}
-                            className="pl-10"
-                        />
-                    </div>
-
-                    {/* Genre Filter */}
-                    <Select value={genreFilter || 'all'} onValueChange={setGenreFilter}>
-                        <SelectTrigger className="w-[180px]">
-                            <SelectValue placeholder="Genre" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="all">Alle Genres</SelectItem>
-                            <SelectItem value="Marsch">Marsch</SelectItem>
-                            <SelectItem value="Polka">Polka</SelectItem>
-                            <SelectItem value="Walzer">Walzer</SelectItem>
-                            <SelectItem value="Pop">Pop</SelectItem>
-                            <SelectItem value="Rock">Rock</SelectItem>
-                            <SelectItem value="Filmmusik">Filmmusik</SelectItem>
-                        </SelectContent>
-                    </Select>
-
-                    {/* Difficulty Filter */}
-                    <Select value={difficultyFilter || 'all'} onValueChange={setDifficultyFilter}>
-                        <SelectTrigger className="w-[180px]">
-                            <SelectValue placeholder="Schwierigkeit" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="all">Alle Schwierigkeiten</SelectItem>
-                            <SelectItem value="easy">Leicht</SelectItem>
-                            <SelectItem value="medium">Mittel</SelectItem>
-                            <SelectItem value="hard">Schwer</SelectItem>
-                        </SelectContent>
-                    </Select>
-
-                    {/* Bookmark Filter */}
-                    <Select value={bookmarkedFilter || 'all'} onValueChange={setBookmarkedFilter}>
-                        <SelectTrigger className="w-[200px]">
-                            <SelectValue placeholder="Markiert von" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="all">Alle</SelectItem>
-                            <SelectItem value={user?.id.toString() || 'all'}>Meine Markierungen</SelectItem>
-                        </SelectContent>
-                    </Select>
-
-                    {/* Sort */}
-                    <Select value={sortBy} onValueChange={setSortBy}>
-                        <SelectTrigger className="w-[180px]">
-                            <SelectValue placeholder="Sortieren" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="title">Titel</SelectItem>
-                            <SelectItem value="composer">Komponist</SelectItem>
-                            <SelectItem value="arranger">Arrangeur</SelectItem>
-                            <SelectItem value="genre">Genre</SelectItem>
-                            <SelectItem value="difficulty">Schwierigkeit</SelectItem>
-                            <SelectItem value="createdAt">Neueste</SelectItem>
-                        </SelectContent>
-                    </Select>
+        <div className="space-y-5">
+            {/* ── Page Header ── */}
+            <div className="flex items-center justify-between gap-4 pt-1">
+                <div>
+                    <h1 className="text-2xl font-bold tracking-tight">Noten-Verwaltung</h1>
+                    <p className="text-sm text-muted-foreground mt-0.5">
+                        {data ? `${data.pagination.total} Stücke im Archiv` : 'Notenarchiv'}
+                    </p>
                 </div>
-
-                {/* Action Buttons */}
-                <div className="flex gap-2 flex-wrap">
+                <div className="flex items-center gap-2 flex-shrink-0">
                     {canManageSheetMusic && (
                         <>
                             <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
                                 <DialogTrigger asChild>
-                                    <Button>
-                                        <Plus className="h-4 w-4 mr-2" />
-                                        Neue Note
+                                    <Button size="sm" className="gap-1.5">
+                                        <Plus className="h-4 w-4" />
+                                        <span className="hidden sm:inline">Neue Note</span>
                                     </Button>
                                 </DialogTrigger>
                                 <CreateEditDialog
@@ -350,12 +287,12 @@ export function SheetMusicManagementPage() {
 
                             <Dialog open={csvDialogOpen} onOpenChange={setCsvDialogOpen}>
                                 <DialogTrigger asChild>
-                                    <Button variant="outline">
-                                        <FileUp className="h-4 w-4 mr-2" />
-                                        CSV Import
+                                    <Button variant="outline" size="sm" className="gap-1.5 hidden sm:flex">
+                                        <FileUp className="h-4 w-4" />
+                                        CSV
                                     </Button>
                                 </DialogTrigger>
-                                <DialogContent className="max-w-2xl">
+                                <DialogContent size="lg">
                                     <DialogHeader>
                                         <DialogTitle>CSV Import</DialogTitle>
                                         <DialogDescription>
@@ -367,49 +304,32 @@ export function SheetMusicManagementPage() {
                                             <Label>Import-Modus</Label>
                                             <div className="flex gap-4 mt-2">
                                                 <label className="flex items-center gap-2">
-                                                    <input
-                                                        type="radio"
-                                                        checked={csvMode === 'add'}
-                                                        onChange={() => setCsvMode('add')}
-                                                    />
-                                                    <span>Nur neue hinzufügen</span>
+                                                    <input type="radio" checked={csvMode === 'add'} onChange={() => setCsvMode('add')} />
+                                                    <span className="text-sm">Nur neue hinzufügen</span>
                                                 </label>
                                                 <label className="flex items-center gap-2">
-                                                    <input
-                                                        type="radio"
-                                                        checked={csvMode === 'update'}
-                                                        onChange={() => setCsvMode('update')}
-                                                    />
-                                                    <span>Aktualisieren + Neue hinzufügen</span>
+                                                    <input type="radio" checked={csvMode === 'update'} onChange={() => setCsvMode('update')} />
+                                                    <span className="text-sm">Aktualisieren + Neue hinzufügen</span>
                                                 </label>
                                             </div>
                                         </div>
-
                                         <div>
                                             <Label>Datei hochladen</Label>
-                                            <Input
-                                                type="file"
-                                                accept=".csv"
-                                                onChange={handleFileUpload}
-                                                className="mt-2"
-                                            />
+                                            <Input type="file" accept=".csv" onChange={handleFileUpload} className="mt-1.5" />
                                         </div>
                                         <div>
                                             <Label>Oder CSV Daten manuell eingeben</Label>
                                             <Textarea
-                                                rows={10}
+                                                rows={8}
                                                 value={csvData}
                                                 onChange={(e) => setCsvData(e.target.value)}
                                                 placeholder="title,composer,arranger,genre,difficulty,publisher,notes&#10;Test Marsch,Johann Strauss,,,medium,Musikverlag XY,Klassischer Marsch"
-                                                className="mt-2"
+                                                className="mt-1.5"
                                             />
                                         </div>
                                     </div>
                                     <DialogFooter>
-                                        <Button
-                                            onClick={() => importCsvMutation.mutate()}
-                                            disabled={!csvData || importCsvMutation.isPending}
-                                        >
+                                        <Button onClick={() => importCsvMutation.mutate()} disabled={!csvData || importCsvMutation.isPending}>
                                             {importCsvMutation.isPending ? 'Importiere...' : 'Importieren'}
                                         </Button>
                                     </DialogFooter>
@@ -417,15 +337,14 @@ export function SheetMusicManagementPage() {
                             </Dialog>
                         </>
                     )}
-
-                    <Button variant="outline" onClick={() => exportMutation.mutate()} disabled={exportMutation.isPending}>
-                        <FileDown className="h-4 w-4 mr-2" />
-                        Export
+                    <Button variant="outline" size="sm" className="gap-1.5 hidden sm:flex" onClick={() => exportMutation.mutate()} disabled={exportMutation.isPending}>
+                        <FileDown className="h-4 w-4" />
+                        CSV
                     </Button>
                     <PdfExportDialog
                         trigger={
-                            <Button variant="outline" disabled={exportPdfMutation.isPending}>
-                                <FileDown className="h-4 w-4 mr-2" />
+                            <Button variant="outline" size="sm" className="gap-1.5 hidden sm:flex" disabled={exportPdfMutation.isPending}>
+                                <FileDown className="h-4 w-4" />
                                 PDF
                             </Button>
                         }
@@ -436,12 +355,219 @@ export function SheetMusicManagementPage() {
                 </div>
             </div>
 
-            {/* Table */}
-            {
-                isLoading ? (
-                    <div className="text-center py-8">Lädt...</div>
-                ) : (
-                    <>
+            {/* ── Search + Filter ── */}
+            <div className="flex gap-2">
+                {/* Search — always full width, h-11 */}
+                <div className="flex-1 relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                        placeholder="Titel, Komponist, Arrangeur..."
+                        value={search}
+                        onChange={(e) => { setSearch(e.target.value); setCurrentPage(1); }}
+                        className="pl-10"
+                    />
+                </div>
+
+                {/* Mobile: Filter drawer trigger */}
+                <Button
+                    variant="outline"
+                    size="icon"
+                    className="md:hidden h-11 w-11 flex-shrink-0"
+                    onClick={() => setFilterSheetOpen(true)}
+                    title="Filter"
+                >
+                    <SlidersHorizontal className="h-4 w-4" />
+                </Button>
+
+                {/* Desktop: Inline filter selects */}
+                <div className="hidden md:flex gap-2 flex-wrap">
+                    <Select value={genreFilter || 'all'} onValueChange={setGenreFilter}>
+                        <SelectTrigger className="w-[150px]"><SelectValue placeholder="Genre" /></SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="all">Alle Genres</SelectItem>
+                            <SelectItem value="Marsch">Marsch</SelectItem>
+                            <SelectItem value="Polka">Polka</SelectItem>
+                            <SelectItem value="Walzer">Walzer</SelectItem>
+                            <SelectItem value="Pop">Pop</SelectItem>
+                            <SelectItem value="Rock">Rock</SelectItem>
+                            <SelectItem value="Filmmusik">Filmmusik</SelectItem>
+                        </SelectContent>
+                    </Select>
+                    <Select value={difficultyFilter || 'all'} onValueChange={setDifficultyFilter}>
+                        <SelectTrigger className="w-[160px]"><SelectValue placeholder="Schwierigkeit" /></SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="all">Alle Schwierigkeiten</SelectItem>
+                            <SelectItem value="easy">Leicht</SelectItem>
+                            <SelectItem value="medium">Mittel</SelectItem>
+                            <SelectItem value="hard">Schwer</SelectItem>
+                        </SelectContent>
+                    </Select>
+                    <Select value={bookmarkedFilter || 'all'} onValueChange={setBookmarkedFilter}>
+                        <SelectTrigger className="w-[180px]"><SelectValue placeholder="Markiert von" /></SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="all">Alle</SelectItem>
+                            <SelectItem value={user?.id.toString() || 'all'}>Meine Markierungen</SelectItem>
+                        </SelectContent>
+                    </Select>
+                    <Select value={sortBy} onValueChange={setSortBy}>
+                        <SelectTrigger className="w-[150px]"><SelectValue placeholder="Sortieren" /></SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="title">Titel</SelectItem>
+                            <SelectItem value="composer">Komponist</SelectItem>
+                            <SelectItem value="arranger">Arrangeur</SelectItem>
+                            <SelectItem value="genre">Genre</SelectItem>
+                            <SelectItem value="difficulty">Schwierigkeit</SelectItem>
+                            <SelectItem value="createdAt">Neueste</SelectItem>
+                        </SelectContent>
+                    </Select>
+                </div>
+            </div>
+
+            {/* ── Mobile Filter Drawer ── */}
+            <Sheet open={filterSheetOpen} onOpenChange={setFilterSheetOpen}>
+                <SheetContent side="bottom" className="pb-safe-nav space-y-4">
+                    <SheetHeader>
+                        <SheetTitle>Filter &amp; Sortierung</SheetTitle>
+                    </SheetHeader>
+                    <div className="space-y-3 pt-2">
+                        <div className="space-y-1.5">
+                            <label className="text-sm font-medium">Genre</label>
+                            <Select value={genreFilter || 'all'} onValueChange={setGenreFilter}>
+                                <SelectTrigger className="w-full"><SelectValue placeholder="Genre" /></SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="all">Alle Genres</SelectItem>
+                                    <SelectItem value="Marsch">Marsch</SelectItem>
+                                    <SelectItem value="Polka">Polka</SelectItem>
+                                    <SelectItem value="Walzer">Walzer</SelectItem>
+                                    <SelectItem value="Pop">Pop</SelectItem>
+                                    <SelectItem value="Rock">Rock</SelectItem>
+                                    <SelectItem value="Filmmusik">Filmmusik</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+                        <div className="space-y-1.5">
+                            <label className="text-sm font-medium">Schwierigkeit</label>
+                            <Select value={difficultyFilter || 'all'} onValueChange={setDifficultyFilter}>
+                                <SelectTrigger className="w-full"><SelectValue placeholder="Schwierigkeit" /></SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="all">Alle Schwierigkeiten</SelectItem>
+                                    <SelectItem value="easy">Leicht</SelectItem>
+                                    <SelectItem value="medium">Mittel</SelectItem>
+                                    <SelectItem value="hard">Schwer</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+                        <div className="space-y-1.5">
+                            <label className="text-sm font-medium">Markierungen</label>
+                            <Select value={bookmarkedFilter || 'all'} onValueChange={setBookmarkedFilter}>
+                                <SelectTrigger className="w-full"><SelectValue placeholder="Markiert von" /></SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="all">Alle</SelectItem>
+                                    <SelectItem value={user?.id.toString() || 'all'}>Meine Markierungen</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+                        <div className="space-y-1.5">
+                            <label className="text-sm font-medium">Sortieren nach</label>
+                            <Select value={sortBy} onValueChange={setSortBy}>
+                                <SelectTrigger className="w-full"><SelectValue placeholder="Sortieren" /></SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="title">Titel</SelectItem>
+                                    <SelectItem value="composer">Komponist</SelectItem>
+                                    <SelectItem value="arranger">Arrangeur</SelectItem>
+                                    <SelectItem value="genre">Genre</SelectItem>
+                                    <SelectItem value="difficulty">Schwierigkeit</SelectItem>
+                                    <SelectItem value="createdAt">Neueste</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+                        <Button className="w-full mt-2" onClick={() => setFilterSheetOpen(false)}>
+                            Anwenden
+                        </Button>
+                    </div>
+                </SheetContent>
+            </Sheet>
+
+            {/* ── Data / Loading ── */}
+            {isLoading ? (
+                <div className="native-group divide-y divide-border/40">
+                    {[1, 2, 3, 4, 5].map((i) => (
+                        <div key={i} className="flex items-center gap-3 px-4 py-3">
+                            <div className="h-9 w-9 rounded-lg bg-muted animate-pulse flex-shrink-0" />
+                            <div className="flex-1 space-y-2">
+                                <div className="h-4 w-2/3 rounded bg-muted animate-pulse" />
+                                <div className="h-3 w-1/3 rounded bg-muted animate-pulse" />
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            ) : (
+                <>
+                    {/* ── Mobile: Action-Card List ── */}
+                    <div className="md:hidden native-group divide-y divide-border/40">
+                        {!data?.sheetMusic.length ? (
+                            <div className="px-4 py-10 text-center text-sm text-muted-foreground">
+                                Keine Noten gefunden
+                            </div>
+                        ) : (
+                            data.sheetMusic.map((sheet) => {
+                                const bookmarked = isBookmarkedByMe(sheet);
+                                const meta = [sheet.composer, sheet.genre].filter(Boolean).join(' · ');
+                                return (
+                                    <div key={sheet.id} className="flex items-center gap-3 px-4 py-3">
+                                        {/* Icon */}
+                                        <div className="inset-icon bg-primary/10 flex-shrink-0">
+                                            <Music className="h-4 w-4 text-primary" />
+                                        </div>
+
+                                        {/* Content */}
+                                        <div className="flex-1 min-w-0">
+                                            <p className="font-semibold text-sm truncate leading-tight">{sheet.title}</p>
+                                            {meta && (
+                                                <p className="text-xs text-muted-foreground truncate mt-0.5">{meta}</p>
+                                            )}
+                                            {sheet.difficulty && (
+                                                <span className={`inline-block mt-1 text-[10px] font-semibold px-1.5 py-0.5 rounded-full ${
+                                                    sheet.difficulty === 'easy' ? 'bg-green-100 text-green-700' :
+                                                    sheet.difficulty === 'medium' ? 'bg-amber-100 text-amber-700' :
+                                                    'bg-red-100 text-red-700'
+                                                }`}>
+                                                    {sheet.difficulty === 'easy' ? 'Leicht' : sheet.difficulty === 'medium' ? 'Mittel' : 'Schwer'}
+                                                </span>
+                                            )}
+                                        </div>
+
+                                        {/* Bookmark quick-toggle */}
+                                        {canBookmarkSheetMusic && (
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                className="h-9 w-9 flex-shrink-0"
+                                                onClick={() => bookmarkMutation.mutate(sheet.id)}
+                                                title={bookmarked ? 'Markierung entfernen' : 'Markieren'}
+                                            >
+                                                <Star className={`h-4 w-4 ${bookmarked ? 'fill-primary text-primary' : 'text-muted-foreground'}`} />
+                                            </Button>
+                                        )}
+
+                                        {/* 3-dots action menu */}
+                                        <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            className="h-9 w-9 flex-shrink-0"
+                                            onClick={() => setActionDrawerItem(sheet)}
+                                            title="Aktionen"
+                                        >
+                                            <MoreVertical className="h-4 w-4 text-muted-foreground" />
+                                        </Button>
+                                    </div>
+                                );
+                            })
+                        )}
+                    </div>
+
+                    {/* ── Desktop: Sticky-header table ── */}
+                    <div className="hidden md:block native-group overflow-hidden">
                         <ZoomableTableWrapper title="Notenbestand">
                             <Table className="min-w-[800px]">
                                 <TableHeader>
@@ -458,31 +584,17 @@ export function SheetMusicManagementPage() {
                                 </TableHeader>
                                 <TableBody>
                                     {data?.sheetMusic.map((sheet) => (
-                                        <TableRow key={sheet.id}>
+                                        <TableRow key={sheet.id} className="h-12">
                                             <TableCell className="font-medium">{sheet.title}</TableCell>
                                             <TableCell>{sheet.composer || '-'}</TableCell>
                                             <TableCell>{sheet.arranger || '-'}</TableCell>
                                             <TableCell>{sheet.genre || '-'}</TableCell>
                                             <TableCell>
                                                 {sheet.difficulty ? (
-                                                    <Badge
-                                                        variant={
-                                                            sheet.difficulty === 'easy'
-                                                                ? 'secondary'
-                                                                : sheet.difficulty === 'medium'
-                                                                    ? 'default'
-                                                                    : 'destructive'
-                                                        }
-                                                    >
-                                                        {sheet.difficulty === 'easy'
-                                                            ? 'Leicht'
-                                                            : sheet.difficulty === 'medium'
-                                                                ? 'Mittel'
-                                                                : 'Schwer'}
+                                                    <Badge variant={sheet.difficulty === 'easy' ? 'secondary' : sheet.difficulty === 'medium' ? 'default' : 'destructive'}>
+                                                        {sheet.difficulty === 'easy' ? 'Leicht' : sheet.difficulty === 'medium' ? 'Mittel' : 'Schwer'}
                                                     </Badge>
-                                                ) : (
-                                                    '-'
-                                                )}
+                                                ) : '-'}
                                             </TableCell>
                                             <TableCell>{sheet.publisher || '-'}</TableCell>
                                             <TableCell>
@@ -500,42 +612,21 @@ export function SheetMusicManagementPage() {
                                                 </div>
                                             </TableCell>
                                             <TableCell className="text-right">
-                                                <div className="flex justify-end gap-2">
-                                                    <Button
-                                                        size="icon"
-                                                        variant={isBookmarkedByMe(sheet) ? 'default' : 'ghost'}
-                                                        onClick={() => bookmarkMutation.mutate(sheet.id)}
-                                                        disabled={!canBookmarkSheetMusic}
-                                                    >
-                                                        <Star
-                                                            className={`h-4 w-4 ${isBookmarkedByMe(sheet) ? 'fill-white' : ''
-                                                                }`}
-                                                        />
+                                                <div className="flex justify-end gap-1">
+                                                    <Button size="icon" variant={isBookmarkedByMe(sheet) ? 'default' : 'ghost'} onClick={() => bookmarkMutation.mutate(sheet.id)} disabled={!canBookmarkSheetMusic} title="Markierung">
+                                                        <Star className={`h-4 w-4 ${isBookmarkedByMe(sheet) ? 'fill-white' : ''}`} />
                                                     </Button>
                                                     {canAddSheetMusicToFolders && (
-                                                        <Button
-                                                            size="icon"
-                                                            variant="ghost"
-                                                            title="Zu Mappe hinzufügen"
-                                                            onClick={() => handleAddToFolder(sheet)}
-                                                        >
+                                                        <Button size="icon" variant="ghost" title="Zu Mappe hinzufügen" onClick={() => handleAddToFolder(sheet)}>
                                                             <Folder className="h-4 w-4" />
                                                         </Button>
                                                     )}
                                                     {canManageSheetMusic && (
                                                         <>
-                                                            <Button
-                                                                size="icon"
-                                                                variant="ghost"
-                                                                onClick={() => handleEdit(sheet)}
-                                                            >
+                                                            <Button size="icon" variant="ghost" onClick={() => handleEdit(sheet)}>
                                                                 <Edit2 className="h-4 w-4" />
                                                             </Button>
-                                                            <Button
-                                                                size="icon"
-                                                                variant="ghost"
-                                                                onClick={() => handleDelete(sheet.id, sheet.title)}
-                                                            >
+                                                            <Button size="icon" variant="ghost" onClick={() => handleDelete(sheet.id, sheet.title)}>
                                                                 <Trash2 className="h-4 w-4" />
                                                             </Button>
                                                         </>
@@ -547,52 +638,94 @@ export function SheetMusicManagementPage() {
                                 </TableBody>
                             </Table>
                         </ZoomableTableWrapper>
+                    </div>
 
-                        {/* Pagination */}
-                        {data && data.pagination.totalPages > 1 && (
-                            <div className="flex justify-center gap-2 mt-4">
-                                <Button
-                                    variant="outline"
-                                    disabled={currentPage === 1}
-                                    onClick={() => setCurrentPage((p) => p - 1)}
-                                >
-                                    Zurück
-                                </Button>
-                                <span className="flex items-center px-4">
-                                    Seite {currentPage} von {data.pagination.totalPages}
-                                </span>
-                                <Button
-                                    variant="outline"
-                                    disabled={currentPage === data.pagination.totalPages}
-                                    onClick={() => setCurrentPage((p) => p + 1)}
-                                >
-                                    Weiter
-                                </Button>
-                            </div>
+                    {/* Pagination */}
+                    {data && data.pagination.totalPages > 1 && (
+                        <div className="flex justify-center gap-2 mt-2">
+                            <Button variant="outline" disabled={currentPage === 1} onClick={() => setCurrentPage((p) => p - 1)}>
+                                Zurück
+                            </Button>
+                            <span className="flex items-center px-4 text-sm text-muted-foreground">
+                                Seite {currentPage} von {data.pagination.totalPages}
+                            </span>
+                            <Button variant="outline" disabled={currentPage === data.pagination.totalPages} onClick={() => setCurrentPage((p) => p + 1)}>
+                                Weiter
+                            </Button>
+                        </div>
+                    )}
+                </>
+            )}
+
+            {/* ── Mobile Action Drawer (3-dots) ── */}
+            <Sheet open={!!actionDrawerItem} onOpenChange={(open) => { if (!open) setActionDrawerItem(null); }}>
+                <SheetContent side="bottom" className="pb-safe-nav">
+                    <SheetHeader>
+                        <SheetTitle className="truncate text-base">{actionDrawerItem?.title}</SheetTitle>
+                        {actionDrawerItem?.composer && (
+                            <p className="text-sm text-muted-foreground -mt-1">{actionDrawerItem.composer}</p>
                         )}
-                    </>
-                )
-            }
+                    </SheetHeader>
+                    <div className="space-y-1 pt-4">
+                        {canBookmarkSheetMusic && actionDrawerItem && (
+                            <Button
+                                variant="ghost"
+                                className="w-full justify-start gap-3 h-12 text-base"
+                                onClick={() => { bookmarkMutation.mutate(actionDrawerItem.id); setActionDrawerItem(null); }}
+                            >
+                                <Star className={`h-5 w-5 ${isBookmarkedByMe(actionDrawerItem) ? 'fill-primary text-primary' : ''}`} />
+                                {isBookmarkedByMe(actionDrawerItem) ? 'Markierung entfernen' : 'Markieren'}
+                            </Button>
+                        )}
+                        {canAddSheetMusicToFolders && actionDrawerItem && (
+                            <Button
+                                variant="ghost"
+                                className="w-full justify-start gap-3 h-12 text-base"
+                                onClick={() => { handleAddToFolder(actionDrawerItem); setActionDrawerItem(null); }}
+                            >
+                                <Folder className="h-5 w-5" />
+                                Zu Mappe hinzufügen
+                            </Button>
+                        )}
+                        {canManageSheetMusic && actionDrawerItem && (
+                            <>
+                                <Button
+                                    variant="ghost"
+                                    className="w-full justify-start gap-3 h-12 text-base"
+                                    onClick={() => { handleEdit(actionDrawerItem); setActionDrawerItem(null); }}
+                                >
+                                    <Edit2 className="h-5 w-5" />
+                                    Bearbeiten
+                                </Button>
+                                <Button
+                                    variant="ghost"
+                                    className="w-full justify-start gap-3 h-12 text-base text-destructive hover:text-destructive hover:bg-destructive/10"
+                                    onClick={() => { handleDelete(actionDrawerItem.id, actionDrawerItem.title); setActionDrawerItem(null); }}
+                                >
+                                    <Trash2 className="h-5 w-5" />
+                                    Löschen
+                                </Button>
+                            </>
+                        )}
+                    </div>
+                </SheetContent>
+            </Sheet>
 
-            {/* Edit Dialog */}
-            {
-                selectedSheet && (
-                    <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
-                        <CreateEditDialog
-                            title="Note bearbeiten"
-                            formData={formData}
-                            setFormData={setFormData}
-                            onSubmit={() =>
-                                updateMutation.mutate({ id: selectedSheet.id, data: formData })
-                            }
-                            isLoading={updateMutation.isPending}
-                            sheetId={selectedSheet.id}
-                        />
-                    </Dialog>
-                )
-            }
+            {/* ── Edit Dialog ── */}
+            {selectedSheet && (
+                <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+                    <CreateEditDialog
+                        title="Note bearbeiten"
+                        formData={formData}
+                        setFormData={setFormData}
+                        onSubmit={() => updateMutation.mutate({ id: selectedSheet.id, data: formData })}
+                        isLoading={updateMutation.isPending}
+                        sheetId={selectedSheet.id}
+                    />
+                </Dialog>
+            )}
 
-            {/* Add To Folder Dialog */}
+            {/* ── Add To Folder Dialog ── */}
             <Dialog open={addToFolderDialogOpen} onOpenChange={setAddToFolderDialogOpen}>
                 {selectedSheetForFolder && (
                     <AddToFolderDialog
@@ -602,7 +735,7 @@ export function SheetMusicManagementPage() {
                     />
                 )}
             </Dialog>
-        </div >
+        </div>
     );
 }
 

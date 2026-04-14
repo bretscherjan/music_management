@@ -6,7 +6,7 @@ import { musicFolderService } from '@/services/musicFolderService';
 import { sheetMusicService } from '@/services/sheetMusicService';
 import { useCan } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
-import { Download, Plus, Trash2, GripVertical, Save, X } from 'lucide-react';
+import { Download, Plus, Trash2, GripVertical, Save, X, Loader2, Music } from 'lucide-react';
 import { PdfExportDialog } from '@/components/ui/PdfExportDialog';
 import type { PdfOptions } from '@/utils/pdfTheme';
 import { toast } from 'sonner';
@@ -177,18 +177,18 @@ export const FolderContent = ({ folderId }: FolderContentProps) => {
         };
 
         return (
-            <div ref={setNodeRef} style={style} className={`bg-white p-3 rounded-lg border shadow-sm flex items-center gap-3 ${editMode ? 'border-primary/40 bg-accent/10' : ''}`}>
+            <div ref={setNodeRef} style={style} className={`bg-card p-4 rounded-xl border shadow-sm flex items-center gap-3 transition-colors ${editMode ? 'border-primary/40 bg-primary/5' : 'border-border'}`}>
                 {editMode && (
-                    <div {...attributes} {...listeners} className="cursor-grab text-gray-400 hover:text-gray-600 touch-none p-2 -ml-2 active:text-primary">
+                    <div {...attributes} {...listeners} className="cursor-grab text-muted-foreground hover:text-foreground touch-none p-2 -ml-2 active:text-primary">
                         <GripVertical className="h-6 w-6" />
                     </div>
                 )}
 
                 <div className="flex-1">
-                    <h3 className="font-medium text-gray-900">{item.sheetMusic.title}</h3>
-                    <p className="text-sm text-gray-500">
+                    <h3 className="font-semibold text-sm text-foreground">{item.sheetMusic.title}</h3>
+                    <p className="text-xs text-muted-foreground">
                         {item.sheetMusic.composer}
-                        {item.sheetMusic.arranger && ` • Arr. ${item.sheetMusic.arranger}`}
+                        {item.sheetMusic.arranger && ` · Arr. ${item.sheetMusic.arranger}`}
                     </p>
                 </div>
 
@@ -203,14 +203,24 @@ export const FolderContent = ({ folderId }: FolderContentProps) => {
         );
     };
 
-    if (isLoading) return <div className="p-8 text-center text-gray-500">Laden...</div>;
-    if (!folder) return <div className="p-8 text-center text-red-500">Fehler beim Laden</div>;
+    if (isLoading) return (
+        <div className="flex-1 flex items-center justify-center p-8">
+            <div className="flex flex-col items-center gap-3 text-muted-foreground">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                <p className="text-sm">Lade Mappe...</p>
+            </div>
+        </div>
+    );
+    if (!folder) return (
+        <div className="flex-1 flex items-center justify-center p-8 text-destructive text-sm">
+            Fehler beim Laden
+        </div>
+    );
 
     return (
-        <div className="h-full flex flex-col bg-slate-50">
-            {/* Header */}
-            {/* Header */}
-            <div className="bg-white border-b p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-sm z-10 sticky top-0">
+        <div className="h-full flex flex-col bg-background">
+            {/* Sticky header */}
+            <div className="bg-card border-b px-4 py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3 sticky top-0 z-10">
                 <div className="flex-1 min-w-0">
                     {editMode ? (
                         <div className="space-y-2">
@@ -218,25 +228,25 @@ export const FolderContent = ({ folderId }: FolderContentProps) => {
                                 type="text"
                                 value={editedName}
                                 onChange={(e) => setEditedName(e.target.value)}
-                                className="text-xl sm:text-2xl font-bold text-gray-800 bg-gray-50 border rounded px-2 py-1 w-full focus:outline-none focus:ring-2 focus:ring-primary/50"
+                                className="text-lg sm:text-xl font-bold bg-muted/30 border rounded-xl px-3 py-1.5 w-full focus:outline-none focus:ring-2 focus:ring-primary/50"
                                 placeholder="Name der Mappe"
                             />
                             <input
                                 type="text"
                                 value={editedDescription || ''}
                                 onChange={(e) => setEditedDescription(e.target.value)}
-                                className="text-sm text-gray-500 bg-gray-50 border rounded px-2 py-1 w-full focus:outline-none focus:ring-2 focus:ring-primary/50"
+                                className="text-sm text-muted-foreground bg-muted/30 border rounded-xl px-3 py-1.5 w-full focus:outline-none focus:ring-2 focus:ring-primary/50"
                                 placeholder="Beschreibung (optional)"
                             />
                         </div>
                     ) : (
                         <>
-                            <h1 className="text-xl sm:text-2xl font-bold text-gray-800 break-all">{folder.name}</h1>
-                            {folder.description && <p className="text-gray-500 mt-1 text-sm">{folder.description}</p>}
+                            <h1 className="text-lg sm:text-xl font-bold break-all">{folder.name}</h1>
+                            {folder.description && <p className="text-muted-foreground mt-0.5 text-sm">{folder.description}</p>}
                         </>
                     )}
                 </div>
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap gap-2 flex-shrink-0">
                     {canManageFolders && !editMode && (
                         <Button variant="outline" size="sm" onClick={() => setEditMode(true)}>
                             Bearbeiten
@@ -273,7 +283,7 @@ export const FolderContent = ({ folderId }: FolderContentProps) => {
                                         <input
                                             type="text"
                                             placeholder="Suchen..."
-                                            className="w-full p-2 border rounded"
+                                            className="w-full h-11 px-4 border rounded-xl bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
                                             value={searchTerm}
                                             onChange={(e) => setSearchTerm(e.target.value)}
                                         />
@@ -283,12 +293,12 @@ export const FolderContent = ({ folderId }: FolderContentProps) => {
                                             {allSheetMusic?.sheetMusic
                                                 .filter(s => !items.some(i => i.sheetMusicId === s.id))
                                                 .map(sheet => (
-                                                    <div key={sheet.id} className="flex items-center justify-between p-2 hover:bg-gray-50 rounded border">
+                                                    <div key={sheet.id} className="flex items-center justify-between p-3 hover:bg-muted/50 rounded-xl border transition-colors">
                                                         <div>
-                                                            <div className="font-medium">{sheet.title}</div>
-                                                            <div className="text-xs text-gray-500">{sheet.composer}</div>
+                                                            <div className="font-medium text-sm">{sheet.title}</div>
+                                                            <div className="text-xs text-muted-foreground">{sheet.composer}</div>
                                                         </div>
-                                                        <Button size="sm" variant="ghost" onClick={() => handleAddItem(sheet)}>
+                                                        <Button size="sm" variant="ghost" className="text-primary" onClick={() => handleAddItem(sheet)}>
                                                             Hinzufügen
                                                         </Button>
                                                     </div>
@@ -304,9 +314,9 @@ export const FolderContent = ({ folderId }: FolderContentProps) => {
                             <Button variant="ghost" size="icon" onClick={() => {
                                 setEditMode(false);
                                 if (folder) {
-                                    setItems(folder.items || []); // Reset items
-                                    setEditedName(folder.name); // Reset name
-                                    setEditedDescription(folder.description); // Reset description
+                                    setItems(folder.items || []);
+                                    setEditedName(folder.name);
+                                    setEditedDescription(folder.description);
                                 }
                             }}>
                                 <X className="h-4 w-4" />
@@ -319,23 +329,7 @@ export const FolderContent = ({ folderId }: FolderContentProps) => {
                             {canManageFolders && (
                                 <Button
                                     variant="destructive"
-                                    size="icon"
-                                    className="sm:hidden"
-                                    onClick={() => {
-                                        if (confirm('Möchten Sie diese Mappe wirklich löschen?')) {
-                                            deleteFolderMutation.mutate(folderId);
-                                        }
-                                    }}
-                                    disabled={deleteFolderMutation.isPending}
-                                >
-                                    <Trash2 className="h-4 w-4" />
-                                </Button>
-                            )}
-                            {canManageFolders && (
-                                <Button
-                                    variant="destructive"
                                     size="sm"
-                                    className="hidden sm:flex"
                                     onClick={() => {
                                         if (confirm('Möchten Sie diese Mappe wirklich löschen?')) {
                                             deleteFolderMutation.mutate(folderId);
@@ -343,8 +337,8 @@ export const FolderContent = ({ folderId }: FolderContentProps) => {
                                     }}
                                     disabled={deleteFolderMutation.isPending}
                                 >
-                                    <Trash2 className="h-4 w-4 mr-2" />
-                                    Löschen
+                                    <Trash2 className="h-4 w-4 sm:mr-2" />
+                                    <span className="hidden sm:inline">Löschen</span>
                                 </Button>
                             )}
                             <PdfExportDialog
@@ -376,8 +370,8 @@ export const FolderContent = ({ folderId }: FolderContentProps) => {
                 </div>
             </div>
 
-            {/* List */}
-            <div className="flex-1 overflow-y-auto p-6 pt-10">
+            {/* Item list */}
+            <div className="flex-1 overflow-y-auto p-4">
                 <DndContext
                     sensors={sensors}
                     collisionDetection={closestCenter}
@@ -388,20 +382,29 @@ export const FolderContent = ({ folderId }: FolderContentProps) => {
                         strategy={verticalListSortingStrategy}
                         disabled={!editMode}
                     >
-                        <div className="max-w-4xl mx-auto space-y-3">
+                        <div className="max-w-3xl mx-auto space-y-3">
                             {items.map((item) => (
                                 <SortableItem key={item.id} item={item} />
                             ))}
                             {items.length === 0 && (
-                                <div className="text-center py-12 text-gray-400 border-2 border-dashed rounded-xl">
-                                    Diese Mappe ist noch leer
+                                <div className="flex flex-col items-center justify-center py-20 gap-4 text-center">
+                                    <div className="h-16 w-16 rounded-full bg-muted flex items-center justify-center">
+                                        <Music className="h-8 w-8 text-muted-foreground/40" />
+                                    </div>
+                                    <div>
+                                        <p className="font-medium text-muted-foreground">Mappe ist leer</p>
+                                        {canManageFolders && (
+                                            <p className="text-xs text-muted-foreground mt-1">
+                                                Klicke auf «Bearbeiten» um Stücke hinzuzufügen
+                                            </p>
+                                        )}
+                                    </div>
                                 </div>
                             )}
                         </div>
                     </SortableContext>
                 </DndContext>
             </div>
-
         </div>
     );
 };

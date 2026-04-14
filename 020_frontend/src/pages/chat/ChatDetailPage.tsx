@@ -409,12 +409,12 @@ export function ChatDetailPage() {
     if (!currentChat && !isLoading) return <div className="p-8 text-center">Chat nicht gefunden</div>;
 
     return (
-        <div className="flex flex-col h-[calc(100vh-120px)] max-w-4xl mx-auto border rounded-lg overflow-hidden bg-background shadow-sm relative">
+        <div className="flex flex-col h-[calc(100dvh-8rem)] max-w-3xl mx-auto rounded-2xl overflow-hidden bg-background shadow-sm relative border border-border/50">
             {/* Entity Picker Popover */}
             {showEntityPicker && (
                 <div 
-                    className="absolute z-50 w-72 bg-card border rounded-lg shadow-xl p-2 max-h-60 overflow-y-auto animate-in fade-in zoom-in-95 duration-100 flex flex-col gap-1"
-                    style={{ bottom: '80px', left: '20px' }}
+                    className="absolute z-50 w-72 bg-card border rounded-2xl shadow-xl p-2 max-h-60 overflow-y-auto animate-in fade-in zoom-in-95 duration-100 flex flex-col gap-1"
+                    style={{ bottom: '76px', left: '16px' }}
                 >
                     <div className="flex items-center justify-between px-2 py-1 border-b mb-1">
                         <span className="text-[10px] uppercase font-black text-primary flex items-center gap-1">
@@ -425,13 +425,12 @@ export function ChatDetailPage() {
                     </div>
 
                     {!activeCategory ? (
-                        // Category Selection Stage
                         filteredCategories.map((cat, idx) => (
                             <div 
                                 key={cat.key}
                                 onClick={() => selectCategory(cat)}
                                 className={cn(
-                                    "flex items-center gap-3 p-2 rounded cursor-pointer transition-colors",
+                                    "flex items-center gap-3 p-2 rounded-xl cursor-pointer transition-colors",
                                     selectedIndex === idx ? "bg-primary text-primary-foreground" : "hover:bg-muted"
                                 )}
                             >
@@ -446,7 +445,6 @@ export function ChatDetailPage() {
                             </div>
                         ))
                     ) : (
-                        // Item Selection Stage
                         <>
                             {entityResults?.length === 0 ? (
                                 <div className="text-xs text-muted-foreground p-4 text-center italic">Keine {activeCategory.label} gefunden</div>
@@ -456,7 +454,7 @@ export function ChatDetailPage() {
                                         key={idx}
                                         onClick={() => insertEntity(item)}
                                         className={cn(
-                                            "flex items-center gap-2 p-2 rounded cursor-pointer transition-colors",
+                                            "flex items-center gap-2 p-2 rounded-xl cursor-pointer transition-colors",
                                             selectedIndex === idx ? "bg-primary text-primary-foreground" : "hover:bg-muted"
                                         )}
                                     >
@@ -474,17 +472,17 @@ export function ChatDetailPage() {
             )}
 
             {/* Header */}
-            <div className="p-4 border-b flex items-center justify-between bg-muted/30">
-                <div className="flex items-center gap-4">
-                    <Button variant="ghost" size="icon" onClick={() => navigate('/member/chat')}>
-                        <ChevronLeft className="w-6 h-6" />
+            <div className="px-3 py-3 border-b flex items-center justify-between bg-card">
+                <div className="flex items-center gap-3">
+                    <Button variant="ghost" size="icon" className="text-primary h-9 w-9" onClick={() => navigate('/member/chat')}>
+                        <ChevronLeft className="w-5 h-5" />
                     </Button>
-                    <div className="flex items-center gap-3">
-                        <Avatar>
+                    <div className="flex items-center gap-2.5">
+                        <Avatar className="h-9 w-9">
                             <AvatarFallback name={chatTitle} />
                         </Avatar>
                         <div>
-                            <h2 className="font-bold leading-none mb-1">{chatTitle}</h2>
+                            <h2 className="font-bold text-sm leading-tight">{chatTitle}</h2>
                             {typingUsers.length > 0 ? (
                                 <p className="text-xs text-primary animate-pulse">
                                     {typingUsers.length === 1 
@@ -506,8 +504,8 @@ export function ChatDetailPage() {
                         if (open) setNewTitle(currentChat?.title || '');
                     }}>
                         <DialogTrigger asChild>
-                            <Button variant="ghost" size="icon">
-                                <Info className="w-5 h-5" />
+                            <Button variant="ghost" size="icon" className="h-9 w-9">
+                                <Info className="w-4 h-4" />
                             </Button>
                         </DialogTrigger>
                         <DialogContent className="max-w-md">
@@ -531,7 +529,7 @@ export function ChatDetailPage() {
                                                 </>
                                             ) : (
                                                 <>
-                                                    <div className="flex-1 p-2 bg-muted rounded-md text-sm">{currentChat.title || 'Kein Name'}</div>
+                                                    <div className="flex-1 p-2 bg-muted rounded-xl text-sm">{currentChat.title || 'Kein Name'}</div>
                                                     {isOwner && <Button variant="outline" size="sm" onClick={() => setIsEditingTitle(true)}>Ändern</Button>}
                                                 </>
                                             )}
@@ -548,9 +546,9 @@ export function ChatDetailPage() {
                                             </Button>
                                         )}
                                     </div>
-                                    <div className="space-y-2 max-h-60 overflow-y-auto pr-2">
+                                    <div className="native-group divide-y divide-border/40 max-h-60 overflow-y-auto">
                                         {currentChat?.participants.map(p => (
-                                            <div key={p.id} className="flex items-center justify-between">
+                                            <div key={p.id} className="flex items-center justify-between px-3 py-2.5">
                                                 <div className="flex items-center gap-3">
                                                     <Avatar className="h-8 w-8">
                                                         <AvatarImage src={p.user.profilePicture || undefined} />
@@ -598,18 +596,18 @@ export function ChatDetailPage() {
                                     value={userSearch} 
                                     onChange={(e) => setUserSearch(e.target.value)} 
                                 />
-                                <div className="space-y-2 max-h-60 overflow-y-auto">
+                                <div className="native-group divide-y divide-border/40 max-h-60 overflow-y-auto">
                                     {allUsers?.filter(u => 
                                         !currentChat?.participants.find(p => p.userId === u.id) &&
                                         `${u.firstName} ${u.lastName}`.toLowerCase().includes(userSearch.toLowerCase())
                                     ).map(u => (
-                                        <div key={u.id} className="flex items-center justify-between p-2 hover:bg-muted rounded-md cursor-pointer" onClick={() => handleAddUser(u.id)}>
+                                        <div key={u.id} className="flex items-center justify-between px-3 py-3 cursor-pointer active:bg-muted/50" onClick={() => handleAddUser(u.id)}>
                                             <div className="flex items-center gap-2">
                                                 <Avatar className="h-8 w-8">
                                                     <AvatarImage src={u.profilePicture || undefined} />
                                                     <AvatarFallback name={`${u.firstName} ${u.lastName}`} />
                                                 </Avatar>
-                                                <span className="text-sm">{u.firstName} {u.lastName}</span>
+                                                <span className="text-sm font-medium">{u.firstName} {u.lastName}</span>
                                             </div>
                                             <UserPlus className="w-4 h-4 text-primary" />
                                         </div>
@@ -622,13 +620,20 @@ export function ChatDetailPage() {
             </div>
 
             {/* Messages */}
-            <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-muted/5">
+            <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3 bg-[#F2F2F7]">
                 {isLoading ? (
-                    <p className="text-center text-muted-foreground py-8">Lade Chat...</p>
+                    <div className="flex items-center justify-center py-16">
+                        <div className="flex flex-col items-center gap-3 text-muted-foreground">
+                            <div className="animate-spin h-8 w-8 border-2 border-primary border-t-transparent rounded-full" />
+                            <p className="text-sm">Lade Nachrichten...</p>
+                        </div>
+                    </div>
                 ) : messages?.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center h-full text-muted-foreground opacity-50 space-y-2">
-                        <MessageSquare className="w-12 h-12" />
-                        <p className="italic">Noch keine Nachrichten.</p>
+                    <div className="flex flex-col items-center justify-center h-full gap-3 text-muted-foreground">
+                        <div className="h-14 w-14 rounded-full bg-muted flex items-center justify-center">
+                            <MessageSquare className="w-7 h-7 text-muted-foreground/40" />
+                        </div>
+                        <p className="text-sm">Noch keine Nachrichten. Schreibe die erste!</p>
                     </div>
                 ) : (
                     messages?.map((msg, idx) => {
@@ -636,6 +641,7 @@ export function ChatDetailPage() {
                         const participant = currentChat?.participants.find(p => p.userId === msg.senderId);
                         const sender = participant?.user;
                         const showAvatar = !isMine && (idx === 0 || messages[idx-1].senderId !== msg.senderId);
+                        const isLast = idx === messages.length - 1 || messages[idx+1]?.senderId !== msg.senderId;
 
                         return (
                             <div key={msg.id} className={cn(
@@ -643,7 +649,7 @@ export function ChatDetailPage() {
                                 isMine ? "flex-row-reverse" : "flex-row"
                             )}>
                                 {!isMine && (
-                                    <div className="w-8">
+                                    <div className="w-8 flex-shrink-0">
                                         {showAvatar && (
                                             <Avatar className="w-8 h-8 shadow-sm">
                                                 <AvatarImage src={sender?.profilePicture || undefined} />
@@ -653,18 +659,18 @@ export function ChatDetailPage() {
                                     </div>
                                 )}
                                 <div className={cn(
-                                    "max-w-[75%] space-y-1",
+                                    "max-w-[78%] flex flex-col gap-0.5",
                                     isMine ? "items-end" : "items-start"
                                 )}>
                                     {!isMine && showAvatar && currentChat?.type === 'group' && (
-                                        <p className="text-[10px] text-muted-foreground ml-1 font-medium">{sender?.firstName}</p>
+                                        <p className="text-[10px] text-muted-foreground ml-1 font-semibold">{sender?.firstName}</p>
                                     )}
 
-                                    {/* Reply Preview in Message Body */}
+                                    {/* Reply preview */}
                                     {msg.replyToId && (
                                         <div className={cn(
-                                            "text-[11px] p-2 rounded-t-lg border-l-4 bg-muted/50 mb-[-8px] opacity-80",
-                                            isMine ? "border-primary-foreground/30 mr-1" : "border-primary ml-1"
+                                            "text-[11px] px-2.5 py-1.5 rounded-t-xl border-l-4 bg-muted/60 mb-[-6px] opacity-80",
+                                            isMine ? "border-white/40 mr-1" : "border-primary ml-1"
                                         )}>
                                             <p className="truncate italic">"{msg.replyToText}"</p>
                                         </div>
@@ -672,20 +678,27 @@ export function ChatDetailPage() {
 
                                     <div className="relative group/bubble">
                                         <div className={cn(
-                                            "p-3 rounded-2xl shadow-sm transition-all relative",
+                                            "px-3.5 py-2.5 shadow-sm transition-all",
                                             isMine 
-                                                ? 'bg-primary text-primary-foreground rounded-br-none' 
-                                                : 'bg-card text-card-foreground border rounded-bl-none'
+                                                ? cn(
+                                                    'bg-primary text-primary-foreground',
+                                                    isLast ? 'rounded-2xl rounded-br-md' : 'rounded-2xl'
+                                                  )
+                                                : cn(
+                                                    'bg-white text-foreground border border-slate-200',
+                                                    isLast ? 'rounded-2xl rounded-bl-md' : 'rounded-2xl'
+                                                  )
                                         )}>
-                                            <div className="text-sm whitespace-pre-wrap break-words">{renderMessageText(msg.text, isMine)}</div>
+                                            <div className="text-sm whitespace-pre-wrap break-words leading-relaxed">{renderMessageText(msg.text, isMine)}</div>
                                             <p className={cn(
-                                                "text-[9px] mt-1 text-right opacity-60",
+                                                "text-[10px] mt-1 text-right",
+                                                isMine ? "text-primary-foreground/60" : "text-muted-foreground"
                                             )}>
                                                 {format(new Date(msg.createdAt), 'HH:mm')}
                                             </p>
                                         </div>
 
-                                        {/* Reactions display */}
+                                        {/* Reactions */}
                                         {msg.reactions && msg.reactions.length > 0 && (
                                             <div className={cn(
                                                 "flex flex-wrap gap-1 mt-1",
@@ -696,8 +709,8 @@ export function ChatDetailPage() {
                                                         key={r.emoji} 
                                                         onClick={() => handleToggleReaction(msg.id, r.emoji)}
                                                         className={cn(
-                                                            "px-1.5 py-0.5 rounded-full text-[10px] border flex items-center gap-1 cursor-pointer hover:scale-105 transition-transform",
-                                                            r.userIds.includes(user?.id) ? "bg-primary/10 border-primary/30" : "bg-muted"
+                                                            "px-1.5 py-0.5 rounded-full text-[11px] border flex items-center gap-1 cursor-pointer hover:scale-105 transition-transform",
+                                                            r.userIds.includes(user?.id) ? "bg-primary/10 border-primary/30" : "bg-muted/80 border-border/50"
                                                         )}
                                                     >
                                                         <span>{r.emoji}</span>
@@ -707,9 +720,9 @@ export function ChatDetailPage() {
                                             </div>
                                         )}
 
-                                        {/* Actions overlay */}
+                                        {/* Actions overlay — desktop hover + mobile tap area */}
                                         <div className={cn(
-                                            "absolute top-0 opacity-0 group-hover/bubble:opacity-100 transition-opacity flex gap-1 bg-background/80 backdrop-blur-sm p-1 rounded-full border shadow-sm z-10",
+                                            "absolute top-0 opacity-0 group-hover/bubble:opacity-100 transition-opacity flex gap-1 bg-card/90 backdrop-blur-sm p-1 rounded-full border shadow-sm z-10",
                                             isMine ? "right-full mr-2" : "left-full ml-2"
                                         )}>
                                             <Button variant="ghost" size="icon" className="h-7 w-7 rounded-full" onClick={() => setReplyTo(msg)}>
@@ -725,7 +738,7 @@ export function ChatDetailPage() {
                                                     {['👍', '❤️', '😂', '😮', '😢', '👏'].map(emoji => (
                                                         <DropdownMenuItem 
                                                             key={emoji} 
-                                                            className="p-1.5 cursor-pointer hover:bg-muted"
+                                                            className="p-1.5 cursor-pointer"
                                                             onClick={() => handleToggleReaction(msg.id, emoji)}
                                                         >
                                                             {emoji}
@@ -743,33 +756,38 @@ export function ChatDetailPage() {
                 <div ref={messagesEndRef} />
             </div>
 
-            {/* Reply Preview Above Composer */}
+            {/* Reply preview strip */}
             {replyTo && (
-                <div className="px-4 py-2 border-t bg-muted/20 flex items-center justify-between animate-in slide-in-from-bottom-2 duration-200">
+                <div className="px-4 py-2 border-t bg-muted/10 flex items-center justify-between animate-in slide-in-from-bottom-2 duration-200">
                     <div className="flex items-center gap-3 border-l-4 border-primary pl-3 py-1">
-                        <Reply className="w-4 h-4 text-primary" />
+                        <Reply className="w-4 h-4 text-primary flex-shrink-0" />
                         <div className="min-w-0">
                             <p className="text-[10px] font-bold text-primary">Antwort auf</p>
                             <p className="text-xs truncate text-muted-foreground">{replyTo.text}</p>
                         </div>
                     </div>
-                    <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setReplyTo(null)}>
+                    <Button variant="ghost" size="icon" className="h-7 w-7 flex-shrink-0" onClick={() => setReplyTo(null)}>
                         <X className="w-4 h-4" />
                     </Button>
                 </div>
             )}
 
-            {/* Composer */}
-            <form onSubmit={handleSend} className="p-4 border-t bg-muted/30 flex gap-2">
+            {/* Composer — sticky pill input */}
+            <form onSubmit={handleSend} className="px-3 pt-2 pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))] border-t bg-card/95 backdrop-blur-sm flex items-center gap-2 sticky bottom-0">
                 <Input
                     ref={inputRef}
-                    placeholder="Deine Nachricht... (# für Links)"
+                    placeholder="Nachricht... (# für Links)"
                     value={newMessage}
                     onChange={handleTyping}
                     onKeyDown={handleKeyDown}
-                    className="flex-1 focus-visible:ring-primary"
+                    className="flex-1 rounded-full bg-muted border-0 focus-visible:ring-1 focus-visible:ring-primary/50 h-10 px-4"
                 />
-                <Button type="submit" size="icon" disabled={!newMessage.trim() || sendMessageMutation.isPending} className="shrink-0">
+                <Button
+                    type="submit"
+                    size="icon"
+                    disabled={!newMessage.trim() || sendMessageMutation.isPending}
+                    className="h-10 w-10 rounded-full flex-shrink-0"
+                >
                     <Send className="w-4 h-4" />
                 </Button>
             </form>

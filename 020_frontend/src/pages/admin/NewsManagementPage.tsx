@@ -1,17 +1,11 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { newsService } from '@/services/newsService';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import {
-    Card,
-    CardContent,
-    CardDescription,
-    CardHeader,
-    CardTitle,
-} from '@/components/ui/card';
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import {
     Dialog,
     DialogContent,
@@ -20,9 +14,10 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
-import { Plus, Pencil, Trash2, Loader2, Calendar } from 'lucide-react';
+import { Plus, Pencil, Trash2, Loader2, Calendar, MoreVertical, Search, Newspaper } from 'lucide-react';
 import { formatDate } from '@/lib/utils';
 import type { CreateNewsDto, UpdateNewsDto } from '@/types';
+import { EmptyState } from '@/components/common/EmptyState';
 
 export function NewsManagementPage() {
     const queryClient = useQueryClient();
@@ -31,6 +26,8 @@ export function NewsManagementPage() {
     const [editingNews, setEditingNews] = useState<{ id: number; title: string; content: string } | null>(null);
     const [deletingNewsId, setDeletingNewsId] = useState<number | null>(null);
     const [formData, setFormData] = useState({ title: '', content: '' });
+    const [searchTerm, setSearchTerm] = useState('');
+    const [actionDrawerNews, setActionDrawerNews] = useState<{ id: number; title: string; content: string } | null>(null);
 
     // Fetch News
     const { data: newsList, isLoading } = useQuery({
@@ -108,6 +105,15 @@ export function NewsManagementPage() {
 
     const isSubmitting = createMutation.isPending || updateMutation.isPending;
 
+    const filteredNews = useMemo(() => {
+        if (!newsList) return [];
+        if (!searchTerm.trim()) return newsList;
+        const q = searchTerm.toLowerCase();
+        return newsList.filter((n) =>
+            n.title.toLowerCase().includes(q) || n.content.toLowerCase().includes(q)
+        );
+    }, [newsList, searchTerm]);
+
     if (isLoading) {
         return (
             <div className="flex justify-center py-8">
@@ -117,18 +123,30 @@ export function NewsManagementPage() {
     }
 
     return (
-        <div className="space-y-6">
-            <div className="flex items-center justify-between">
+        <div className="space-y-5">
+            {/* Header */}
+            <div className="flex items-center justify-between gap-4 pt-1">
                 <div>
-                    <h1 className="text-3xl font-bold tracking-tight">News Verwaltung</h1>
-                    <p className="text-muted-foreground">
-                        Aktuelle Nachrichten für die Mitglieder verwalten
-                    </p>
+                    <h1 className="text-2xl font-bold tracking-tight">News Verwaltung</h1>
+                    <p className="text-sm text-muted-foreground mt-0.5">Aktuelle Nachrichten für die Mitglieder verwalten</p>
                 </div>
-                <Button className="gap-2" onClick={() => setIsDialogOpen(true)}>
+                <Button className="gap-1.5 h-11 px-4" onClick={() => setIsDialogOpen(true)}>
                     <Plus className="h-4 w-4" />
-                    News erstellen
+                    <span className="hidden sm:inline">News erstellen</span>
                 </Button>
+            </div>
+
+            {/* Search bar */}
+            <div className="native-group p-4">
+                <div className="relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                        placeholder="News durchsuchen..."
+                        className="pl-10 h-11"
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                    />
+                </div>
             </div>
 
             {/* Create/Edit Dialog */}
@@ -203,48 +221,86 @@ export function NewsManagementPage() {
                 </DialogContent>
             </Dialog>
 
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                {newsList?.map((news) => (
-                    <Card key={news.id} className="flex flex-col h-full">
-                        <CardHeader>
-                            <CardTitle className="line-clamp-2">{news.title}</CardTitle>
-                            <CardDescription className="flex items-center gap-2 text-xs">
-                                <Calendar className="h-3 w-3" />
-                                {formatDate(news.createdAt)}
-                            </CardDescription>
-                        </CardHeader>
-                        <CardContent className="flex-1">
-                            <p className="text-sm text-muted-foreground whitespace-pre-wrap line-clamp-4">
-                                {news.content}
-                            </p>
-                        </CardContent>
-                        <div className="p-6 pt-0 mt-auto flex justify-end gap-2">
+            {/* News List */}
+            {filteredNews.length === 0 ? (
+                <EmptyState
+                    icon={Newspaper}
+                    title={searchTerm ? 'Keine Treffer' : 'Noch keine News'}
+                    description={searchTerm ? 'Versuche einen anderen Suchbegriff.' : 'Erstelle die erste Nachricht über den Button oben rechts.'}
+                    {...(!searchTerm && {
+                        action: {
+                            label: 'News erstellen',
+                            onClick: () => setIsDialogOpen(true),
+                        }
+                    })}
+                />
+            ) : (
+                <div className="native-group divide-y divide-border/40">
+                    {filteredNews.map((news) => (
+                        <div key={news.id} className="flex items-start gap-3 px-4 py-3">
+                            {/* Left: icon */}
+                            <div className="inset-icon bg-primary/10 flex-shrink-0 mt-0.5">
+                                <Newspaper className="h-4 w-4 text-primary" />
+                            </div>
+                            {/* Center: content */}
+                            <div className="flex-1 min-w-0">
+                                <p className="font-semibold text-sm truncate">{news.title}</p>
+                                <p className="text-xs text-muted-foreground line-clamp-2 mt-0.5">{news.content}</p>
+                                <p className="text-xs text-muted-foreground/70 mt-1 flex items-center gap-1">
+                                    <Calendar className="h-3 w-3" />
+                                    {formatDate((news as any).createdAt)}
+                                </p>
+                            </div>
+                            {/* Right: 3-dots */}
                             <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handleEdit(news)}
+                                variant="ghost"
+                                size="icon"
+                                className="h-9 w-9 flex-shrink-0"
+                                onClick={() => setActionDrawerNews({ id: news.id, title: news.title, content: news.content })}
                             >
-                                <Pencil className="h-4 w-4" />
-                                <span className="sr-only">Bearbeiten</span>
-                            </Button>
-                            <Button
-                                variant="destructive"
-                                size="sm"
-                                onClick={() => handleDeleteClick(news.id)}
-                            >
-                                <Trash2 className="h-4 w-4" />
-                                <span className="sr-only">Löschen</span>
+                                <MoreVertical className="h-4 w-4" />
                             </Button>
                         </div>
-                    </Card>
-                ))}
-                {!newsList?.length && (
-                    <div className="col-span-full flex flex-col items-center justify-center p-8 text-center text-muted-foreground border rounded-lg border-dashed">
-                        <p>Keine News vorhanden</p>
-                        <p className="text-sm">Erstelle die erste Nachricht über den Button oben rechts.</p>
+                    ))}
+                </div>
+            )}
+
+            {/* Action Sheet */}
+            <Sheet open={!!actionDrawerNews} onOpenChange={(open) => { if (!open) setActionDrawerNews(null); }}>
+                <SheetContent side="bottom" className="pb-safe-nav rounded-t-2xl">
+                    <SheetHeader className="mb-2">
+                        <SheetTitle className="text-left text-base line-clamp-1">{actionDrawerNews?.title}</SheetTitle>
+                    </SheetHeader>
+                    <div className="divide-y divide-border/40">
+                        <Button
+                            variant="ghost"
+                            className="w-full h-12 justify-start gap-3 text-base font-normal"
+                            onClick={() => {
+                                if (actionDrawerNews) {
+                                    handleEdit(actionDrawerNews);
+                                    setActionDrawerNews(null);
+                                }
+                            }}
+                        >
+                            <Pencil className="h-4 w-4 text-muted-foreground" />
+                            Bearbeiten
+                        </Button>
+                        <Button
+                            variant="ghost"
+                            className="w-full h-12 justify-start gap-3 text-base font-normal text-destructive hover:text-destructive hover:bg-destructive/10"
+                            onClick={() => {
+                                if (actionDrawerNews) {
+                                    handleDeleteClick(actionDrawerNews.id);
+                                    setActionDrawerNews(null);
+                                }
+                            }}
+                        >
+                            <Trash2 className="h-4 w-4" />
+                            Löschen
+                        </Button>
                     </div>
-                )}
-            </div>
+                </SheetContent>
+            </Sheet>
         </div>
     );
 }

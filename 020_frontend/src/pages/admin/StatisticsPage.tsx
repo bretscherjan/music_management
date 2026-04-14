@@ -1,12 +1,16 @@
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { statsService, type RepertoireStatsParams } from '@/services/statsService';
+import { eventService } from '@/services/eventService';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
-import { Download, Calendar, Filter, Music, TrendingUp, BarChart2, Clock, Users, Award, UserX } from 'lucide-react';
+import {
+    BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend,
+    ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line,
+} from 'recharts';
+import { Download, Calendar, Filter, Music, TrendingUp, BarChart2, Clock, Users, Award, UserX, CalendarDays } from 'lucide-react';
 import { toast } from 'sonner';
 import { ZoomableTableWrapper } from '@/components/common/ZoomableTableWrapper';
 import { PdfExportDialog } from '@/components/ui/PdfExportDialog';
@@ -14,7 +18,7 @@ import type { PdfOptions } from '@/utils/pdfTheme';
 import { cn } from '@/lib/utils';
 
 export function StatisticsPage() {
-    const [activeTab, setActiveTab] = useState<'repertoire' | 'attendance'>('repertoire');
+    const [activeTab, setActiveTab] = useState<'repertoire' | 'attendance' | 'termine'>('repertoire');
     // State for filters
     const [timeRange, setTimeRange] = useState('all'); // all, lastyear, currentyear
     const [eventCategory, setEventCategory] = useState<string>('all');
@@ -52,6 +56,65 @@ export function StatisticsPage() {
         queryFn: () => statsService.getAttendanceStats({ ...getDateParams() }), // Passing category too if needed, though backend currently only uses date for attendance in my impl.
         enabled: activeTab === 'attendance'
     });
+
+    // Fetch all events for Termine Analyse (client-side derived stats)
+    const { data: allEvents, isLoading: isLoadingTermine } = useQuery({
+        queryKey: ['events-stats-all'],
+        queryFn: () => eventService.getAll(),
+        enabled: activeTab === 'termine',
+        staleTime: 5 * 60 * 1000,
+    });
+
+    // ── Derived: Termine Analyse stats ──────────────────────────────────────
+    const todayForStats = new Date();
+    todayForStats.setHours(0, 0, 0, 0);
+
+    const termineKpis = useMemo(() => {
+        if (!allEvents) return null;
+        return {
+            total: allEvents.length,
+            upcoming: allEvents.filter(e => new Date(e.date) >= todayForStats).length,
+            past: allEvents.filter(e => new Date(e.date) < todayForStats).length,
+        };
+    }, [allEvents]);
+
+    const typeDistData = useMemo(() => {
+        if (!allEvents) return [];
+        return [
+            { name: 'Proben', value: allEvents.filter(e => e.category === 'rehearsal').length, color: 'hsl(var(--chart-2))' },
+            { name: 'Auftritte', value: allEvents.filter(e => e.category === 'performance').length, color: 'hsl(var(--chart-1))' },
+            { name: 'Sonstiges', value: allEvents.filter(e => e.category === 'other').length, color: 'hsl(var(--chart-3))' },
+        ].filter(d => d.value > 0);
+    }, [allEvents]);
+
+    const weekdayData = useMemo(() => {
+        const DAYS = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'];
+        return DAYS.map((day, idx) => ({
+            day,
+            count: allEvents?.filter(e => {
+                const d = new Date(e.date).getDay(); // 0=Sun..6=Sat
+                const mon0 = d === 0 ? 6 : d - 1;   // 0=Mon..6=Sun
+                return mon0 === idx;
+            }).length ?? 0,
+        }));
+    }, [allEvents]);
+
+    const monthlyVolumeData = useMemo(() => {
+        if (!allEvents) return [];
+        const counts: Record<string, number> = {};
+        for (const event of allEvents) {
+            const d = new Date(event.date);
+            const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+            counts[key] = (counts[key] ?? 0) + 1;
+        }
+        return Object.entries(counts)
+            .sort(([a], [b]) => a.localeCompare(b))
+            .slice(-24)
+            .map(([month, count]) => ({
+                month: month.substring(5) + '/' + month.substring(2, 4),
+                count,
+            }));
+    }, [allEvents]);
 
     const handleDownloadPdf = async (opts: PdfOptions) => {
         try {
@@ -105,7 +168,9 @@ export function StatisticsPage() {
         'UNEXCUSED':'hsl(var(--chart-1))',   // Brand Red
     };
 
-    const isLoading = activeTab === 'repertoire' ? isLoadingRepertoire : isLoadingAttendance;
+    const isLoading = activeTab === 'repertoire' ? isLoadingRepertoire :
+                      activeTab === 'attendance' ? isLoadingAttendance :
+                      isLoadingTermine;
 
     return (
         <div className="space-y-6 max-w-7xl mx-auto pb-12">
@@ -169,6 +234,12 @@ export function StatisticsPage() {
                     >
                         Anwesenheit
                     </button>
+                    <button
+                        onClick={() => setActiveTab('termine')}
+                        className={`segmented-control-option${activeTab === 'termine' ? ' is-active' : ''}`}
+                    >
+                        Termine
+                    </button>
                 </div>
             </div>
 
@@ -212,7 +283,7 @@ export function StatisticsPage() {
 
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                         {/* Top 10 Chart */}
-                        <Card className="lg:col-span-2">
+                        <Card className="lg:col-span-2 shadow-sm rounded-2xl border-slate-100 bg-white">
                             <CardHeader>
                                 <CardTitle>Top 10 Meistgespielte Stücke</CardTitle>
                                 <CardDescription>Basierend auf der Anzahl Einträge in Setlisten</CardDescription>
@@ -241,7 +312,7 @@ export function StatisticsPage() {
                         </Card>
 
                         {/* Distribution Chart */}
-                        <Card>
+                        <Card className="shadow-sm rounded-2xl border-slate-100 bg-white">
                             <CardHeader>
                                 <CardTitle>Nutzungsverteilung</CardTitle>
                                 <CardDescription>Wie viele Stücke werden wie oft gespielt?</CardDescription>
@@ -352,7 +423,7 @@ export function StatisticsPage() {
 
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                         {/* Attendance Distribution */}
-                        <Card>
+                        <Card className="shadow-sm rounded-2xl border-slate-100 bg-white">
                             <CardHeader>
                                 <CardTitle>Anwesenheitsquote</CardTitle>
                                 <CardDescription>Verteilung der verifizierten Anwesenheiten</CardDescription>
@@ -388,7 +459,7 @@ export function StatisticsPage() {
                         </Card>
 
                         {/* Top Attendees Chart (still relevant to visualize "top") */}
-                        <Card className="lg:col-span-2">
+                        <Card className="lg:col-span-2 shadow-sm rounded-2xl border-slate-100 bg-white">
                             <CardHeader>
                                 <CardTitle>Top Anwesende</CardTitle>
                                 <CardDescription>Mitglieder mit den meisten verifizierten Anwesenheiten</CardDescription>
@@ -464,6 +535,130 @@ export function StatisticsPage() {
                     </Card>
                 </div>
             )}
+
+            {!isLoading && activeTab === 'termine' && (
+                <div className="space-y-6 animate-in fade-in duration-500">
+
+                    {/* ── KPI Summary Cards ── */}
+                    {termineKpis && (
+                        <div className="grid grid-cols-3 gap-3">
+                            <KpiCard
+                                icon={CalendarDays}
+                                label="Termine gesamt"
+                                value={termineKpis.total}
+                                accent
+                            />
+                            <KpiCard
+                                icon={Clock}
+                                label="Bevorstehend"
+                                value={termineKpis.upcoming}
+                            />
+                            <KpiCard
+                                icon={Award}
+                                label="Vergangen"
+                                value={termineKpis.past}
+                            />
+                        </div>
+                    )}
+
+                    {/* Event type distribution + Weekday analysis */}
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <Card className="shadow-sm rounded-2xl border-slate-100 bg-white">
+                            <CardHeader>
+                                <CardTitle>Termintypen</CardTitle>
+                                <CardDescription>Verteilung der Veranstaltungstypen</CardDescription>
+                            </CardHeader>
+                            <CardContent className="h-[300px]">
+                                {typeDistData.length > 0 ? (
+                                    <ResponsiveContainer width="100%" height="100%">
+                                        <PieChart>
+                                            <Pie
+                                                data={typeDistData}
+                                                cx="50%"
+                                                cy="45%"
+                                                innerRadius={60}
+                                                outerRadius={100}
+                                                paddingAngle={4}
+                                                dataKey="value"
+                                            >
+                                                {typeDistData.map((entry, index) => (
+                                                    <Cell key={`cell-${index}`} fill={entry.color} />
+                                                ))}
+                                            </Pie>
+                                            <RechartsTooltip formatter={(v: any, name: any) => [v, name]} />
+                                            <Legend layout="horizontal" verticalAlign="bottom" align="center" />
+                                        </PieChart>
+                                    </ResponsiveContainer>
+                                ) : (
+                                    <div className="h-full flex items-center justify-center text-muted-foreground text-sm">
+                                        Keine Daten verfügbar
+                                    </div>
+                                )}
+                            </CardContent>
+                        </Card>
+
+                        <Card className="shadow-sm rounded-2xl border-slate-100 bg-white">
+                            <CardHeader>
+                                <CardTitle>Wochentag-Analyse</CardTitle>
+                                <CardDescription>An welchen Wochentagen finden die meisten Termine statt?</CardDescription>
+                            </CardHeader>
+                            <CardContent className="h-[300px]">
+                                <ResponsiveContainer width="100%" height="100%">
+                                    <BarChart data={weekdayData} margin={{ top: 5, right: 16, left: -16, bottom: 5 }}>
+                                        <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                                        <XAxis dataKey="day" tick={{ fontSize: 12 }} />
+                                        <YAxis allowDecimals={false} tick={{ fontSize: 11 }} />
+                                        <RechartsTooltip formatter={(v: any) => [v, 'Termine']} />
+                                        <Bar dataKey="count" name="Termine" radius={[4, 4, 0, 0]}>
+                                            {weekdayData.map((entry, index) => (
+                                                <Cell
+                                                    key={`cell-${index}`}
+                                                    fill={entry.count === Math.max(...weekdayData.map(d => d.count))
+                                                        ? 'hsl(var(--chart-1))'
+                                                        : 'hsl(var(--chart-1) / 0.45)'}
+                                                />
+                                            ))}
+                                        </Bar>
+                                    </BarChart>
+                                </ResponsiveContainer>
+                            </CardContent>
+                        </Card>
+                    </div>
+
+                    {/* Monthly Volume Line Chart */}
+                    <Card className="shadow-sm rounded-2xl border-slate-100 bg-white">
+                        <CardHeader>
+                            <CardTitle>Monatliches Volumen</CardTitle>
+                            <CardDescription>Anzahl Termine pro Monat (letzte 24 Monate)</CardDescription>
+                        </CardHeader>
+                        <CardContent className="h-[260px]">
+                            {monthlyVolumeData.length > 0 ? (
+                                <ResponsiveContainer width="100%" height="100%">
+                                    <LineChart data={monthlyVolumeData} margin={{ top: 5, right: 16, left: -16, bottom: 5 }}>
+                                        <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                                        <XAxis dataKey="month" tick={{ fontSize: 11 }} interval="preserveStartEnd" />
+                                        <YAxis allowDecimals={false} tick={{ fontSize: 11 }} />
+                                        <RechartsTooltip formatter={(v: any) => [v, 'Termine']} />
+                                        <Line
+                                            type="monotone"
+                                            dataKey="count"
+                                            stroke="hsl(var(--chart-1))"
+                                            strokeWidth={2.5}
+                                            dot={{ r: 3, fill: 'hsl(var(--chart-1))' }}
+                                            activeDot={{ r: 5 }}
+                                            name="Termine"
+                                        />
+                                    </LineChart>
+                                </ResponsiveContainer>
+                            ) : (
+                                <div className="h-full flex items-center justify-center text-muted-foreground text-sm">
+                                    Keine Daten verfügbar
+                                </div>
+                            )}
+                        </CardContent>
+                    </Card>
+                </div>
+            )}
         </div>
     );
 }
@@ -482,7 +677,7 @@ interface KpiCardProps {
 function KpiCard({ icon: Icon, label, value, sub, accent, warn }: KpiCardProps) {
     return (
         <div className={cn(
-            "rounded-2xl border border-slate-100 shadow-sm p-4 flex flex-col gap-1 bg-card",
+            "rounded-2xl border border-slate-100 shadow-sm p-4 flex flex-col gap-1 bg-white",
             accent && "border-primary/20 bg-primary/5"
         )}>
             <div className="flex items-center gap-2 text-muted-foreground">

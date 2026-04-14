@@ -27,7 +27,6 @@ import {
 } from 'lucide-react';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
-import { getMediaUrl } from '@/lib/api';
 
 
 interface NavItem {
@@ -80,7 +79,7 @@ export function Header() {
             <div className="container-app flex h-16 items-center justify-between">
                 {/* Logo & Mobile Menu Trigger (Left align on mobile?) No, standart right aligned hamburger usually. */}
                 <Link to="/member" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
-                    <img src={getMediaUrl('/logo_smile.svg')} alt="Musig Elgg Logo" className="h-8 w-8 rounded-full object-cover" />
+                    <img src={'/logos/logo_smile.svg'} alt="Musig Elgg Logo" className="h-8 w-8 rounded-full object-cover" />
                     <div className="flex flex-col">
                         <span className="font-bold text-lg leading-tight">Musig Elgg</span>
                         <span className="text-xs text-muted-foreground">Mitgliederbereich</span>

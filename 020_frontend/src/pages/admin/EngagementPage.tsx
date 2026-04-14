@@ -440,8 +440,6 @@ export function EngagementPage() {
                                     <TableRow>
                                         <TableHead className="w-[110px]">Status</TableHead>
                                         <TableHead>Name</TableHead>
-                                        <TableHead>Register</TableHead>
-                                        <TableHead>Rolle</TableHead>
                                         <TableHead className="text-right">Zuletzt online</TableHead>
                                     </TableRow>
                                 </TableHeader>
@@ -455,8 +453,6 @@ export function EngagementPage() {
                                                 </span>
                                             </TableCell>
                                             <TableCell className="font-medium">{u.lastName} {u.firstName}</TableCell>
-                                            <TableCell className="text-muted-foreground text-sm">{u.register ?? '—'}</TableCell>
-                                            <TableCell><RoleBadge role={u.role} /></TableCell>
                                             <TableCell className="text-right text-muted-foreground text-sm">
                                                 {formatDistanceToNow(u.lastSeen, { addSuffix: true, locale: de })}
                                             </TableCell>
@@ -683,7 +679,19 @@ export function EngagementPage() {
                                         }).map((u) => {
                                             const isOnline = !!onlineUsers.find(ou => ou.id === u.id);
                                             return (
-                                                <div key={u.id} className="flex items-center gap-3 px-4 py-3 hover:bg-muted/30 transition-colors">
+                                                <div
+                                                    key={u.id}
+                                                    role="button"
+                                                    tabIndex={0}
+                                                    onClick={() => setMemberSheet({ id: u.id, firstName: u.firstName, lastName: u.lastName, email: u.email, role: u.role, register: u.register, category: 'all', total: u.total, logins: u.logins, fileDownloads: u.fileDownloads, attendanceUpdates: u.attendanceUpdates, lastSeenAt: u.lastSeenAt })}
+                                                    onKeyDown={(e) => {
+                                                        if (e.key === 'Enter' || e.key === ' ') {
+                                                            e.preventDefault();
+                                                            setMemberSheet({ id: u.id, firstName: u.firstName, lastName: u.lastName, email: u.email, role: u.role, register: u.register, category: 'all', total: u.total, logins: u.logins, fileDownloads: u.fileDownloads, attendanceUpdates: u.attendanceUpdates, lastSeenAt: u.lastSeenAt });
+                                                        }
+                                                    }}
+                                                    className="flex items-center gap-3 px-4 py-3 hover:bg-muted/30 transition-colors cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+                                                >
                                                     <Avatar className="h-10 w-10 flex-shrink-0">
                                                         <AvatarFallback name={`${u.firstName} ${u.lastName}`} />
                                                     </Avatar>
@@ -703,7 +711,7 @@ export function EngagementPage() {
                                                             <span className="text-xs text-muted-foreground"><span className="font-bold text-primary">{u.total}</span> Aktionen</span>
                                                         </div>
                                                     </div>
-                                                    <Button variant="ghost" size="icon" className="h-8 w-8 flex-shrink-0 text-muted-foreground" onClick={() => setMemberSheet({ id: u.id, firstName: u.firstName, lastName: u.lastName, email: u.email, role: u.role, register: u.register, category: 'all', total: u.total, logins: u.logins, fileDownloads: u.fileDownloads, attendanceUpdates: u.attendanceUpdates, lastSeenAt: u.lastSeenAt })}>
+                                                    <Button variant="ghost" size="icon" className="h-8 w-8 flex-shrink-0 text-muted-foreground pointer-events-none" tabIndex={-1}>
                                                         <MoreVertical className="h-4 w-4" />
                                                     </Button>
                                                 </div>
@@ -837,7 +845,19 @@ export function EngagementPage() {
                                             const isNew = u.category === 'newly-registered';
                                             const isInactive = u.category === 'inactive';
                                             return (
-                                                <div key={`${u.id}-${u.category}`} className="flex items-center gap-3 px-4 py-3 hover:bg-muted/30 transition-colors">
+                                                <div
+                                                    key={`${u.id}-${u.category}`}
+                                                    role="button"
+                                                    tabIndex={0}
+                                                    onClick={() => setMemberSheet(u)}
+                                                    onKeyDown={(e) => {
+                                                        if (e.key === 'Enter' || e.key === ' ') {
+                                                            e.preventDefault();
+                                                            setMemberSheet(u);
+                                                        }
+                                                    }}
+                                                    className="flex items-center gap-3 px-4 py-3 hover:bg-muted/30 transition-colors cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+                                                >
                                                     <div className="relative flex-shrink-0">
                                                         <Avatar className="h-10 w-10">
                                                             <AvatarFallback name={`${u.firstName} ${u.lastName}`} />
@@ -897,7 +917,7 @@ export function EngagementPage() {
                                                                 {isNew ? 'Neu' : 'Inaktiv'}
                                                             </Badge>
                                                         )}
-                                                        <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground" onClick={() => setMemberSheet(u)}>
+                                                        <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground pointer-events-none" tabIndex={-1}>
                                                             <MoreVertical className="h-4 w-4" />
                                                         </Button>
                                                     </div>

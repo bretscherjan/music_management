@@ -73,7 +73,7 @@ html {
   --accent: var(--musig-surface);
   --accent-foreground: var(--musig-red);
 
-  --destructive: 0 94% 60% / 0.2;
+  --destructive: 0 94% 60% ;
   --destructive-foreground: var(--musig-red);
 
   --border: 0 0% 90%;
@@ -246,6 +246,7 @@ body {
 .swipeable-card-content {
   position: relative;
   will-change: transform;
+  background-color: hsl(var(--card));
   /* Prevent text selection & image drag during swipe */
   -webkit-user-drag: none;
   user-select: none;

@@ -24,6 +24,7 @@ import { UpcommingEvents } from '@/pages/public/UpcommingEvents';
 
 // Member/Admin Pages
 import { EventListPage } from '@/pages/events/EventListPage';
+import { EventArchivePage } from '@/pages/events/EventArchivePage';
 import { EventDetailPage } from '@/pages/events/EventDetailPage';
 import { UserManagementPage } from '@/pages/admin/UserManagementPage';
 import { FileListPage } from '@/pages/files/FileListPage';
@@ -88,6 +89,7 @@ function App() {
               <Route index element={<EventListPage />} />
               {!isAppMode && <Route path="download" element={<AppDownloadPage />} />}
               <Route path="events" element={<ProtectedRoute permission="events:read"><EventListPage /></ProtectedRoute>} />
+              <Route path="events/archiv" element={<ProtectedRoute permission="events:read"><EventArchivePage /></ProtectedRoute>} />
               <Route path="events/:id" element={<ProtectedRoute permission="events:read"><EventDetailPage /></ProtectedRoute>} />
               <Route path="files" element={<ProtectedRoute permission="files:read"><FileListPage /></ProtectedRoute>} />
               <Route path="music-folders" element={<ProtectedRoute permission="folders:read"><MusicFolderPage /></ProtectedRoute>} />

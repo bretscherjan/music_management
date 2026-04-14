@@ -479,7 +479,7 @@ export function DbDiagram() {
                     })}
                 </div>
 
-                <div className="fixed bottom-6 right-6 inline-flex bg-white/95 backdrop-blur-sm p-3 rounded-lg border shadow-xl text-xs text-muted-foreground items-center gap-2 z-50">
+                <div className="fixed bottom-6 right-6 inline-flex bg-white/95 backdrop-blur-sm p-3 rounded-lg border shadow-xl text-xs text-muted-foreground items-center gap-2 z-40">
                     <Move className="h-4 w-4 text-primary" />
                     Kopfzeile ziehen · <kbd className="bg-zinc-100 border rounded px-1 text-[9px]">Ctrl</kbd>+Scroll zum Zoomen · <span className="text-indigo-600 font-semibold">FK-Feld klicken</span> navigiert
                 </div>

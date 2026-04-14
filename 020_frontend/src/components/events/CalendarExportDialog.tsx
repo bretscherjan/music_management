@@ -30,9 +30,14 @@ export function CalendarExportDialog({ events }: { events: Event[] }) {
     const [copied, setCopied] = useState(false);
     const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
 
-    // Initialize selection when events change
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const upcomingIds = events.filter(e => new Date(e.date) >= today).map(e => e.id);
+    const pastIds = events.filter(e => new Date(e.date) < today).map(e => e.id);
+
+    // Initialize with upcoming events selected
     useEffect(() => {
-        setSelectedIds(new Set(events.map(e => e.id)));
+        setSelectedIds(new Set(events.filter(e => new Date(e.date) >= today).map(e => e.id)));
     }, [events]);
 
     const handleToggleSelect = (id: number) => {
@@ -47,6 +52,14 @@ export function CalendarExportDialog({ events }: { events: Event[] }) {
 
     const handleSelectAll = () => {
         setSelectedIds(new Set(events.map(e => e.id)));
+    };
+
+    const handleSelectUpcoming = () => {
+        setSelectedIds(new Set(upcomingIds));
+    };
+
+    const handleSelectPast = () => {
+        setSelectedIds(new Set(pastIds));
     };
 
     const handleDeselectAll = () => {
@@ -200,11 +213,17 @@ export function CalendarExportDialog({ events }: { events: Event[] }) {
                     <div className="space-y-3">
                         <div className="flex items-center justify-between">
                             <Label>Termine auswählen ({selectedIds.size}/{events.length})</Label>
-                            <div className="flex gap-2">
-                                <Button variant="ghost" size="sm" className="h-8 text-xs" onClick={handleSelectAll}>
+                            <div className="flex gap-1">
+                                <Button variant="ghost" size="sm" className="h-7 text-xs px-2" onClick={handleSelectUpcoming}>
+                                    Bevorstehende
+                                </Button>
+                                <Button variant="ghost" size="sm" className="h-7 text-xs px-2" onClick={handleSelectPast}>
+                                    Vergangene
+                                </Button>
+                                <Button variant="ghost" size="sm" className="h-7 text-xs px-2" onClick={handleSelectAll}>
                                     Alle
                                 </Button>
-                                <Button variant="ghost" size="sm" className="h-8 text-xs" onClick={handleDeselectAll}>
+                                <Button variant="ghost" size="sm" className="h-7 text-xs px-2" onClick={handleDeselectAll}>
                                     Keine
                                 </Button>
                             </div>

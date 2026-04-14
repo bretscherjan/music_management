@@ -618,10 +618,10 @@ export function FileListPage() {
 
             {/* Bulk Action Toolbar */}
             {canSelectItems && (selectedFileIds.length > 0 || selectedFolderIds.length > 0) && (
-                <div className="fixed bottom-20 left-1/2 -translate-x-1/2 z-50 animate-in fade-in slide-in-from-bottom-4 duration-300">
+                <div className="fixed inset-x-3 bottom-[calc(5rem+env(safe-area-inset-bottom)+0.75rem)] z-40 animate-in fade-in slide-in-from-bottom-4 duration-300 md:inset-x-auto md:left-1/2 md:-translate-x-1/2 md:bottom-6">
                     <Card className="shadow-2xl border-primary/20 bg-background/95 backdrop-blur-sm">
-                        <CardContent className="p-4 flex items-center gap-4">
-                            <div className="flex items-center gap-2 px-2 border-r pr-4">
+                        <CardContent className="p-3 sm:p-4 flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
+                            <div className="flex items-center gap-2 sm:px-2 sm:border-r sm:pr-4">
                                 <Badge variant="default" className="bg-primary hover:bg-primary px-2 py-0.5">
                                     {selectedFileIds.length + selectedFolderIds.length}
                                 </Badge>
@@ -631,7 +631,7 @@ export function FileListPage() {
                                 </Button>
                             </div>
 
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-2 flex-wrap">
                                 {canManageFilePermissions && (
                                     <Button size="sm" onClick={() => setIsBulkAccessOpen(true)} className="h-9">
                                         <Shield className="h-4 w-4 mr-2" />

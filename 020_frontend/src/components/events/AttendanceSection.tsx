@@ -2,7 +2,6 @@ import { useMemo, useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { eventService } from '@/services/eventService';
 import { useAuth, useCan } from '@/context/AuthContext';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
@@ -119,31 +118,29 @@ export function AttendanceSection({ eventId }: AttendanceSectionProps) {
 
     if (isLoading) {
         return (
-            <Card>
-                <CardHeader>
-                    <Skeleton className="h-6 w-48" />
-                </CardHeader>
-                <CardContent>
-                    <div className="space-y-4">
-                        {[1, 2, 3].map((i) => (
-                            <Skeleton key={i} className="h-12 w-full" />
-                        ))}
+            <div className="native-group divide-y divide-border/40">
+                <div className="px-4 py-3">
+                    <Skeleton className="h-5 w-36" />
+                </div>
+                {[1, 2, 3].map((i) => (
+                    <div key={i} className="flex items-center gap-3 px-4 py-3">
+                        <Skeleton className="h-8 w-8 rounded-full flex-shrink-0" />
+                        <Skeleton className="h-4 flex-1" />
                     </div>
-                </CardContent>
-            </Card>
+                ))}
+            </div>
         );
     }
 
     return (
-        <Card>
-            <CardHeader>
-                <div className="flex items-center justify-between flex-wrap gap-4">
-                    <CardTitle className="flex items-center gap-2">
-                        <Users className="h-5 w-5" />
+        <div className="space-y-4">
+            {/* Header with summary */}
+            <div className="native-group">
+                <div className="flex items-center justify-between flex-wrap gap-3 px-4 py-4 border-b border-border/40">
+                    <h3 className="font-semibold flex items-center gap-2 text-sm">
+                        <Users className="h-4 w-4" />
                         Anwesenheit
-                    </CardTitle>
-
-                    {/* Summary Badges */}
+                    </h3>
                     <div className="flex gap-2 flex-wrap">
                         <Badge variant="success" className="gap-1 text-green-900/70">
                             <CheckCircle className="h-3 w-3 text-green-900/70" />
@@ -163,22 +160,21 @@ export function AttendanceSection({ eventId }: AttendanceSectionProps) {
                         </Badge>
                     </div>
                 </div>
-            </CardHeader>
-            <CardContent className="space-y-6">
-                {error && (
-                    <Alert variant="destructive">
-                        <AlertCircle className="h-4 w-4" />
-                        <AlertTitle>Fehler</AlertTitle>
-                        <AlertDescription>{error}</AlertDescription>
-                    </Alert>
-                )}
+
                 {/* My Attendance */}
-                <div className="p-4 rounded-lg bg-gray-100 border border-primary/20 space-y-4">
-                    <div>
-                        <h4 className="font-medium mb-3 flex items-center justify-between">
-                            Meine Zusage
+                <div className="p-4 space-y-4">
+                    {error && (
+                        <Alert variant="destructive">
+                            <AlertCircle className="h-4 w-4" />
+                            <AlertTitle>Fehler</AlertTitle>
+                            <AlertDescription>{error}</AlertDescription>
+                        </Alert>
+                    )}
+                    <div className="rounded-xl bg-primary/5 border border-primary/15 p-4 space-y-3">
+                        <div className="flex items-center justify-between">
+                            <h4 className="font-medium text-sm">Meine Zusage</h4>
                             {isLocked && <Badge variant="outline" className="text-xs">Bearbeitung gesperrt</Badge>}
-                        </h4>
+                        </div>
                         <div className="flex gap-2 flex-wrap">
                             <AttendanceButton
                                 status="yes"
@@ -199,58 +195,63 @@ export function AttendanceSection({ eventId }: AttendanceSectionProps) {
                                 disabled={isPending || isLocked}
                             />
                         </div>
-                    </div>
-
-                    {/* Comment Input */}
-                    {!isLocked && (
-                        <div className="flex gap-2">
-                            <Input
-                                placeholder="Kommentar (optional)..."
-                                value={comment}
-                                onChange={(e) => {
-                                    setComment(e.target.value);
-                                    setIsCommentModified(true);
-                                }}
-                                className="bg-background"
-                            />
-                        </div>
-                    )}
-                    {isLocked && userAttendance?.comment && (
-                        <div className="text-sm text-muted-foreground italic">
-                            Kommentar: {userAttendance.comment}
-                        </div>
-                    )}
-                </div>
-
-                {/* Attendance List by Register */}
-                {groupedAttendances.map((group) => (
-                    <div key={group.registerName} className="space-y-3">
-                        <h4 className="font-medium flex items-center gap-2 text-sm text-muted-foreground">
-                            <Music className="h-4 w-4" />
-                            {group.registerName}
-                        </h4>
-                        <div className="space-y-2">
-                            {group.attendances.map((attendance) => (
-                                <AttendanceRow
-                                    key={attendance.id ?? `pending-${attendance.userId}`}
-                                    attendance={attendance}
-                                    isAdmin={canAdminAttendance}
-                                    onStatusChange={(status) => handleStatusChange(status, attendance.userId)}
-                                    onCommentChange={(newComment) => handleCommentChange(attendance.userId, newComment)}
-                                    disabled={isPending}
+                        {!isLocked && (
+                            <div className="flex gap-2">
+                                <Input
+                                    placeholder="Kommentar (optional)..."
+                                    value={comment}
+                                    onChange={(e) => {
+                                        setComment(e.target.value);
+                                        setIsCommentModified(true);
+                                    }}
+                                    className="bg-background"
                                 />
-                            ))}
-                        </div>
+                            </div>
+                        )}
+                        {isLocked && userAttendance?.comment && (
+                            <div className="text-sm text-muted-foreground italic">
+                                Kommentar: {userAttendance.comment}
+                            </div>
+                        )}
                     </div>
-                ))}
+                </div>
+            </div>
 
-                {attendances?.length === 0 && (
-                    <p className="text-center text-muted-foreground py-4">
-                        Noch keine Rückmeldungen
-                    </p>
-                )}
-            </CardContent>
-        </Card>
+            {/* Attendance List by Register */}
+            {groupedAttendances.length > 0 && (
+                <div className="space-y-2">
+                    <p className="native-section-label">Rückmeldungen</p>
+                    <div className="native-group divide-y divide-border/40">
+                        {groupedAttendances.map((group) => (
+                            <div key={group.registerName}>
+                                <div className="px-4 py-2 bg-muted/40 flex items-center gap-1.5">
+                                    <Music className="h-3.5 w-3.5 text-muted-foreground" />
+                                    <span className="text-xs font-semibold text-muted-foreground">{group.registerName}</span>
+                                </div>
+                                <div className="divide-y divide-border/30">
+                                    {group.attendances.map((attendance) => (
+                                        <AttendanceRow
+                                            key={attendance.id ?? `pending-${attendance.userId}`}
+                                            attendance={attendance}
+                                            isAdmin={canAdminAttendance}
+                                            onStatusChange={(status) => handleStatusChange(status, attendance.userId)}
+                                            onCommentChange={(newComment) => handleCommentChange(attendance.userId, newComment)}
+                                            disabled={isPending}
+                                        />
+                                    ))}
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
+
+            {attendances?.length === 0 && (
+                <p className="text-center text-muted-foreground py-4 text-sm">
+                    Noch keine Rückmeldungen
+                </p>
+            )}
+        </div>
     );
 }
 
@@ -263,23 +264,23 @@ interface AttendanceButtonProps {
 
 function AttendanceButton({ status, isActive, onClick, disabled }: AttendanceButtonProps) {
     const config = {
-        yes: { icon: CheckCircle, label: 'Ja', activeClass: 'bg-success hover:bg-success' },
-        no: { icon: XCircle, label: 'Nein', activeClass: 'bg-red-600 hover:bg-red-700' },
-        maybe: { icon: HelpCircle, label: 'Vielleicht', activeClass: 'bg-yellow-600 hover:bg-yellow-700' },
+        yes: { icon: CheckCircle, label: 'Ja', activeClass: 'bg-success hover:bg-success text-white', inactiveClass: 'bg-green-50 text-green-700 border-green-200' },
+        no: { icon: XCircle, label: 'Nein', activeClass: 'bg-red-600 hover:bg-red-700 text-white', inactiveClass: 'bg-red-50 text-red-700 border-red-200' },
+        maybe: { icon: HelpCircle, label: 'Vielleicht', activeClass: 'bg-yellow-500 hover:bg-yellow-600 text-white', inactiveClass: 'bg-yellow-50 text-yellow-700 border-yellow-200' },
     };
 
-    const { icon: Icon, label, activeClass } = config[status];
+    const { icon: Icon, label, activeClass, inactiveClass } = config[status];
 
     return (
         <Button
-            variant={isActive ? 'default' : 'outline'}
+            variant="outline"
             size="sm"
             onClick={onClick}
             disabled={disabled}
-            className={cn(isActive && activeClass)}
+            className={cn("gap-1.5 flex-1 sm:flex-none", isActive ? activeClass : inactiveClass)}
         >
-            <Icon className="h-4 w-4 mr-1" />
-            <span className="hidden sm:inline">{label}</span>
+            <Icon className="h-4 w-4" />
+            {label}
         </Button>
     );
 }
@@ -315,76 +316,48 @@ function AttendanceRow({ attendance, isAdmin, onStatusChange, onCommentChange, d
     };
 
     return (
-        <div className="flex flex-col p-3 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors">
+        <div className="flex flex-col px-4 py-3 hover:bg-muted/20 transition-colors">
             <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3 min-w-0">
-                    <StatusIcon className={cn("h-5 w-5 flex-shrink-0", color)} />
-                    <span className="truncate">{userName}</span>
-                    {!isEditing && attendance.comment && (
-                        <span className="text-xs text-muted-foreground truncate hidden sm:inline">
-                            – {attendance.comment}
-                        </span>
-                    )}
+                    <StatusIcon className={cn("h-4 w-4 flex-shrink-0", color)} />
+                    <div className="min-w-0">
+                        <span className="text-sm font-medium truncate block">{userName}</span>
+                        {!isEditing && attendance.comment && (
+                            <span className="text-xs text-muted-foreground truncate block">
+                                {attendance.comment}
+                            </span>
+                        )}
+                    </div>
                 </div>
 
                 {isAdmin && (
-                    <div className="flex gap-1 flex-shrink-0 ml-2">
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8"
-                            onClick={() => onStatusChange('yes')}
-                            disabled={disabled}
-                        >
-                            <CheckCircle className="h-4 w-4 text-success" />
+                    <div className="flex gap-0.5 flex-shrink-0 ml-2">
+                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => onStatusChange('yes')} disabled={disabled}>
+                            <CheckCircle className="h-3.5 w-3.5 text-success" />
                         </Button>
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8"
-                            onClick={() => onStatusChange('no')}
-                            disabled={disabled}
-                        >
-                            <XCircle className="h-4 w-4 text-red-600" />
+                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => onStatusChange('no')} disabled={disabled}>
+                            <XCircle className="h-3.5 w-3.5 text-red-600" />
                         </Button>
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8"
-                            onClick={() => onStatusChange('maybe')}
-                            disabled={disabled}
-                        >
-                            <HelpCircle className="h-4 w-4 text-yellow-600" />
+                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => onStatusChange('maybe')} disabled={disabled}>
+                            <HelpCircle className="h-3.5 w-3.5 text-yellow-600" />
                         </Button>
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8"
-                            onClick={() => setIsEditing(!isEditing)}
-                            disabled={disabled}
-                            title="Kommentar bearbeiten"
-                        >
-                            <Edit2 className="h-4 w-4 text-muted-foreground" />
+                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setIsEditing(!isEditing)} disabled={disabled} title="Kommentar bearbeiten">
+                            <Edit2 className="h-3.5 w-3.5 text-muted-foreground" />
                         </Button>
                     </div>
                 )}
             </div>
 
-            {/* Admin comment editing */}
             {isAdmin && isEditing && (
-                <div className="flex gap-2 mt-2 pl-8">
+                <div className="flex gap-2 mt-2 pl-7">
                     <Input
                         value={editComment}
                         onChange={(e) => setEditComment(e.target.value)}
                         placeholder="Kommentar eingeben..."
                         className="flex-1 h-8 text-sm"
                     />
-                    <Button size="sm" onClick={handleSaveComment} disabled={disabled}>
-                        OK
-                    </Button>
-                    <Button size="sm" variant="ghost" onClick={() => setIsEditing(false)}>
-                        ✕
-                    </Button>
+                    <Button size="sm" onClick={handleSaveComment} disabled={disabled}>OK</Button>
+                    <Button size="sm" variant="ghost" onClick={() => setIsEditing(false)}>✕</Button>
                 </div>
             )}
         </div>

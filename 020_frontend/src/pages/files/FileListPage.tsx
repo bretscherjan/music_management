@@ -33,8 +33,6 @@ import { Button } from '@/components/ui/button';
 import {
     Card,
     CardContent,
-    CardHeader,
-    CardTitle,
 } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
@@ -340,15 +338,14 @@ export function FileListPage() {
                     </CardContent>
                 </Card>
             ) : (
-                <Card>
-                    <CardHeader>
-                        <CardTitle className="text-lg flex items-center justify-between gap-2 overflow-hidden">
-                            <div className="flex items-center gap-2 overflow-hidden">
-                                <Folder className="h-5 w-5 fill-musig-contrast/20 text-musig-contrast shrink-0" />
-                                <span className="truncate">{currentFolderName}</span>
-                            </div>
+                <div className="native-group overflow-hidden">
+                    <div className="flex items-center justify-between gap-2 px-4 py-3 border-b">
+                        <div className="flex items-center gap-2 overflow-hidden">
+                            <Folder className="h-5 w-5 fill-musig-contrast/20 text-musig-contrast shrink-0" />
+                            <span className="font-semibold text-sm truncate">{currentFolderName}</span>
+                        </div>
 
-                            {canSelectItems && (files.length > 0 || folders.length > 0) && (
+                        {canSelectItems && (files.length > 0 || folders.length > 0) && (
                                 <div className="flex items-center gap-2">
                                     <Button
                                         variant="ghost"
@@ -364,10 +361,9 @@ export function FileListPage() {
                                     </Button>
                                 </div>
                             )}
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="space-y-4">
+                    </div>
+                    <div className="divide-y divide-border/40">
+                        <div className="p-4 space-y-4">
                             {/* Subfolders */}
                             {folders.length > 0 && (
                                 <div className="space-y-2">
@@ -378,7 +374,7 @@ export function FileListPage() {
                                         <div
                                             key={folder.id}
                                             id={`folder-${folder.id}`}
-                                            className={`flex items-center justify-between p-3 rounded-lg transition-colors group relative border ${selectedFolderIds.includes(folder.id) ? 'bg-primary/10 border-primary/20' : folderAccess.isRestricted ? 'bg-muted/20 border-muted' : 'bg-muted/30 hover:bg-muted/50 border-transparent'} ${!folderAccess.canAccess ? 'opacity-60' : ''}`}
+                                            className={`flex items-center justify-between p-3 rounded-xl transition-colors group relative border ${selectedFolderIds.includes(folder.id) ? 'bg-primary/10 border-primary/20' : folderAccess.isRestricted ? 'bg-muted/20 border-muted' : 'bg-muted/30 hover:bg-muted/50 border-transparent'} ${!folderAccess.canAccess ? 'opacity-60' : ''}`}
                                         >
                                             <div className="flex items-center gap-3 flex-1 min-w-0">
                                                 {canSelectItems && (
@@ -421,7 +417,7 @@ export function FileListPage() {
                                                 {(canUploadFiles || canManageFilePermissions) && (
                                                     <DropdownMenu>
                                                         <DropdownMenuTrigger asChild>
-                                                            <Button variant="ghost" className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                            <Button variant="ghost" className="h-9 w-9 p-0 transition-opacity">
                                                                 <span className="sr-only">Open menu</span>
                                                                 <MoreVertical className="h-4 w-4" />
                                                             </Button>
@@ -525,7 +521,7 @@ export function FileListPage() {
                                                 <Button
                                                     variant="ghost"
                                                     size="icon"
-                                                    className="h-8 w-8 text-muted-foreground hover:text-primary opacity-0 group-hover:opacity-100 transition-opacity"
+                                                    className="h-9 w-9 text-muted-foreground hover:text-primary transition-opacity"
                                                     onClick={(e) => {
                                                         e.stopPropagation();
                                                         handleDownload(file.id, file.originalName);
@@ -542,7 +538,7 @@ export function FileListPage() {
 
                                                 <DropdownMenu>
                                                     <DropdownMenuTrigger asChild>
-                                                        <Button variant="ghost" className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                        <Button variant="ghost" className="h-9 w-9 p-0">
                                                             <MoreVertical className="h-4 w-4" />
                                                         </Button>
                                                     </DropdownMenuTrigger>
@@ -616,8 +612,8 @@ export function FileListPage() {
                                 </div>
                             )}
                         </div>
-                    </CardContent>
-                </Card>
+                    </div>
+                </div>
             )}
 
             {/* Bulk Action Toolbar */}

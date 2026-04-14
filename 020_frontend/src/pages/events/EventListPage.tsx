@@ -3,11 +3,11 @@ import { useQuery } from '@tanstack/react-query';
 import { Link, useSearchParams } from 'react-router-dom';
 import { eventService } from '@/services/eventService';
 import { useCan } from '@/context/AuthContext';
-import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { MapPin, Clock, Plus, Filter, Users, CheckCircle, XCircle, HelpCircle } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { MapPin, Clock, Plus, CheckCircle, XCircle, HelpCircle, ChevronRight } from 'lucide-react';
 import { formatTime, getCategoryLabel } from '@/lib/utils';
 import type { Event, EventCategory } from '@/types';
 import { CalendarExportDialog } from '@/components/events/CalendarExportDialog';
@@ -75,113 +75,91 @@ export function EventListPage() {
     const pastEvents = sortedEvents.filter(e => new Date(e.date) < today).reverse();
 
     return (
-        <div className="space-y-8">
+        <div className="space-y-5">
             {/* Header */}
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6 border-b pb-6">
+            <div className="flex items-center justify-between gap-4 pt-1">
                 <div>
-                    <h1 className="text-3xl font-bold tracking-tight text-secondary">Termine</h1>
-                    <p className="text-muted-foreground mt-1 text-lg">
-                        Übersicht aller Veranstaltungen und Proben
-                    </p>
+                    <h1 className="text-2xl font-bold tracking-tight">Termine</h1>
+                    <p className="text-sm text-muted-foreground mt-0.5">Veranstaltungen &amp; Proben</p>
                 </div>
-
-                <div className="flex flex-wrap gap-3">
+                <div className="flex items-center gap-2 flex-shrink-0">
                     <CalendarExportDialog events={filteredEvents} />
-
                     {can('events:write') && (
                         <Link to="/member/admin/events/new">
-                            <Button className="shadow-sm">
-                                <Plus className="h-4 w-4 mr-2" />
-                                Neuer Termin
+                            <Button size="sm" className="gap-1.5">
+                                <Plus className="h-4 w-4" />
+                                <span className="hidden sm:inline">Neuer Termin</span>
                             </Button>
                         </Link>
                     )}
                 </div>
             </div>
 
-            {/* Category Filter */}
-            <div className="flex items-center gap-2 overflow-x-auto pb-2">
-                <Filter className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-                {categories.map((cat) => (
-                    <Button
-                        key={cat.value}
-                        variant={selectedCategory === cat.value ? 'default' : 'outline'}
-                        size="sm"
-                        onClick={() => setSelectedCategory(cat.value)}
-                        className="flex-shrink-0"
-                    >
-                        {cat.label}
-                    </Button>
-                ))}
+            {/* Category Filter – Segmented Control */}
+            <div className="overflow-x-auto">
+                <div className="segmented-control">
+                    {categories.map((cat) => (
+                        <button
+                            key={cat.value}
+                            className={cn('segmented-control-option', selectedCategory === cat.value && 'is-active')}
+                            onClick={() => setSelectedCategory(cat.value)}
+                        >
+                            {cat.label}
+                        </button>
+                    ))}
+                </div>
             </div>
 
             {/* Events List */}
-            {
-                isLoading ? (
-                    <div className="space-y-4">
-                        {[1, 2, 3, 4].map((i) => (
-                            <Card key={i}>
-                                <CardContent className="p-6">
-                                    <Skeleton className="h-6 w-3/4 mb-2" />
-                                    <Skeleton className="h-4 w-1/2" />
-                                </CardContent>
-                            </Card>
-                        ))}
-                    </div>
-                ) : error ? (
-                    <Card className="border-destructive/20 bg-destructive/5">
-                        <CardContent className="p-12 text-center">
-                            <HelpCircle className="h-12 w-12 text-destructive mx-auto mb-4 opacity-50" />
-                            <p className="text-destructive font-medium">Fehler beim Laden der Termine</p>
-                            <Button 
-                                variant="outline" 
-                                size="sm" 
-                                className="mt-4"
-                                onClick={() => window.location.reload()}
-                            >
-                                Erneut versuchen
-                            </Button>
-                        </CardContent>
-                    </Card>
-                ) : upcomingEvents.length === 0 && pastEvents.length === 0 ? (
-                    <Card className="bg-muted/30 border-dashed">
-                        <CardContent className="p-12 text-center">
-                            <Clock className="h-12 w-12 text-muted-foreground mx-auto mb-4 opacity-20" />
-                            <p className="text-muted-foreground">Keine Termine in dieser Kategorie gefunden</p>
-                        </CardContent>
-                    </Card>
-                ) : (
-                    <div className="space-y-12">
-                        {upcomingEvents.length > 0 && (
-                            <section className="space-y-6">
-                                <h2 className="text-xl font-semibold flex items-center gap-2 text-secondary">
-                                    <Clock className="h-5 w-5 text-primary" />
-                                    Anstehende Termine
-                                </h2>
-                                <div className="grid gap-4">
-                                    {upcomingEvents.map((event) => (
-                                        <EventListItem key={event.id} event={event} isLocked={false} />
-                                    ))}
-                                </div>
-                            </section>
-                        )}
-
-                        {pastEvents.length > 0 && (
-                            <section className="space-y-6">
-                                <h2 className="text-xl font-semibold flex items-center gap-2 text-muted-foreground">
-                                    <Clock className="h-5 w-5" />
-                                    Vergangene Termine
-                                </h2>
-                                <div className="grid gap-4 opacity-75 grayscale-[0.5]">
-                                    {pastEvents.map((event) => (
-                                        <EventListItem key={event.id} event={event} isLocked={true} />
-                                    ))}
-                                </div>
-                            </section>
-                        )}
-                    </div>
-                )
-            }
+            {isLoading ? (
+                <div className="native-group divide-y divide-border/50">
+                    {[1, 2, 3, 4].map((i) => (
+                        <div key={i} className="flex items-center gap-4 p-4">
+                            <Skeleton className="h-14 w-12 rounded-xl flex-shrink-0" />
+                            <div className="flex-1 space-y-2">
+                                <Skeleton className="h-4 w-3/4" />
+                                <Skeleton className="h-3 w-1/2" />
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            ) : error ? (
+                <div className="native-group p-8 text-center">
+                    <HelpCircle className="h-10 w-10 text-destructive mx-auto mb-3 opacity-50" />
+                    <p className="text-destructive font-medium text-sm">Fehler beim Laden der Termine</p>
+                    <Button variant="outline" size="sm" className="mt-4" onClick={() => window.location.reload()}>
+                        Erneut versuchen
+                    </Button>
+                </div>
+            ) : upcomingEvents.length === 0 && pastEvents.length === 0 ? (
+                <div className="native-group p-10 text-center">
+                    <Clock className="h-10 w-10 text-muted-foreground mx-auto mb-3 opacity-20" />
+                    <p className="text-sm text-muted-foreground">Keine Termine in dieser Kategorie</p>
+                </div>
+            ) : (
+                <div className="space-y-6">
+                    {upcomingEvents.length > 0 && (
+                        <section className="space-y-2">
+                            <p className="native-section-label">Anstehende Termine</p>
+                            <div className="native-group divide-y divide-border/40">
+                                {upcomingEvents.map((event) => (
+                                    <EventListItem key={event.id} event={event} isLocked={false} />
+                                ))}
+                            </div>
+                        </section>
+                    )}
+                    {pastEvents.length > 0 && (
+                        <section className="space-y-2 ">
+                            <p className="native-section-label">Vergangene Termine</p>
+                            <div className="native-group divide-y divide-border/40">
+                                {pastEvents.map((event) => (
+                                    <EventListItem key={event.id} event={event} isLocked={true} />
+                                ))}
+                            </div>
+                        </section>
+                    )}
+                </div>
+            )}
         </div>
     );
 }
@@ -201,104 +179,73 @@ function EventListItem({ event, isLocked }: { event: Event; isLocked: boolean })
     const summary = event.attendanceSummary || { yes: 0, no: 0, maybe: 0, pending: 0, total: 0 };
 
     return (
-        <div id={`event-${event.id}`} className="scroll-mt-24 rounded-xl overflow-hidden">
-            <SwipeableEventCard
-                eventId={event.id}
-                currentStatus={status}
-                isLocked={isLocked}
-            >
+        <div id={`event-${event.id}`} className="scroll-mt-24">
+            <SwipeableEventCard eventId={event.id} currentStatus={status} isLocked={isLocked}>
                 <Link to={`/member/events/${event.id}`}>
-                    <Card className={`transition-all hover:shadow-md hover:border-primary/50 border-l-4 ${borderColor}`}>
-                        <CardContent className="p-4 sm:p-6">
-                            <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
-                                { isLocked ? (
-                                <div className="flex-shrink-0 text-center bg-primary/20 rounded-lg p-2 w-16 flex flex-col items-center justify-center">
-                                    <div className="text-xs text-secondary/80 uppercase font-semibold">
-                                        {new Date(event.date).toLocaleDateString('de-CH', { weekday: 'short' })}
-                                    </div>
-                                    <div className="text-xl font-bold text-secondary">
-                                        {new Date(event.date).getDate()}
-                                    </div>
-                                    <div className="text-xs text-secondary/80">
-                                        {new Date(event.date).toLocaleDateString('de-CH', { month: 'short' })}
-                                    </div>
-                                </div>
-                                ) : (
-                                <div className="flex-shrink-0 text-center bg-primary/75 rounded-lg p-2 w-16 flex flex-col items-center justify-center">
-                                    <div className="text-xs text-secondary/80 uppercase font-semibold">
-                                        {new Date(event.date).toLocaleDateString('de-CH', { weekday: 'short' })}
-                                    </div>
-                                    <div className="text-xl font-bold text-secondary">
-                                        {new Date(event.date).getDate()}
-                                    </div>
-                                    <div className="text-xs text-secondary/80">
-                                        {new Date(event.date).toLocaleDateString('de-CH', { month: 'short' })}
-                                    </div>
-                                </div>)}
-                                <div className="flex-1 min-w-0">
-                                    <div className="flex items-center gap-2 flex-wrap mb-1">
-                                        <h3 className="font-semibold truncate">{event.title}</h3>
-                                        <Badge variant={categoryVariant[event.category] ?? 'secondary'} className="flex-shrink-0">
-                                            {getCategoryLabel(event.category)}
-                                        </Badge>
-                                        {status && (
-                                            <Badge
-                                                variant="outline"
-                                                className={`ml-auto ${
-                                                    status === 'yes'
-                                                        ? 'text-success border-success/20 bg-success/5'
-                                                        : status === 'no'
-                                                            ? 'text-red-600 border-red-200 bg-red-50'
-                                                            : 'text-yellow-600 border-yellow-200 bg-yellow-50'
-                                                }`}
-                                            >
-                                                {status === 'yes' ? 'Zugesagt' : status === 'no' ? 'Abgesagt' : 'Vielleicht'}
-                                            </Badge>
-                                        )}
-                                    </div>
-
-                                    <div className="flex flex-wrap gap-3 text-sm text-muted-foreground">
-                                        <span className="flex items-center gap-1">
-                                            <Clock className="h-3.5 w-3.5" />
-                                            {formatTime(event.startTime)} - {formatTime(event.endTime)}
-                                        </span>
-                                        {event.location && (
-                                            <span className="flex items-center gap-1">
-                                                <MapPin className="h-3.5 w-3.5" />
-                                                {event.location}
-                                            </span>
-                                        )}
-                                    </div>
-
-                                    <div className="mt-4 flex items-center justify-between flex-wrap gap-4 pt-3 border-t">
-                                        <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-                                            <Users className="h-4 w-4" />
-                                            Anwesenheit
-                                        </div>
-
-                                        <div className="flex gap-2 flex-wrap">
-                                            <Badge variant="success" className="gap-1 text-green-800">
-                                                <CheckCircle className="h-3 w-3" />
-                                                {summary.yes}
-                                            </Badge>
-                                            <Badge variant="destructive" className="gap-1 text-red-800">
-                                                <XCircle className="h-3 w-3" />
-                                                {summary.no}
-                                            </Badge>
-                                            <Badge variant="warning" className="gap-1 text-yellow-800">
-                                                <HelpCircle className="h-3 w-3" />
-                                                {summary.maybe}
-                                            </Badge>
-                                            <Badge variant="outline" className="gap-1">
-                                                <Clock className="h-3 w-3" />
-                                                {summary.pending ?? 0}
-                                            </Badge>
-                                        </div>
-                                    </div>
-                                </div>
+                    <div className={`flex items-center gap-3 px-4 py-3.5 hover:bg-muted/30 transition-colors border-l-4 ${borderColor}`}>
+                        {/* Date Badge */}
+                        <div className={cn(
+                            "flex-shrink-0 text-center rounded-xl w-12 h-14 flex flex-col items-center justify-center",
+                            isLocked ? "bg-muted" : "bg-primary/15"
+                        )}>
+                            <div className="text-[10px] font-semibold uppercase text-muted-foreground leading-none">
+                                {new Date(event.date).toLocaleDateString('de-CH', { weekday: 'short' })}
                             </div>
-                        </CardContent>
-                    </Card>
+                            <div className={cn("text-xl font-bold leading-tight", isLocked ? "text-muted-foreground" : "text-primary")}>
+                                {new Date(event.date).getDate()}
+                            </div>
+                            <div className="text-[10px] text-muted-foreground leading-none">
+                                {new Date(event.date).toLocaleDateString('de-CH', { month: 'short' })}
+                            </div>
+                        </div>
+
+                        {/* Content */}
+                        <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-0.5">
+                                <span className="font-semibold text-sm truncate">{event.title}</span>
+                                <Badge variant={categoryVariant[event.category] ?? 'secondary'} className="text-[10px] px-1.5 py-0 flex-shrink-0">
+                                    {getCategoryLabel(event.category)}
+                                </Badge>
+                            </div>
+                            <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                                <span className="flex items-center gap-1">
+                                    <Clock className="h-3 w-3" />
+                                    {formatTime(event.startTime)}
+                                </span>
+                                {event.location && (
+                                    <span className="flex items-center gap-1 truncate">
+                                        <MapPin className="h-3 w-3 flex-shrink-0" />
+                                        <span className="truncate">{event.location}</span>
+                                    </span>
+                                )}
+                            </div>
+                            {/* Attendance mini-summary */}
+                            <div className="flex items-center gap-2 mt-1.5">
+                                <span className="text-[11px] text-green-600 font-medium flex items-center gap-0.5">
+                                    <CheckCircle className="h-3 w-3" />{summary.yes}
+                                </span>
+                                <span className="text-[11px] text-red-500 font-medium flex items-center gap-0.5">
+                                    <XCircle className="h-3 w-3" />{summary.no}
+                                </span>
+                                <span className="text-[11px] text-yellow-600 font-medium flex items-center gap-0.5">
+                                    <HelpCircle className="h-3 w-3" />{summary.maybe}
+                                </span>
+                                {status && (
+                                    <Badge variant="outline" className={cn(
+                                        "text-[10px] px-1.5 py-0 ml-auto flex-shrink-0",
+                                        status === 'yes' ? 'text-green-600 border-green-200' :
+                                        status === 'no' ? 'text-red-600 border-red-200' :
+                                        'text-yellow-600 border-yellow-200'
+                                    )}>
+                                        {status === 'yes' ? 'Zugesagt' : status === 'no' ? 'Abgesagt' : 'Vielleicht'}
+                                    </Badge>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Chevron affordance */}
+                        <ChevronRight className="h-4 w-4 text-muted-foreground/50 flex-shrink-0" />
+                    </div>
                 </Link>
             </SwipeableEventCard>
         </div>

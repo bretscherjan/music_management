@@ -9,6 +9,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
 import protokollService from '@/services/protokollService';
 import type { TranscribeProgress } from '@/services/protokollService';
+import { PageHeader } from '@/components/common/PageHeader';
 
 type Step = 'input' | 'transcribing' | 'editing' | 'summarizing';
 type Tab = 'upload' | 'record';
@@ -211,17 +212,11 @@ export function ProtokollPage() {
     return (
         <div className="max-w-4xl mx-auto space-y-6">
             {/* Header */}
-            <div className="flex items-center gap-3">
-                <div className="p-2 bg-brand-primary/20 rounded-xl">
-                    <ClipboardList className="h-7 w-7 text-brand-primary" />
-                </div>
-                <div>
-                    <h1 className="text-2xl font-bold text-gray-900">Protokoll</h1>
-                    <p className="text-sm text-gray-500">
-                        Audio aufnehmen oder hochladen → automatisch transkribieren & zusammenfassen
-                    </p>
-                </div>
-            </div>
+            <PageHeader
+                title="Protokoll"
+                subtitle="Audio aufnehmen oder hochladen → automatisch transkribieren & zusammenfassen"
+                Icon={ClipboardList}
+            />
 
             {/* Step Indicator */}
             <div className="flex items-center gap-2 text-sm">
@@ -239,7 +234,7 @@ export function ProtokollPage() {
                             {i > 0 && <div className="w-8 h-px bg-gray-300" />}
                             <div
                                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${isCurrent
-                                    ? 'bg-brand-primary/50 text-brand-primary'
+                                    ? 'bg-brand-primary/20 text-brand-primary'
                                     : isDone
                                         ? 'bg-success/10 text-brand-primary'
                                         : 'bg-gray-100 text-gray-400'

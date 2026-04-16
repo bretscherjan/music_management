@@ -8,6 +8,7 @@ import { cn } from '@/lib/utils';
 import { Clock, HelpCircle, ChevronLeft, Archive } from 'lucide-react';
 import type { Event, EventCategory } from '@/types';
 import { EventListItem } from '@/components/events/EventListItem';
+import { PageHeader } from '@/components/common/PageHeader';
 
 const categories: { value: EventCategory | 'all'; label: string }[] = [
     { value: 'all', label: 'Alle' },
@@ -46,19 +47,19 @@ export function EventArchivePage() {
 
     return (
         <div className="space-y-5">
-            {/* Header */}
-            <div className="flex items-center gap-3 pt-1">
+            {/* Header with back button */}
+            <div className="flex items-center gap-1 -ml-2">
                 <Link to="/member/events">
-                    <Button variant="ghost" size="icon" className="h-8 w-8 -ml-2">
+                    <Button variant="ghost" size="icon" className="h-9 w-9 rounded-xl flex-shrink-0">
                         <ChevronLeft className="h-5 w-5" />
                     </Button>
                 </Link>
-                <div>
-                    <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2">
-                        <Archive className="h-6 w-6 text-muted-foreground" /> Archiv
-                    </h1>
-                    <p className="text-sm text-muted-foreground mt-0.5">Alle vergangenen Termine</p>
-                </div>
+                <PageHeader
+                    title="Archiv"
+                    subtitle="Alle vergangenen Termine"
+                    Icon={Archive}
+                    className="flex-1 pt-0 pb-0"
+                />
             </div>
 
             {/* Category Filter */}

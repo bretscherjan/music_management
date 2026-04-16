@@ -46,6 +46,7 @@ import type { PdfOptions } from '@/utils/pdfTheme';
 import { toast } from 'sonner';
 import { musicFolderService } from '@/services/musicFolderService';
 import { ZoomableTableWrapper } from '@/components/common/ZoomableTableWrapper';
+import { PageHeader } from '@/components/common/PageHeader';
 
 export function SheetMusicManagementPage() {
     const { user } = useAuth();
@@ -259,101 +260,100 @@ export function SheetMusicManagementPage() {
     return (
         <div className="space-y-5">
             {/* ── Page Header ── */}
-            <div className="flex items-center justify-between gap-4 pt-1">
-                <div>
-                    <h1 className="text-2xl font-bold tracking-tight">Noten-Verwaltung</h1>
-                    <p className="text-sm text-muted-foreground mt-0.5">
-                        {data ? `${data.pagination.total} Stücke im Archiv` : 'Notenarchiv'}
-                    </p>
-                </div>
-                <div className="flex items-center gap-2 flex-shrink-0">
-                    {canManageSheetMusic && (
-                        <>
-                            <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
-                                <DialogTrigger asChild>
-                                    <Button size="sm" className="gap-1.5">
-                                        <Plus className="h-4 w-4" />
-                                        <span className="hidden sm:inline">Neue Note</span>
-                                    </Button>
-                                </DialogTrigger>
-                                <CreateEditDialog
-                                    title="Neue Note erstellen"
-                                    formData={formData}
-                                    setFormData={setFormData}
-                                    onSubmit={() => createMutation.mutate(formData)}
-                                    isLoading={createMutation.isPending}
-                                />
-                            </Dialog>
+            <PageHeader
+                title="Noten-Verwaltung"
+                subtitle={data ? `${data.pagination.total} Stücke im Archiv` : 'Notenarchiv'}
+                Icon={Music}
+                actions={
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                        {canManageSheetMusic && (
+                            <>
+                                <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
+                                    <DialogTrigger asChild>
+                                        <Button className="h-11 w-11 sm:w-auto sm:px-5 gap-1.5 rounded-2xl shadow-sm">
+                                            <Plus className="h-5 w-5 flex-shrink-0" />
+                                            <span className="hidden sm:inline">Neue Note</span>
+                                        </Button>
+                                    </DialogTrigger>
+                                    <CreateEditDialog
+                                        title="Neue Note erstellen"
+                                        formData={formData}
+                                        setFormData={setFormData}
+                                        onSubmit={() => createMutation.mutate(formData)}
+                                        isLoading={createMutation.isPending}
+                                    />
+                                </Dialog>
 
-                            <Dialog open={csvDialogOpen} onOpenChange={setCsvDialogOpen}>
-                                <DialogTrigger asChild>
-                                    <Button variant="outline" size="sm" className="gap-1.5 hidden sm:flex">
-                                        <FileUp className="h-4 w-4" />
-                                        CSV
-                                    </Button>
-                                </DialogTrigger>
-                                <DialogContent size="lg">
-                                    <DialogHeader>
-                                        <DialogTitle>CSV Import</DialogTitle>
-                                        <DialogDescription>
-                                            Format: title,composer,arranger,genre,difficulty,publisher,notes
-                                        </DialogDescription>
-                                    </DialogHeader>
-                                    <div className="space-y-4">
-                                        <div>
-                                            <Label>Import-Modus</Label>
-                                            <div className="flex gap-4 mt-2">
-                                                <label className="flex items-center gap-2">
-                                                    <input type="radio" checked={csvMode === 'add'} onChange={() => setCsvMode('add')} />
-                                                    <span className="text-sm">Nur neue hinzufügen</span>
-                                                </label>
-                                                <label className="flex items-center gap-2">
-                                                    <input type="radio" checked={csvMode === 'update'} onChange={() => setCsvMode('update')} />
-                                                    <span className="text-sm">Aktualisieren + Neue hinzufügen</span>
-                                                </label>
+                                <Dialog open={csvDialogOpen} onOpenChange={setCsvDialogOpen}>
+                                    <DialogTrigger asChild>
+                                        <Button variant="outline" size="sm" className="gap-1.5 hidden sm:flex">
+                                            <FileUp className="h-4 w-4" />
+                                            CSV
+                                        </Button>
+                                    </DialogTrigger>
+                                    <DialogContent size="lg" topPlacement>
+                                        <DialogHeader>
+                                            <DialogTitle>CSV Import</DialogTitle>
+                                            <DialogDescription>
+                                                Format: title,composer,arranger,genre,difficulty,publisher,notes
+                                            </DialogDescription>
+                                        </DialogHeader>
+                                        <div className="space-y-4">
+                                            <div>
+                                                <Label>Import-Modus</Label>
+                                                <div className="flex gap-4 mt-2">
+                                                    <label className="flex items-center gap-2">
+                                                        <input type="radio" checked={csvMode === 'add'} onChange={() => setCsvMode('add')} />
+                                                        <span className="text-sm">Nur neue hinzufügen</span>
+                                                    </label>
+                                                    <label className="flex items-center gap-2">
+                                                        <input type="radio" checked={csvMode === 'update'} onChange={() => setCsvMode('update')} />
+                                                        <span className="text-sm">Aktualisieren + Neue hinzufügen</span>
+                                                    </label>
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <Label>Datei hochladen</Label>
+                                                <Input type="file" accept=".csv" onChange={handleFileUpload} className="mt-1.5" />
+                                            </div>
+                                            <div>
+                                                <Label>Oder CSV Daten manuell eingeben</Label>
+                                                <Textarea
+                                                    rows={8}
+                                                    value={csvData}
+                                                    onChange={(e) => setCsvData(e.target.value)}
+                                                    placeholder="title,composer,arranger,genre,difficulty,publisher,notes&#10;Test Marsch,Johann Strauss,,,medium,Musikverlag XY,Klassischer Marsch"
+                                                    className="mt-1.5"
+                                                />
                                             </div>
                                         </div>
-                                        <div>
-                                            <Label>Datei hochladen</Label>
-                                            <Input type="file" accept=".csv" onChange={handleFileUpload} className="mt-1.5" />
-                                        </div>
-                                        <div>
-                                            <Label>Oder CSV Daten manuell eingeben</Label>
-                                            <Textarea
-                                                rows={8}
-                                                value={csvData}
-                                                onChange={(e) => setCsvData(e.target.value)}
-                                                placeholder="title,composer,arranger,genre,difficulty,publisher,notes&#10;Test Marsch,Johann Strauss,,,medium,Musikverlag XY,Klassischer Marsch"
-                                                className="mt-1.5"
-                                            />
-                                        </div>
-                                    </div>
-                                    <DialogFooter>
-                                        <Button onClick={() => importCsvMutation.mutate()} disabled={!csvData || importCsvMutation.isPending}>
-                                            {importCsvMutation.isPending ? 'Importiere...' : 'Importieren'}
-                                        </Button>
-                                    </DialogFooter>
-                                </DialogContent>
-                            </Dialog>
-                        </>
-                    )}
-                    <Button variant="outline" size="sm" className="gap-1.5 hidden sm:flex" onClick={() => exportMutation.mutate()} disabled={exportMutation.isPending}>
-                        <FileDown className="h-4 w-4" />
-                        CSV
-                    </Button>
-                    <PdfExportDialog
-                        trigger={
-                            <Button variant="outline" size="sm" className="gap-1.5 hidden sm:flex" disabled={exportPdfMutation.isPending}>
-                                <FileDown className="h-4 w-4" />
-                                PDF
-                            </Button>
-                        }
-                        title="Notenbestand exportieren"
-                        onExport={(opts) => exportPdfMutation.mutate(opts)}
-                        isLoading={exportPdfMutation.isPending}
-                    />
-                </div>
-            </div>
+                                        <DialogFooter>
+                                            <Button onClick={() => importCsvMutation.mutate()} disabled={!csvData || importCsvMutation.isPending}>
+                                                {importCsvMutation.isPending ? 'Importiere...' : 'Importieren'}
+                                            </Button>
+                                        </DialogFooter>
+                                    </DialogContent>
+                                </Dialog>
+                            </>
+                        )}
+                        <Button variant="outline" size="sm" className="gap-1.5 hidden sm:flex" onClick={() => exportMutation.mutate()} disabled={exportMutation.isPending}>
+                            <FileDown className="h-4 w-4" />
+                            CSV
+                        </Button>
+                        <PdfExportDialog
+                            trigger={
+                                <Button variant="outline" size="sm" className="gap-1.5 hidden sm:flex" disabled={exportPdfMutation.isPending}>
+                                    <FileDown className="h-4 w-4" />
+                                    PDF
+                                </Button>
+                            }
+                            title="Notenbestand exportieren"
+                            onExport={(opts) => exportPdfMutation.mutate(opts)}
+                            isLoading={exportPdfMutation.isPending}
+                        />
+                    </div>
+                }
+            />
 
             {/* ── Search + Filter ── */}
             <div className="flex gap-2">
@@ -761,7 +761,7 @@ function CreateEditDialog({
 
 
     return (
-        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto" topPlacement>
             <DialogHeader>
                 <DialogTitle>{title}</DialogTitle>
             </DialogHeader>

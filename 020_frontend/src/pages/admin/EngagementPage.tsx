@@ -25,6 +25,7 @@ import {
 import socketService from '@/services/socketService';
 import type { OnlineJoinedEvent, OnlineLeftEvent, OnlineListEvent } from '@/services/socketService';
 import { storage } from '@/lib/storage';
+import { PageHeader } from '@/components/common/PageHeader';
 
 // ── Combined User Type for merged table ────────────────────────────────────────
 type CombinedUser = {
@@ -50,6 +51,8 @@ type CombinedUser = {
     // All users fields
     daysSinceLastSeen?: number | null;
 };
+
+type CombinedUserSortCol = 'lastName' | 'firstName' | 'email' | 'register' | 'createdAt' | 'daysSinceCreation' | 'lastSeenAt' | 'daysInactive' | 'total' | 'logins' | 'fileDownloads' | 'attendanceUpdates' | 'daysSinceLastSeen';
 
 // ── Constants ──────────────────────────────────────────────────────────────────
 
@@ -85,6 +88,18 @@ const REGISTER_PALETTE = [
     '#2563eb', '#f59e0b', '#10b981', '#7c3aed', 'var(--color-red-500)', '#06b6d4', '#ec4899', '#065f46', '#7c2d12', '#0ea5a4',
 ];
 
+const MOBILE_SORT_OPTIONS: Array<{ value: CombinedUserSortCol; label: string }> = [
+    { value: 'lastSeenAt', label: 'Zuletzt online' },
+    { value: 'lastName', label: 'Name' },
+    { value: 'total', label: 'Gesamt Aktionen' },
+    { value: 'logins', label: 'Logins' },
+    { value: 'fileDownloads', label: 'Downloads' },
+    { value: 'attendanceUpdates', label: 'Zusagen' },
+    { value: 'createdAt', label: 'Registriert' },
+    { value: 'daysSinceCreation', label: 'Tage neu' },
+    { value: 'daysInactive', label: 'Tage inaktiv' },
+];
+
 // ── Small helpers ──────────────────────────────────────────────────────────────
 
 function RoleBadge({ role }: { role: string }) {
@@ -102,7 +117,7 @@ export function EngagementPage() {
     const [featureType, setFeatureType] = useState<'all' | 'interaction' | 'visit'>('all');
 
     // ── Combined users table filters ────────────────────────────────────────
-    const [userCategory, setUserCategory] = useState<'all' | 'top' | 'newly-registered' | 'inactive' | 'all-members'>('all');
+    const [userCategory, setUserCategory] = useState<'all' | 'top' | 'newly-registered' | 'inactive' | 'all-members'>('all-members');
     const [inactDays, setInactDays] = useState('30');
     const [newRegDays, setNewRegDays] = useState('30');
     const [topAction, setTopAction] = useState('all');
@@ -295,10 +310,8 @@ export function EngagementPage() {
     }, [topData, newRegData, inactiveData, allUsersData]);
 
     // ── Combined Users Sort State ──────────────────────────────────────────
-    type CombinedUserSortCol = 'lastName' | 'firstName' | 'email' | 'register' | 'createdAt' | 'daysSinceCreation' | 'lastSeenAt' | 'daysInactive' | 'total' | 'logins' | 'fileDownloads' | 'attendanceUpdates' | 'daysSinceLastSeen';
-
-    const [combinedSortCol, setCombinedSortCol] = useState<CombinedUserSortCol>('lastName');
-    const [combinedSortDir, setCombinedSortDir] = useState<'asc' | 'desc'>('asc');
+    const [combinedSortCol, setCombinedSortCol] = useState<CombinedUserSortCol>('lastSeenAt');
+    const [combinedSortDir, setCombinedSortDir] = useState<'asc' | 'desc'>('desc');
 
     const toggleCombinedSort = (col: CombinedUserSortCol) => {
         if (col === combinedSortCol) {
@@ -312,6 +325,80 @@ export function EngagementPage() {
     const getCombinedSortIcon = (col: CombinedUserSortCol) =>
         col !== combinedSortCol ? <ChevronsUpDown className="h-3 w-3 opacity-40" /> : combinedSortDir === 'desc' ? <ChevronDown className="h-3 w-3" /> : <ChevronUp className="h-3 w-3" />;
 
+    const lastSeenSortValues = useMemo(() => {
+        const map = new Map<number, number>();
+
+        onlineUsers.forEach(user => {
+            map.set(user.id, user.lastSeen.getTime());
+        });
+
+        Object.entries(recentlyOffline).forEach(([userId, lastSeen]) => {
+            map.set(Number(userId), lastSeen.getTime());
+        });
+
+        return map;
+    }, [onlineUsers, recentlyOffline]);
+
+    const sortedAllUsers = useMemo(() => {
+        const users = [...(allUsersData?.users ?? [])];
+
+        users.sort((a, b) => {
+            let cmp = 0;
+
+            switch (combinedSortCol) {
+                case 'lastName':
+                    cmp = a.lastName.localeCompare(b.lastName);
+                    break;
+                case 'firstName':
+                    cmp = a.firstName.localeCompare(b.firstName);
+                    break;
+                case 'email':
+                    cmp = (a.email ?? '').localeCompare(b.email ?? '');
+                    break;
+                case 'register':
+                    cmp = (a.register ?? '').localeCompare(b.register ?? '');
+                    break;
+                case 'total':
+                    cmp = (a.total ?? 0) - (b.total ?? 0);
+                    break;
+                case 'logins':
+                    cmp = (a.logins ?? 0) - (b.logins ?? 0);
+                    break;
+                case 'fileDownloads':
+                    cmp = (a.fileDownloads ?? 0) - (b.fileDownloads ?? 0);
+                    break;
+                case 'attendanceUpdates':
+                    cmp = (a.attendanceUpdates ?? 0) - (b.attendanceUpdates ?? 0);
+                    break;
+                case 'lastSeenAt': {
+                    const at = lastSeenSortValues.get(a.id) ?? (a.lastSeenAt ? new Date(a.lastSeenAt).getTime() : null);
+                    const bt = lastSeenSortValues.get(b.id) ?? (b.lastSeenAt ? new Date(b.lastSeenAt).getTime() : null);
+
+                    if (at == null && bt == null) {
+                        cmp = 0;
+                    } else if (at == null) {
+                        cmp = 1;
+                    } else if (bt == null) {
+                        cmp = -1;
+                    } else {
+                        cmp = at - bt;
+                    }
+                    break;
+                }
+                case 'daysSinceLastSeen':
+                    cmp = (a.daysSinceLastSeen ?? 0) - (b.daysSinceLastSeen ?? 0);
+                    break;
+                default:
+                    cmp = 0;
+                    break;
+            }
+
+            return combinedSortDir === 'asc' ? cmp : -cmp;
+        });
+
+        return users;
+    }, [allUsersData?.users, combinedSortCol, combinedSortDir, lastSeenSortValues]);
+
     const sortedCombinedUsers = useMemo(() => {
         const arr = [...combinedUsers];
         if (userCategory !== 'all') {
@@ -323,9 +410,18 @@ export function EngagementPage() {
             let cmp: number;
 
             if (combinedSortCol === 'lastSeenAt') {
-                const at = (av as string | null) ? new Date(av as string).getTime() : 0;
-                const bt = (bv as string | null) ? new Date(bv as string).getTime() : 0;
-                cmp = at - bt;
+                const at = lastSeenSortValues.get(a.id) ?? ((av as string | null) ? new Date(av as string).getTime() : null);
+                const bt = lastSeenSortValues.get(b.id) ?? ((bv as string | null) ? new Date(bv as string).getTime() : null);
+
+                if (at == null && bt == null) {
+                    cmp = 0;
+                } else if (at == null) {
+                    cmp = 1;
+                } else if (bt == null) {
+                    cmp = -1;
+                } else {
+                    cmp = at - bt;
+                }
             } else if (['daysInactive', 'daysSinceCreation', 'total', 'logins', 'fileDownloads', 'attendanceUpdates'].includes(combinedSortCol)) {
                 const an = av === null || av === undefined ? -Infinity : Number(av);
                 const bn = bv === null || bv === undefined ? -Infinity : Number(bv);
@@ -342,19 +438,18 @@ export function EngagementPage() {
             return combinedSortDir === 'asc' ? cmp : -cmp;
         });
         return arr;
-    }, [combinedUsers, userCategory, combinedSortCol, combinedSortDir]);
+    }, [combinedUsers, userCategory, combinedSortCol, combinedSortDir, lastSeenSortValues]);
 
     // ── Render ──────────────────────────────────────────────────────────────
     return (
-        <div className="space-y-8 max-w-7xl mx-auto pb-12">
+        <div className="space-y-8 max-w-7xl mx-auto">
 
             {/* Header */}
-            <div>
-                <h1 className="text-3xl font-bold tracking-tight flex items-center gap-2">
-                    <Activity className="h-8 w-8 text-primary" /> Engagement & Aktivität
-                </h1>
-                <p className="text-gray-500 mt-1">In-House Analytics – DSGVO-konform, direkt aus der Datenbank.</p>
-            </div>
+            <PageHeader
+                title="Engagement & Aktivität"
+                subtitle="In-House Analytics – DSGVO-konform, direkt aus der Datenbank."
+                Icon={Activity}
+            />
 
             {/* ── KPI Summary Cards ── */}
             {!loadingTop && !loadingAllUsers && (
@@ -643,6 +738,28 @@ export function EngagementPage() {
                     )}
                 </div>
 
+                <div className="md:hidden flex gap-2">
+                    <Select value={combinedSortCol} onValueChange={value => setCombinedSortCol(value as CombinedUserSortCol)}>
+                        <SelectTrigger className="flex-1">
+                            <SelectValue placeholder="Sortieren nach" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {MOBILE_SORT_OPTIONS.map(option => (
+                                <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                    <Select value={combinedSortDir} onValueChange={value => setCombinedSortDir(value as 'asc' | 'desc')}>
+                        <SelectTrigger className="w-[145px]">
+                            <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="desc">Absteigend</SelectItem>
+                            <SelectItem value="asc">Aufsteigend</SelectItem>
+                        </SelectContent>
+                    </Select>
+                </div>
+
                 <Card className="native-group">
                     <CardContent className="p-0">
                         {userCategory === 'all-members' ? (
@@ -657,26 +774,7 @@ export function EngagementPage() {
                                 <>
                                     {/* Mobile card list */}
                                     <div className="md:hidden divide-y divide-border/30">
-                                        {[...allUsersData.users].sort((a, b) => {
-                                            let aVal: any, bVal: any;
-                                            switch (combinedSortCol) {
-                                                case 'lastName': aVal = a.lastName; bVal = b.lastName; break;
-                                                case 'firstName': aVal = a.firstName; bVal = b.firstName; break;
-                                                case 'email': aVal = a.email; bVal = b.email; break;
-                                                case 'register': aVal = a.register; bVal = b.register; break;
-                                                case 'total': aVal = a.total; bVal = b.total; break;
-                                                case 'logins': aVal = a.logins; bVal = b.logins; break;
-                                                case 'fileDownloads': aVal = a.fileDownloads; bVal = b.fileDownloads; break;
-                                                case 'attendanceUpdates': aVal = a.attendanceUpdates; bVal = b.attendanceUpdates; break;
-                                                case 'lastSeenAt': aVal = a.lastSeenAt ? new Date(a.lastSeenAt).getTime() : null; bVal = b.lastSeenAt ? new Date(b.lastSeenAt).getTime() : null; break;
-                                                default: return 0;
-                                            }
-                                            if (aVal == null && bVal == null) return 0;
-                                            if (aVal == null) return combinedSortDir === 'asc' ? 1 : -1;
-                                            if (bVal == null) return combinedSortDir === 'asc' ? -1 : 1;
-                                            if (typeof aVal === 'string') return combinedSortDir === 'asc' ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal);
-                                            return combinedSortDir === 'asc' ? aVal - bVal : bVal - aVal;
-                                        }).map((u) => {
+                                        {sortedAllUsers.map((u) => {
                                             const isOnline = !!onlineUsers.find(ou => ou.id === u.id);
                                             return (
                                                 <div
@@ -709,7 +807,27 @@ export function EngagementPage() {
                                                             {u.register && <span className="text-xs text-muted-foreground">{u.register}</span>}
                                                             <span className="text-xs text-muted-foreground">·</span>
                                                             <span className="text-xs text-muted-foreground"><span className="font-bold text-primary">{u.total}</span> Aktionen</span>
+                                                            {(() => {
+                                                                const onlineEntry = onlineUsers.find(ou => ou.id === u.id);
+                                                                const recentTs = recentlyOffline[u.id];
+                                                                if (onlineEntry) return null; // already shown as "Online" badge
+                                                                const lastSeenDate = recentTs ?? (u.lastSeenAt ? new Date(u.lastSeenAt) : null);
+                                                                if (!lastSeenDate) return <span className="text-xs text-muted-foreground/60">· Nie aktiv</span>;
+                                                                return (
+                                                                    <span className="text-xs text-muted-foreground">
+                                                                        · <span className="text-amber-600 font-medium">{formatDistanceToNow(lastSeenDate, { addSuffix: true, locale: de })}</span>
+                                                                    </span>
+                                                                );
+                                                            })()}
                                                         </div>
+                                                        {/* Attendance tally badges */}
+                                                        {(u.attendanceUpdates ?? 0) > 0 && (
+                                                            <div className="flex items-center gap-1 mt-1">
+                                                                <span className="inline-flex items-center gap-0.5 text-[10px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-full px-1.5 py-0.5">
+                                                                    ✓ {u.attendanceUpdates} Zusagen
+                                                                </span>
+                                                            </div>
+                                                        )}
                                                     </div>
                                                     <Button variant="ghost" size="icon" className="h-8 w-8 flex-shrink-0 text-muted-foreground pointer-events-none" tabIndex={-1}>
                                                         <MoreVertical className="h-4 w-4" />
@@ -747,34 +865,7 @@ export function EngagementPage() {
                                                 </tr>
                                             </thead>
                                             <tbody>
-                                                {allUsersData.users
-                                                    .sort((a, b) => {
-                                                        let aVal: any, bVal: any;
-                                                        switch (combinedSortCol) {
-                                                            case 'lastName': aVal = a.lastName; bVal = b.lastName; break;
-                                                            case 'firstName': aVal = a.firstName; bVal = b.firstName; break;
-                                                            case 'email': aVal = a.email; bVal = b.email; break;
-                                                            case 'register': aVal = a.register; bVal = b.register; break;
-                                                            case 'total': aVal = a.total; bVal = b.total; break;
-                                                            case 'logins': aVal = a.logins; bVal = b.logins; break;
-                                                            case 'fileDownloads': aVal = a.fileDownloads; bVal = b.fileDownloads; break;
-                                                            case 'attendanceUpdates': aVal = a.attendanceUpdates; bVal = b.attendanceUpdates; break;
-                                                            case 'lastSeenAt': aVal = a.lastSeenAt ? new Date(a.lastSeenAt).getTime() : null; bVal = b.lastSeenAt ? new Date(b.lastSeenAt).getTime() : null; break;
-                                                            case 'daysSinceLastSeen': aVal = a.daysSinceLastSeen; bVal = b.daysSinceLastSeen; break;
-                                                            default: return 0;
-                                                        }
-                                                        if (aVal == null && bVal == null) return 0;
-                                                        if (aVal == null) return combinedSortDir === 'asc' ? 1 : -1;
-                                                        if (bVal == null) return combinedSortDir === 'asc' ? -1 : 1;
-                                                        if (typeof aVal === 'string' && typeof bVal === 'string') {
-                                                            return combinedSortDir === 'asc' ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal);
-                                                        }
-                                                        if (typeof aVal === 'number' && typeof bVal === 'number') {
-                                                            return combinedSortDir === 'asc' ? aVal - bVal : bVal - aVal;
-                                                        }
-                                                        return 0;
-                                                    })
-                                                    .map((u) => (
+                                                {sortedAllUsers.map((u) => (
                                                         <tr key={u.id} className="border-b transition-colors hover:bg-muted/50 h-12">
                                                             <td className="px-4 py-3 font-medium">{u.lastName}, {u.firstName}</td>
                                                             <td className="px-4 py-3 text-muted-foreground">{u.email}</td>
@@ -882,6 +973,11 @@ export function EngagementPage() {
                                                             {isTop && (
                                                                 <span className="text-xs text-muted-foreground">
                                                                     <span className="font-bold text-primary">{u.total}</span> Aktionen
+                                                                    {u.lastSeenAt && (
+                                                                        <span className="ml-1 text-amber-600 font-medium">
+                                                                            · {formatDistanceToNow(new Date(u.lastSeenAt), { addSuffix: true, locale: de })}
+                                                                        </span>
+                                                                    )}
                                                                 </span>
                                                             )}
                                                             {isNew && (

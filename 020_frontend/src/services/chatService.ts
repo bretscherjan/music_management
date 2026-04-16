@@ -99,6 +99,13 @@ const chatService = {
     },
 
     /**
+     * Delete a single message
+     */
+    async deleteMessage(chatId: number, messageId: string): Promise<void> {
+        await api.delete(`/chat/${chatId}/messages/${messageId}`);
+    },
+
+    /**
      * Add participants to group
      */
     async addParticipants(chatId: number, userIds: number[]): Promise<Chat> {

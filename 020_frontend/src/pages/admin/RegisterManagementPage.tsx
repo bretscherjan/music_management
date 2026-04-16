@@ -8,7 +8,8 @@ import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Loader2, Plus, Pencil, Trash2, Users, MoreVertical } from 'lucide-react';
+import { Loader2, Plus, Pencil, Trash2, Users, MoreVertical, Music } from 'lucide-react';
+import { PageHeader } from '@/components/common/PageHeader';
 import type { Register } from '@/types/register';
 import { ZoomableTableWrapper } from '@/components/common/ZoomableTableWrapper';
 import { ConfirmDialog } from '@/components/common/ConfirmDialog';
@@ -141,17 +142,17 @@ export function RegisterManagementPage() {
 
     return (
         <div className="space-y-5">
-            {/* Header */}
-            <div className="flex items-center justify-between gap-4 pt-1">
-                <div>
-                    <h1 className="text-2xl font-bold tracking-tight">Registerverwaltung</h1>
-                    <p className="text-sm text-muted-foreground mt-0.5">Stimmen und Instrumentengruppen verwalten</p>
-                </div>
-                <Button onClick={handleOpenCreate} className="gap-1.5 h-11 px-4">
-                    <Plus className="h-4 w-4" />
-                    <span className="hidden sm:inline">Neues Register</span>
-                </Button>
-            </div>
+            <PageHeader
+                title="Registerverwaltung"
+                subtitle="Stimmen und Instrumentengruppen verwalten"
+                Icon={Music}
+                actions={
+                    <Button onClick={handleOpenCreate} className="h-11 w-11 sm:w-auto sm:px-5 gap-1.5 rounded-2xl shadow-sm">
+                        <Plus className="h-5 w-5 flex-shrink-0" />
+                        <span className="hidden sm:inline">Neues Register</span>
+                    </Button>
+                }
+            />
 
             {/* Mobile card list */}
             <div className="md:hidden">
@@ -288,7 +289,7 @@ export function RegisterManagementPage() {
 
             {/* Create / Edit Dialog */}
             <Dialog open={isDialogOpen} onOpenChange={handleClose}>
-                <DialogContent className="max-w-xl max-h-[80vh] overflow-y-auto">
+                <DialogContent className="max-w-xl max-h-[80vh] overflow-y-auto" topPlacement>
                     <DialogHeader>
                         <DialogTitle>
                             {editingRegister ? 'Register bearbeiten' : 'Neues Register erstellen'}

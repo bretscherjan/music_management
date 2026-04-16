@@ -6,10 +6,11 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import { Loader2, Save, Key, User as UserIcon, Bell, Eye, EyeOff } from 'lucide-react';
+import { Loader2, Save, Key, User as UserIcon, Bell, Eye, EyeOff, Settings } from 'lucide-react';
 import type { NotificationSettings } from '@/types';
 import { pushNotificationService } from '@/services/pushNotificationService';
 import { toast } from 'sonner';
+import { PageHeader } from '@/components/common/PageHeader';
 
 
 export function UserSettingsPage() {
@@ -101,12 +102,11 @@ export function UserSettingsPage() {
 
     return (
         <div className="space-y-6 max-w-4xl mx-auto">
-            <div>
-                <h1 className="text-3xl font-bold tracking-tight">Benutzereinstellungen</h1>
-                <p className="text-muted-foreground">
-                    Verwalten Sie Ihr Profil und Sicherheitseinstellungen
-                </p>
-            </div>
+            <PageHeader
+                title="Benutzereinstellungen"
+                subtitle="Verwalten Sie Ihr Profil und Sicherheitseinstellungen"
+                Icon={Settings}
+            />
 
             <div className="grid gap-6 md:grid-cols-2">
                 {/* Profile Settings */}

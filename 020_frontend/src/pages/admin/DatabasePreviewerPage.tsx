@@ -4,6 +4,7 @@ import { DbTableList } from '@/components/admin/db/DbTableList';
 import { SqlConsole } from '@/components/admin/db/SqlConsole';
 import { DbDiagram } from '@/components/admin/db/DbDiagram';
 import { cn } from '@/lib/utils';
+import { PageHeader } from '@/components/common/PageHeader';
 
 export function DatabasePreviewerPage() {
     const [activeTab, setActiveTab] = useState('tables');
@@ -16,17 +17,11 @@ export function DatabasePreviewerPage() {
 
     return (
         <div className="space-y-6">
-            <div className="flex items-center justify-between">
-                <div>
-                    <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2">
-                        <Database className="h-6 w-6 text-primary" />
-                        Datenbank Previewer
-                    </h1>
-                    <p className="text-sm text-muted-foreground mt-0.5">
-                        Visualisierung, Datenbearbeitung und SQL-Konsole.
-                    </p>
-                </div>
-            </div>
+            <PageHeader
+                title="Datenbank Previewer"
+                subtitle="Visualisierung, Datenbearbeitung und SQL-Konsole."
+                Icon={Database}
+            />
 
             {/* Segmented control */}
             <div className="segmented-control max-w-sm">

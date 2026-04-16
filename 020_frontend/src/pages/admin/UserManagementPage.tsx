@@ -18,7 +18,7 @@ import {
     TableRow,
 } from '@/components/ui/table';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Search, Pencil, Plus, Trash2, SlidersHorizontal, MoreVertical } from 'lucide-react';
+import { Search, Pencil, Plus, Trash2, SlidersHorizontal, MoreVertical, Users } from 'lucide-react';
 import { getStatusLabel } from '@/lib/utils';
 import type { UserStatus, User } from '@/types';
 import { AdminEditUserDialog } from '@/components/admin/AdminEditUserDialog';
@@ -26,6 +26,7 @@ import { CreateUserDialog } from '@/components/admin/CreateUserDialog';
 import { ZoomableTableWrapper } from '@/components/common/ZoomableTableWrapper';
 import { ConfirmDialog } from '@/components/common/ConfirmDialog';
 import { toast } from 'sonner';
+import { PageHeader } from '@/components/common/PageHeader';
 
 export function UserManagementPage() {
     const can = useCan();
@@ -129,34 +130,29 @@ export function UserManagementPage() {
 
     return (
         <div className="space-y-5">
-            {/* Header */}
-            <div className="flex items-center justify-between gap-4 pt-1">
-                <div>
-                    <h1 className="text-2xl font-bold tracking-tight">
-                        {canManageMembers ? 'Mitglieder-Verwaltung' : 'Mitgliederliste'}
-                    </h1>
-                    <p className="text-sm text-muted-foreground mt-0.5">
-                        {filteredUsers.length} Mitglieder
-                    </p>
-                </div>
-                <div className="flex gap-2 flex-shrink-0">
-                    {/* Mobile: filter icon */}
-                    <Button
-                        variant="outline"
-                        size="icon"
-                        className="md:hidden h-11 w-11"
-                        onClick={() => setFilterSheetOpen(true)}
-                    >
-                        <SlidersHorizontal className="h-4 w-4" />
-                    </Button>
-                    {canWriteMembers && (
-                        <Button size="sm" onClick={() => setIsCreateDialogOpen(true)} className="gap-1.5 h-11 px-4">
-                            <Plus className="h-4 w-4" />
-                            <span className="hidden sm:inline">Neues Mitglied</span>
+            <PageHeader
+                title={canManageMembers ? 'Mitglieder-Verwaltung' : 'Mitgliederliste'}
+                subtitle={`${filteredUsers.length} Mitglieder`}
+                Icon={Users}
+                actions={
+                    <div className="flex gap-2 flex-shrink-0">
+                        <Button
+                            variant="outline"
+                            size="icon"
+                            className="md:hidden h-11 w-11 rounded-2xl"
+                            onClick={() => setFilterSheetOpen(true)}
+                        >
+                            <SlidersHorizontal className="h-4 w-4" />
                         </Button>
-                    )}
-                </div>
-            </div>
+                        {canWriteMembers && (
+                            <Button size="sm" onClick={() => setIsCreateDialogOpen(true)} className="h-11 w-11 sm:w-auto sm:px-5 gap-1.5 rounded-2xl shadow-sm">
+                                <Plus className="h-5 w-5 flex-shrink-0" />
+                                <span className="hidden sm:inline">Neues Mitglied</span>
+                            </Button>
+                        )}
+                    </div>
+                }
+            />
 
             {/* Search + inline filters (desktop) */}
             <div className="native-group p-4">

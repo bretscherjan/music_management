@@ -74,7 +74,7 @@ export function Sidebar() {
     const showAdminNav = filteredAdminNavItems.length > 0;
 
     return (
-        <aside className="hidden md:flex flex-col w-[100px] bg-card border-r border-border h-[calc(100vh-4rem)] sticky top-16 shrink-0 z-30">
+        <aside className="hidden md:flex flex-col w-[100px] bg-card border-r border-border h-[calc(100dvh-var(--header-height))] sticky top-[var(--header-height)] shrink-0 z-30">
 
             {/* Profile Section (Top) */}
             <Link

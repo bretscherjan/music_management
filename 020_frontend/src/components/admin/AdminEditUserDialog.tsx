@@ -93,7 +93,7 @@ export function AdminEditUserDialog({ open, onOpenChange, user, registers }: Adm
 
     return (
         <Dialog open={open} onOpenChange={handleClose}>
-            <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
+            <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto" topPlacement>
                 <DialogHeader>
                     <DialogTitle>Mitglied bearbeiten: {user.firstName} {user.lastName}</DialogTitle>
                 </DialogHeader>

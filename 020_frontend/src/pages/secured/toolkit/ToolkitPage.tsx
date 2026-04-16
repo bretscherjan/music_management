@@ -1,24 +1,17 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Mic, Timer } from 'lucide-react';
+import { Mic, Timer, Wrench } from 'lucide-react';
 import { Tuner } from './components/Tuner';
 import { Metronome } from './components/Metronome';
+import { PageHeader } from '@/components/common/PageHeader';
 
 export function ToolkitPage() {
   return (
     <div className="max-w-2xl mx-auto px-4 py-6">
-      <div className="relative overflow-hidden bg-white rounded-2xl border border-border/50 p-6 shadow-sm brand-glow mb-8">
-        <div className="absolute top-0 right-0 w-32 h-32 bg-brand-red/5 rounded-full -mr-16 -mt-16 blur-3xl" />
-        
-        <div className="relative flex items-center gap-3">
-          <div className="w-1.5 h-6 bg-brand-red rounded-full shadow-[0_0_8px_rgba(230,0,4,0.3)]" />
-          <div>
-            <h1 className="text-xl font-extrabold text-brand-red tracking-tight">Musiker-Toolkit</h1>
-            <p className="text-xs font-medium text-muted-foreground mt-0.5 ml-0.5">
-              Stimmgerät & Metronom — direkt im Browser.
-            </p>
-          </div>
-        </div>
-      </div>
+      <PageHeader
+        title="Toolkit"
+        subtitle="Stimmgerät und Metronom direkt im Browser"
+        Icon={Wrench}
+      />
 
       <Tabs defaultValue="tuner">
         <TabsList className="w-full mb-8 bg-muted/40 p-1 border border-border/50 h-12">

@@ -1,37 +1,30 @@
 import { Download, Smartphone } from 'lucide-react';
 import { Reveal } from '@/components/ui/Reveal';
+import { PageHeader } from '@/components/common/PageHeader';
 
 const apkUrl = '/downloads/musig-elgg-admin.apk';
 
 export function AppDownloadPage() {
     return (
-        <div className="bg-background">
-            <section className="relative overflow-hidden border-b border-border/40 bg-background py-20 md:py-28">
-                <div className="absolute left-[-6rem] top-10 h-64 w-64 rounded-full bg-brand-primary/8 blur-3xl" />
-                <div className="absolute bottom-[-4rem] right-[-3rem] h-72 w-72 rounded-full bg-brand-yellow/12 blur-3xl" />
+        <div className="bg-background space-y-4">
+            <div className="container-app px-4 pt-6">
+                <PageHeader
+                    title="Downloads"
+                    subtitle="Android-App manuell herunterladen"
+                    Icon={Download}
+                />
+            </div>
 
-                <div className="container-app relative z-10 px-4">
-                    <Reveal className="mx-auto max-w-4xl text-center">
-                        <div className="mb-6 inline-flex items-center gap-3 rounded-full border border-brand-primary/15 bg-white/70 px-5 py-2 text-sm font-semibold text-brand-primary shadow-sm backdrop-blur">
-                            <Smartphone className="h-4 w-4" />
-                            Android-Download
-                        </div>
-                        <h1 className="text-4xl font-black tracking-tight text-foreground md:text-6xl lg:text-7xl">
-                            Musig Elgg Admin App
-                        </h1>
-                        <p className="mx-auto mt-6 max-w-2xl text-lg leading-relaxed text-muted-foreground md:text-xl">
-                            Lade die aktuelle Android-APK direkt herunter und installiere die Vereins-App manuell auf deinem Gerät.
-                        </p>
-                    </Reveal>
-                </div>
-            </section>
-
-            <section className="py-16 md:py-24">
+            <section className="py-8 md:py-12">
                 <div className="container-app px-4">
                     <div className="grid gap-8">
                         <Reveal>
                             <div className="relative overflow-hidden rounded-[2rem] border border-border/30 bg-card p-8 shadow-xl md:p-10">
                                 <div className="absolute right-0 top-0 h-32 w-32 rounded-full bg-brand-primary/10 blur-3xl" />
+                                <div className="mb-6 inline-flex items-center gap-3 rounded-full border border-brand-primary/15 bg-white/70 px-5 py-2 text-sm font-semibold text-brand-primary shadow-sm backdrop-blur">
+                                    <Smartphone className="h-4 w-4" />
+                                    Android-Download
+                                </div>
                                 <h2 className="text-3xl font-bold text-foreground md:text-4xl">
                                     Direktdownload der aktuellen APK
                                 </h2>

@@ -18,6 +18,7 @@ import { Plus, Pencil, Trash2, Loader2, Calendar, MoreVertical, Search, Newspape
 import { formatDate } from '@/lib/utils';
 import type { CreateNewsDto, UpdateNewsDto } from '@/types';
 import { EmptyState } from '@/components/common/EmptyState';
+import { PageHeader } from '@/components/common/PageHeader';
 
 export function NewsManagementPage() {
     const queryClient = useQueryClient();
@@ -124,17 +125,17 @@ export function NewsManagementPage() {
 
     return (
         <div className="space-y-5">
-            {/* Header */}
-            <div className="flex items-center justify-between gap-4 pt-1">
-                <div>
-                    <h1 className="text-2xl font-bold tracking-tight">News Verwaltung</h1>
-                    <p className="text-sm text-muted-foreground mt-0.5">Aktuelle Nachrichten für die Mitglieder verwalten</p>
-                </div>
-                <Button className="gap-1.5 h-11 px-4" onClick={() => setIsDialogOpen(true)}>
-                    <Plus className="h-4 w-4" />
-                    <span className="hidden sm:inline">News erstellen</span>
-                </Button>
-            </div>
+            <PageHeader
+                title="News Verwaltung"
+                subtitle="Aktuelle Nachrichten für die Mitglieder verwalten"
+                Icon={Newspaper}
+                actions={
+                    <Button onClick={() => setIsDialogOpen(true)} className="h-11 w-11 sm:w-auto sm:px-5 gap-1.5 rounded-2xl shadow-sm">
+                        <Plus className="h-5 w-5 flex-shrink-0" />
+                        <span className="hidden sm:inline">News erstellen</span>
+                    </Button>
+                }
+            />
 
             {/* Search bar */}
             <div className="native-group p-4">
@@ -154,7 +155,7 @@ export function NewsManagementPage() {
                 setIsDialogOpen(open);
                 if (!open) resetForm();
             }}>
-                <DialogContent>
+                <DialogContent >
                     <DialogHeader>
                         <DialogTitle>{editingNews ? 'News bearbeiten' : 'Neue News erstellen'}</DialogTitle>
                         <DialogDescription>

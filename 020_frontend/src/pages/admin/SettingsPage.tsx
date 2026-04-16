@@ -4,6 +4,7 @@ import { settingsService } from '@/services/settingsService';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Settings, Loader2, CheckCircle, Info } from 'lucide-react';
+import { PageHeader } from '@/components/common/PageHeader';
 
 type AttendanceDefault = 'yes' | 'no' | 'maybe' | 'none';
 
@@ -50,15 +51,11 @@ export function SettingsPage() {
     return (
         <div className="space-y-6 max-w-2xl">
             {/* Header */}
-            <div>
-                <h1 className="text-3xl font-bold tracking-tight flex items-center gap-2">
-                    <Settings className="h-8 w-8" />
-                    Einstellungen
-                </h1>
-                <p className="text-muted-foreground">
-                    Verwalte die allgemeinen Vereins-Einstellungen
-                </p>
-            </div>
+            <PageHeader
+                title="Einstellungen"
+                subtitle="Verwalte die allgemeinen Vereins-Einstellungen"
+                Icon={Settings}
+            />
 
             {/* Default Attendance Setting */}
             <Card>

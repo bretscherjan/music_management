@@ -4,6 +4,7 @@ import { SponsorManager } from '@/components/admin/cms/SponsorManager';
 import { GalleryManager } from '../../components/admin/cms/GalleryManager';
 import { FlyerManager } from '../../components/admin/cms/FlyerManager';
 import { cn } from '@/lib/utils';
+import { PageHeader } from '@/components/common/PageHeader';
 
 export function CmsManagementPage() {
     const [activeTab, setActiveTab] = useState('sponsors');
@@ -16,17 +17,11 @@ export function CmsManagementPage() {
 
     return (
         <div className="space-y-6">
-            <div className="flex items-center justify-between">
-                <div>
-                    <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2">
-                        <LayoutDashboard className="h-6 w-6 text-primary" />
-                        CMS Management
-                    </h1>
-                    <p className="text-sm text-muted-foreground mt-0.5">
-                        Verwalte die Inhalte der öffentlichen Website.
-                    </p>
-                </div>
-            </div>
+            <PageHeader
+                title="CMS Management"
+                subtitle="Verwalte die Inhalte der öffentlichen Website."
+                Icon={LayoutDashboard}
+            />
 
             {/* Segmented control */}
             <div className="segmented-control max-w-sm">

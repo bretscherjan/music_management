@@ -6,6 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import logsService, { type LogEntry } from '@/services/logsService';
 import socketService from '@/services/socketService';
 import { storage } from '@/lib/storage';
+import { PageHeader } from '@/components/common/PageHeader';
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
@@ -129,28 +130,27 @@ export function LogsPage() {
         <div className="space-y-6 max-w-7xl mx-auto pb-12">
 
             {/* Header */}
-            <div className="flex items-center justify-between flex-wrap gap-3">
-                <div>
-                    <h1 className="text-3xl font-bold tracking-tight flex items-center gap-2">
-                        <Activity className="h-8 w-8 text-primary" /> System-Logs
-                    </h1>
-                    <p className="text-gray-500 mt-1 text-sm">Täglich rotiert · 30 Tage DSGVO-konform aufbewahrt</p>
-                </div>
-                <div className="flex items-center gap-2">
-                    {isToday && liveCount > 0 && (
-                        <span className="inline-flex items-center gap-1 text-xs font-semibold text-success bg-success/10 rounded-full px-2.5 py-1">
-                            <span className="h-1.5 w-1.5 rounded-full bg-success/50 animate-pulse" />
-                            {liveCount} live
-                        </span>
-                    )}
-                    <button
-                        onClick={() => { refetch(); refetchDate(); refetchStats(); setLiveCount(0); }}
-                        className="flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-800 px-3 py-1.5 rounded-lg border hover:bg-slate-50 transition-colors"
-                    >
-                        <RefreshCw className="h-3.5 w-3.5" /> Aktualisieren
-                    </button>
-                </div>
-            </div>
+            <PageHeader
+                title="System-Logs"
+                subtitle="Täglich rotiert · 30 Tage DSGVO-konform aufbewahrt"
+                Icon={Activity}
+                actions={
+                    <div className="flex items-center gap-2">
+                        {isToday && liveCount > 0 && (
+                            <span className="inline-flex items-center gap-1 text-xs font-semibold text-success bg-success/10 rounded-full px-2.5 py-1">
+                                <span className="h-1.5 w-1.5 rounded-full bg-success/50 animate-pulse" />
+                                {liveCount} live
+                            </span>
+                        )}
+                        <button
+                            onClick={() => { refetch(); refetchDate(); refetchStats(); setLiveCount(0); }}
+                            className="flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-800 px-3 py-1.5 rounded-lg border hover:bg-slate-50 transition-colors"
+                        >
+                            <RefreshCw className="h-3.5 w-3.5" /> Aktualisieren
+                        </button>
+                    </div>
+                }
+            />
 
             {/* Stats */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">

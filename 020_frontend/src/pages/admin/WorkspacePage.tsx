@@ -13,6 +13,7 @@ import {
     FileText,
     Settings,
     Mic,
+    Folder as FolderIcon,
 } from 'lucide-react';
 import {
     DndContext,
@@ -68,6 +69,7 @@ import { MeetingRecorderDialog } from '@/components/workspace/MeetingRecorderDia
 import type { Task, AdminNote, TaskPriority } from '@/types/workspace';
 import { PdfExportDialog } from '@/components/ui/PdfExportDialog';
 import type { PdfOptions } from '@/utils/pdfTheme';
+import { PageHeader } from '@/components/common/PageHeader';
 
 type TabType = 'tasks' | 'notes';
 
@@ -359,64 +361,59 @@ export function WorkspacePage() {
     return (
         <TooltipProvider>
             <div className="container-app py-6">
-                {/* Header */}
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
-                    <div>
-                        <h1 className="text-2xl font-bold text-[hsl(var(--musig-dark))]">
-                            Admin Workspace
-                        </h1>
-                        <p className="text-sm text-muted-foreground mt-1">
-                            Tasks und Notizen für Admins
-                        </p>
-                    </div>
+                <PageHeader
+                    title="Workspace"
+                    subtitle="Tasks und Notizen für Admins"
+                    Icon={FolderIcon}
+                    actions={
+                        <div className="flex items-center gap-2">
+                            {/* Connection status */}
+                            <div
+                                className={`flex items-center gap-1.5 px-2 py-1 rounded text-xs ${isConnected
+                                    ? 'bg-success/10 text-success'
+                                    : 'bg-red-100 text-red-700'
+                                    }`}
+                            >
+                                {isConnected ? (
+                                    <Wifi className="h-3 w-3" />
+                                ) : (
+                                    <WifiOff className="h-3 w-3" />
+                                )}
+                                {isConnected ? 'Live' : 'Offline'}
+                            </div>
 
-                    <div className="flex items-center gap-2">
-                        {/* Connection status */}
-                        <div
-                            className={`flex items-center gap-1.5 px-2 py-1 rounded text-xs ${isConnected
-                                ? 'bg-success/10 text-success'
-                                : 'bg-red-100 text-red-700'
-                                }`}
-                        >
-                            {isConnected ? (
-                                <Wifi className="h-3 w-3" />
-                            ) : (
-                                <WifiOff className="h-3 w-3" />
-                            )}
-                            {isConnected ? 'Live' : 'Offline'}
+                            <Button
+                                variant="outline"
+                                size="icon"
+                                onClick={() => setShowSearch(true)}
+                                title="Suche"
+                            >
+                                <Search className="h-4 w-4" />
+                            </Button>
+
+                            <PdfExportDialog
+                                trigger={
+                                    <Button variant="outline" size="icon" title="PDF Export">
+                                        <Download className="h-4 w-4" />
+                                    </Button>
+                                }
+                                title="Workspace exportieren"
+                                onExport={handleExportPdf}
+                            />
+
+                            <Button
+                                variant="outline"
+                                size="icon"
+                                onClick={() => {
+                                    queryClient.invalidateQueries({ queryKey: ['workspace'] });
+                                }}
+                                title="Aktualisieren"
+                            >
+                                <RefreshCw className="h-4 w-4" />
+                            </Button>
                         </div>
-
-                        <Button
-                            variant="outline"
-                            size="icon"
-                            onClick={() => setShowSearch(true)}
-                            title="Suche"
-                        >
-                            <Search className="h-4 w-4" />
-                        </Button>
-
-                        <PdfExportDialog
-                            trigger={
-                                <Button variant="outline" size="icon" title="PDF Export">
-                                    <Download className="h-4 w-4" />
-                                </Button>
-                            }
-                            title="Workspace exportieren"
-                            onExport={handleExportPdf}
-                        />
-
-                        <Button
-                            variant="outline"
-                            size="icon"
-                            onClick={() => {
-                                queryClient.invalidateQueries({ queryKey: ['workspace'] });
-                            }}
-                            title="Aktualisieren"
-                        >
-                            <RefreshCw className="h-4 w-4" />
-                        </Button>
-                    </div>
-                </div>
+                    }
+                />
 
                 {/* Tab Navigation */}
                 <div className="flex items-center gap-2 mb-6">

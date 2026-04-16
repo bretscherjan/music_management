@@ -38,6 +38,9 @@ html {
 /* CSS Variables - Warm Yellow & Signal Red Edition */
 :root,
 .theme-public {
+  --header-height: 4rem;
+  --nav-height: 4rem;
+
   /* Brand Colors (Space-separated HSL) */
   --musig-red: 359 100% 45%;    /* #E60004 Signalrot */
   --musig-yellow: 45 88% 62%;    /* #F2C94C Warmes Gelb */
@@ -363,7 +366,15 @@ body {
 
 /* Safe-area bottom padding for sticky bottom nav */
 .pb-safe-nav {
-  padding-bottom: calc(5rem + env(safe-area-inset-bottom, 0px));
+  padding-bottom: calc(var(--nav-height) + env(safe-area-inset-bottom, 0px));
+}
+
+/* Safe-area utilities */
+.pt-safe {
+  padding-top: env(safe-area-inset-top, 0px);
+}
+.pb-safe {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 
 @theme inline {

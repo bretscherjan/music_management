@@ -10,6 +10,7 @@ import { Trash2, Calendar, AlertTriangle, MoreVertical } from 'lucide-react';
 import { cn, formatDate, getCategoryLabel } from '@/lib/utils';
 import type { Event, EventCategory } from '@/types';
 import { ZoomableTableWrapper } from '@/components/common/ZoomableTableWrapper';
+import { PageHeader } from '@/components/common/PageHeader';
 
 const categories: { value: EventCategory | 'all'; label: string }[] = [
     { value: 'all', label: 'Alle' },
@@ -50,12 +51,36 @@ export function EventManagementPage() {
         );
     }, [events, selectedCategory]);
 
+    const today = useMemo(() => {
+        const date = new Date();
+        date.setHours(0, 0, 0, 0);
+        return date;
+    }, []);
+
+    const upcomingEvents = useMemo(
+        () => filteredEvents.filter(e => new Date(e.date) >= today),
+        [filteredEvents, today]
+    );
+
+    const pastEvents = useMemo(
+        () => filteredEvents.filter(e => new Date(e.date) < today),
+        [filteredEvents, today]
+    );
+
     const handleSelectAll = (checked: boolean) => {
         if (checked) {
             setSelectedIds(filteredEvents.map(e => e.id));
         } else {
             setSelectedIds([]);
         }
+    };
+
+    const handleSelectGroup = (ids: number[], checked: boolean) => {
+        if (checked) {
+            setSelectedIds(prev => [...new Set([...prev, ...ids])]);
+            return;
+        }
+        setSelectedIds(prev => prev.filter(id => !ids.includes(id)));
     };
 
     const handleSelectOne = (id: number, checked: boolean) => {
@@ -84,16 +109,16 @@ export function EventManagementPage() {
     };
 
     const allSelected = filteredEvents.length > 0 && selectedIds.length === filteredEvents.length;
+    const allUpcomingSelected = upcomingEvents.length > 0 && upcomingEvents.every(e => selectedIds.includes(e.id));
+    const allPastSelected = pastEvents.length > 0 && pastEvents.every(e => selectedIds.includes(e.id));
 
     return (
         <div className="space-y-5">
-            {/* Header */}
-            <div className="flex items-center justify-between gap-4 pt-1">
-                <div>
-                    <h1 className="text-2xl font-bold tracking-tight">Terminverwaltung</h1>
-                    <p className="text-sm text-muted-foreground mt-0.5">{filteredEvents.length} Termine</p>
-                </div>
-                {selectedIds.length > 0 && (
+            <PageHeader
+                title="Terminverwaltung"
+                subtitle={`${filteredEvents.length} Termine`}
+                Icon={Calendar}
+                actions={selectedIds.length > 0 ? (
                     <Button
                         variant="destructive"
                         size="sm"
@@ -104,8 +129,8 @@ export function EventManagementPage() {
                         <Trash2 className="h-4 w-4" />
                         {selectedIds.length} löschen
                     </Button>
-                )}
-            </div>
+                ) : undefined}
+            />
 
             {/* Confirm banner */}
             {showConfirmDialog && (
@@ -162,37 +187,120 @@ export function EventManagementPage() {
                         Keine Termine gefunden
                     </div>
                 ) : (
-                    <div className="native-group divide-y divide-border/40">
-                        {filteredEvents.map((event) => {
-                            const isPast = new Date(event.date) < new Date();
-                            return (
-                                <div
-                                    key={event.id}
-                                    className={cn('flex items-center gap-3 px-4 py-3 transition-colors', isPast && 'opacity-60')}
-                                >
-                                    {/* Left: date icon */}
-                                    <div className="inset-icon bg-primary/10 flex-shrink-0 flex-col gap-0 w-11 h-11">
-                                        <Calendar className="h-4 w-4 text-primary" />
-                                    </div>
-                                    {/* Center */}
-                                    <div className="flex-1 min-w-0">
-                                        <p className="font-semibold text-sm truncate">{event.title}</p>
-                                        <p className="text-xs text-muted-foreground">
-                                            {formatDate(event.date)} · <Badge variant={categoryVariant[event.category] || 'default'} className="text-[10px] px-1.5 py-0">{getCategoryLabel(event.category)}</Badge>
-                                        </p>
-                                    </div>
-                                    {/* Right: 3-dots */}
-                                    <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        className="h-9 w-9 flex-shrink-0"
-                                        onClick={() => setActionDrawerEvent(event)}
-                                    >
-                                        <MoreVertical className="h-4 w-4" />
-                                    </Button>
+                    <div className="space-y-2">
+                        <div className="native-group px-4 py-2.5 flex items-center gap-3">
+                            <Checkbox
+                                checked={allSelected}
+                                onCheckedChange={checked => handleSelectAll(!!checked)}
+                                aria-label="Alle Termine auswählen"
+                            />
+                            <span className="text-sm font-medium">Alle auswählen</span>
+                            <span className="text-xs text-muted-foreground ml-auto">
+                                {selectedIds.length} markiert
+                            </span>
+                        </div>
+
+                        {upcomingEvents.length > 0 && (
+                            <>
+                                <div className="native-group px-4 py-2.5 flex items-center gap-3">
+                                    <Checkbox
+                                        checked={allUpcomingSelected}
+                                        onCheckedChange={(checked) => handleSelectGroup(upcomingEvents.map(e => e.id), !!checked)}
+                                        aria-label="Alle zukünftigen Termine auswählen"
+                                    />
+                                    <span className="text-sm font-medium">Alle zukünftigen auswählen</span>
+                                    <span className="text-xs text-muted-foreground ml-auto">{upcomingEvents.length}</span>
                                 </div>
-                            );
-                        })}
+                                <div className="native-group divide-y divide-border/40">
+                                    {upcomingEvents.map((event) => {
+                                        const isSelected = selectedIds.includes(event.id);
+                                        return (
+                                            <div
+                                                key={event.id}
+                                                className={cn(
+                                                    'flex items-center gap-3 px-4 py-3 transition-colors',
+                                                    isSelected && 'bg-primary/5'
+                                                )}
+                                            >
+                                                <Checkbox
+                                                    checked={isSelected}
+                                                    onCheckedChange={(checked) => handleSelectOne(event.id, !!checked)}
+                                                    aria-label={`Termin ${event.title} auswählen`}
+                                                />
+                                                <div className="inset-icon bg-primary/10 flex-shrink-0 flex-col gap-0 w-11 h-11">
+                                                    <Calendar className="h-4 w-4 text-primary" />
+                                                </div>
+                                                <div className="flex-1 min-w-0">
+                                                    <p className="font-semibold text-sm truncate">{event.title}</p>
+                                                    <p className="text-xs text-muted-foreground">
+                                                        {formatDate(event.date)} · <Badge variant={categoryVariant[event.category] || 'default'} className="text-[10px] px-1.5 py-0">{getCategoryLabel(event.category)}</Badge>
+                                                    </p>
+                                                </div>
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    className="h-9 w-9 flex-shrink-0"
+                                                    onClick={() => setActionDrawerEvent(event)}
+                                                >
+                                                    <MoreVertical className="h-4 w-4" />
+                                                </Button>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            </>
+                        )}
+
+                        {pastEvents.length > 0 && (
+                            <>
+                                <div className="native-group px-4 py-2.5 flex items-center gap-3">
+                                    <Checkbox
+                                        checked={allPastSelected}
+                                        onCheckedChange={(checked) => handleSelectGroup(pastEvents.map(e => e.id), !!checked)}
+                                        aria-label="Alle vergangenen Termine auswählen"
+                                    />
+                                    <span className="text-sm font-medium">Alle vergangenen auswählen</span>
+                                    <span className="text-xs text-muted-foreground ml-auto">{pastEvents.length}</span>
+                                </div>
+                                <div className="native-group divide-y divide-border/40">
+                                    {pastEvents.map((event) => {
+                                        const isSelected = selectedIds.includes(event.id);
+                                        return (
+                                            <div
+                                                key={event.id}
+                                                className={cn(
+                                                    'flex items-center gap-3 px-4 py-3 transition-colors opacity-60',
+                                                    isSelected && 'bg-primary/5'
+                                                )}
+                                            >
+                                                <Checkbox
+                                                    checked={isSelected}
+                                                    onCheckedChange={(checked) => handleSelectOne(event.id, !!checked)}
+                                                    aria-label={`Termin ${event.title} auswählen`}
+                                                />
+                                                <div className="inset-icon bg-primary/10 flex-shrink-0 flex-col gap-0 w-11 h-11">
+                                                    <Calendar className="h-4 w-4 text-primary" />
+                                                </div>
+                                                <div className="flex-1 min-w-0">
+                                                    <p className="font-semibold text-sm truncate">{event.title}</p>
+                                                    <p className="text-xs text-muted-foreground">
+                                                        {formatDate(event.date)} · <Badge variant={categoryVariant[event.category] || 'default'} className="text-[10px] px-1.5 py-0">{getCategoryLabel(event.category)}</Badge>
+                                                    </p>
+                                                </div>
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    className="h-9 w-9 flex-shrink-0"
+                                                    onClick={() => setActionDrawerEvent(event)}
+                                                >
+                                                    <MoreVertical className="h-4 w-4" />
+                                                </Button>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            </>
+                        )}
                     </div>
                 )}
             </div>
@@ -231,7 +339,7 @@ export function EventManagementPage() {
                 ) : (
                     <ZoomableTableWrapper title="Terminliste">
                         <div className="min-w-[500px]">
-                            {/* Desktop header */}
+                            {/* Desktop global header */}
                             <div className="flex items-center gap-4 px-4 h-10 border-b font-medium text-xs text-muted-foreground bg-muted/40">
                                 <Checkbox
                                     checked={allSelected}
@@ -242,31 +350,77 @@ export function EventManagementPage() {
                                 <span className="flex-1">Titel</span>
                                 <span className="w-28">Kategorie</span>
                             </div>
-                            {/* Desktop rows */}
-                            {filteredEvents.map((event) => {
-                                const isPast = new Date(event.date) < new Date();
-                                const isSelected = selectedIds.includes(event.id);
-                                return (
-                                    <div
-                                        key={event.id}
-                                        className={cn(
-                                            'flex items-center gap-4 px-4 h-12 hover:bg-muted/50 transition-colors border-b last:border-0',
-                                            isPast && 'opacity-60',
-                                            isSelected && 'bg-primary/5'
-                                        )}
-                                    >
+
+                            {upcomingEvents.length > 0 && (
+                                <>
+                                    <div className="flex items-center gap-3 px-4 h-10 border-b bg-primary/5">
                                         <Checkbox
-                                            checked={isSelected}
-                                            onCheckedChange={(checked) => handleSelectOne(event.id, !!checked)}
+                                            checked={allUpcomingSelected}
+                                            onCheckedChange={(checked) => handleSelectGroup(upcomingEvents.map(e => e.id), !!checked)}
+                                            aria-label="Alle zukünftigen auswählen"
                                         />
-                                        <span className="w-24 text-sm font-mono">{formatDate(event.date)}</span>
-                                        <span className="flex-1 truncate font-medium text-sm">{event.title}</span>
-                                        <Badge variant={categoryVariant[event.category] || 'default'} className="w-28 justify-center">
-                                            {getCategoryLabel(event.category)}
-                                        </Badge>
+                                        <span className="text-xs font-semibold text-primary">Zukünftige Termine ({upcomingEvents.length})</span>
                                     </div>
-                                );
-                            })}
+                                    {upcomingEvents.map((event) => {
+                                        const isSelected = selectedIds.includes(event.id);
+                                        return (
+                                            <div
+                                                key={event.id}
+                                                className={cn(
+                                                    'flex items-center gap-4 px-4 h-12 hover:bg-muted/50 transition-colors border-b',
+                                                    isSelected && 'bg-primary/5'
+                                                )}
+                                            >
+                                                <Checkbox
+                                                    checked={isSelected}
+                                                    onCheckedChange={(checked) => handleSelectOne(event.id, !!checked)}
+                                                />
+                                                <span className="w-24 text-sm font-mono">{formatDate(event.date)}</span>
+                                                <span className="flex-1 truncate font-medium text-sm">{event.title}</span>
+                                                <Badge variant={categoryVariant[event.category] || 'default'} className="w-28 justify-center">
+                                                    {getCategoryLabel(event.category)}
+                                                </Badge>
+                                            </div>
+                                        );
+                                    })}
+                                </>
+                            )}
+
+                            {pastEvents.length > 0 && (
+                                <>
+                                    <div className="flex items-center gap-3 px-4 h-10 border-b bg-muted/40">
+                                        <Checkbox
+                                            checked={allPastSelected}
+                                            onCheckedChange={(checked) => handleSelectGroup(pastEvents.map(e => e.id), !!checked)}
+                                            aria-label="Alle vergangenen auswählen"
+                                        />
+                                        <span className="text-xs font-semibold text-muted-foreground">Vergangene Termine ({pastEvents.length})</span>
+                                    </div>
+                                    {pastEvents.map((event) => {
+                                        const isSelected = selectedIds.includes(event.id);
+                                        return (
+                                            <div
+                                                key={event.id}
+                                                className={cn(
+                                                    'flex items-center gap-4 px-4 h-12 hover:bg-muted/50 transition-colors border-b last:border-0 opacity-60',
+                                                    isSelected && 'bg-primary/5'
+                                                )}
+                                            >
+                                                <Checkbox
+                                                    checked={isSelected}
+                                                    onCheckedChange={(checked) => handleSelectOne(event.id, !!checked)}
+                                                />
+                                                <span className="w-24 text-sm font-mono">{formatDate(event.date)}</span>
+                                                <span className="flex-1 truncate font-medium text-sm">{event.title}</span>
+                                                <Badge variant={categoryVariant[event.category] || 'default'} className="w-28 justify-center">
+                                                    {getCategoryLabel(event.category)}
+                                                </Badge>
+                                            </div>
+                                        );
+                                    })}
+                                </>
+                            )}
+
                             {filteredEvents.length === 0 && (
                                 <p className="text-center text-muted-foreground py-10 text-sm">Keine Termine gefunden</p>
                             )}

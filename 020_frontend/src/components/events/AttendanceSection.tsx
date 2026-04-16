@@ -170,7 +170,7 @@ export function AttendanceSection({ eventId }: AttendanceSectionProps) {
                             <AlertDescription>{error}</AlertDescription>
                         </Alert>
                     )}
-                    <div className="rounded-xl bg-primary/5 border border-primary/15 p-4 space-y-3">
+                    <div className="rounded-xl border border-primary/15 p-4 space-y-3">
                         <div className="flex items-center justify-between">
                             <h4 className="font-medium text-sm">Meine Zusage</h4>
                             {isLocked && <Badge variant="outline" className="text-xs">Bearbeitung gesperrt</Badge>}

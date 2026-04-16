@@ -11,7 +11,7 @@ import {
     ChevronLeft, Send, Info, 
     Smile, Reply, Trash, UserPlus, X, Check, MessageSquare,
     Calendar, FileText, Folder as FolderIcon, User as UserIcon,
-    Hash
+    Hash, Copy
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { useAuth } from '@/context/AuthContext';
@@ -23,6 +23,9 @@ import {
 import {
     DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu';
+import {
+    Sheet, SheetContent,
+} from '@/components/ui/sheet';
 import { toast } from 'sonner';
 
 const CATEGORIES = [
@@ -41,6 +44,7 @@ export function ChatDetailPage() {
     const [newMessage, setNewMessage] = useState('');
     const [replyTo, setReplyTo] = useState<ChatMessage | null>(null);
     const [typingUsers, setTypingUsers] = useState<TypingEvent[]>([]);
+    const [actionMsg, setActionMsg] = useState<ChatMessage | null>(null);
     
     const [isInfoOpen, setIsInfoOpen] = useState(false);
     const [isAddUserOpen, setIsAddUserOpen] = useState(false);
@@ -58,6 +62,7 @@ export function ChatDetailPage() {
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const inputRef = useRef<HTMLInputElement>(null);
     const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+    const longPressRef = useRef<NodeJS.Timeout | null>(null);
 
     const chatIdInt = parseInt(chatId!);
 
@@ -105,6 +110,31 @@ export function ChatDetailPage() {
         mutationFn: (data: { messageId: string, emoji: string }) => 
             chatService.toggleReaction(chatIdInt, data.messageId, data.emoji)
     });
+
+    const deleteMessageMutation = useMutation({
+        mutationFn: (messageId: string) => chatService.deleteMessage(chatIdInt, messageId),
+        onSuccess: (_data, messageId) => {
+            queryClient.setQueryData(['messages', chatIdInt], (old: ChatMessage[] | undefined) =>
+                old?.filter(m => m.id !== messageId)
+            );
+            toast.success('Nachricht gelöscht');
+        },
+        onError: () => toast.error('Löschen fehlgeschlagen'),
+    });
+
+    const handleLongPressStart = (msg: ChatMessage) => {
+        longPressRef.current = setTimeout(() => {
+            setActionMsg(msg);
+            if (navigator.vibrate) navigator.vibrate(40);
+        }, 450);
+    };
+
+    const handleLongPressEnd = () => {
+        if (longPressRef.current) {
+            clearTimeout(longPressRef.current);
+            longPressRef.current = null;
+        }
+    };
 
     useEffect(() => {
         if (!chatIdInt) return;
@@ -676,7 +706,13 @@ export function ChatDetailPage() {
                                         </div>
                                     )}
 
-                                    <div className="relative group/bubble">
+                                    <div
+                                        className="relative group/bubble"
+                                        onTouchStart={() => handleLongPressStart(msg)}
+                                        onTouchEnd={handleLongPressEnd}
+                                        onTouchMove={handleLongPressEnd}
+                                        onContextMenu={(e) => { e.preventDefault(); setActionMsg(msg); }}
+                                    >
                                         <div className={cn(
                                             "px-3.5 py-2.5 shadow-sm transition-all",
                                             isMine 
@@ -791,6 +827,70 @@ export function ChatDetailPage() {
                     <Send className="w-4 h-4" />
                 </Button>
             </form>
+
+            {/* Mobile Message Action Sheet */}
+            <Sheet open={!!actionMsg} onOpenChange={(open) => { if (!open) setActionMsg(null); }}>
+                <SheetContent side="bottom" className="rounded-t-3xl pb-safe px-0">
+                    {actionMsg && (
+                        <>
+                            {/* Preview of the message */}
+                            <div className="px-5 py-3 border-b mb-1">
+                                <p className="text-xs text-muted-foreground font-semibold uppercase tracking-wider mb-1">Nachricht</p>
+                                <p className="text-sm text-foreground line-clamp-2 italic">"{actionMsg.text}"</p>
+                            </div>
+
+                            {/* Emoji reaction row */}
+                            <div className="flex justify-around px-5 py-3 border-b">
+                                {['👍', '❤️', '😂', '😮', '😢', '👏'].map(emoji => (
+                                    <button
+                                        key={emoji}
+                                        className="text-2xl active:scale-90 transition-transform"
+                                        onClick={() => {
+                                            handleToggleReaction(actionMsg.id, emoji);
+                                            setActionMsg(null);
+                                        }}
+                                    >
+                                        {emoji}
+                                    </button>
+                                ))}
+                            </div>
+
+                            {/* Action buttons */}
+                            <div className="py-2">
+                                <button
+                                    className="w-full flex items-center gap-4 px-6 py-4 text-sm font-medium text-foreground hover:bg-muted/50 transition-colors active:bg-muted"
+                                    onClick={() => { setReplyTo(actionMsg); setActionMsg(null); }}
+                                >
+                                    <Reply className="w-5 h-5 text-primary" />
+                                    Antworten
+                                </button>
+                                <button
+                                    className="w-full flex items-center gap-4 px-6 py-4 text-sm font-medium text-foreground hover:bg-muted/50 transition-colors active:bg-muted"
+                                    onClick={() => {
+                                        navigator.clipboard.writeText(actionMsg.text).then(() => toast.success('Kopiert'));
+                                        setActionMsg(null);
+                                    }}
+                                >
+                                    <Copy className="w-5 h-5 text-primary" />
+                                    Kopieren
+                                </button>
+                                {actionMsg.senderId === user?.id && (
+                                    <button
+                                        className="w-full flex items-center gap-4 px-6 py-4 text-sm font-medium text-destructive hover:bg-destructive/5 transition-colors active:bg-destructive/10"
+                                        onClick={() => {
+                                            deleteMessageMutation.mutate(actionMsg.id);
+                                            setActionMsg(null);
+                                        }}
+                                    >
+                                        <Trash className="w-5 h-5" />
+                                        Löschen
+                                    </button>
+                                )}
+                            </div>
+                        </>
+                    )}
+                </SheetContent>
+            </Sheet>
         </div>
     );
 }

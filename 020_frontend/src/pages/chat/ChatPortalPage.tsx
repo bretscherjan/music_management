@@ -16,6 +16,7 @@ import { de } from 'date-fns/locale';
 import { useAuth, useCan } from '@/context/AuthContext';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { toast } from 'sonner';
+import { PageHeader } from '@/components/common/PageHeader';
 
 export function ChatPortalPage() {
     const navigate = useNavigate();
@@ -130,12 +131,10 @@ export function ChatPortalPage() {
     return (
         <div className="space-y-5 max-w-2xl mx-auto">
             {/* Header */}
-            <div className="flex justify-between items-center">
-                <h1 className="text-2xl font-bold flex items-center gap-2">
-                    <MessageSquare className="w-6 h-6 text-primary" />
-                    Chats
-                </h1>
-                {canCreateChat && (
+            <PageHeader
+                title="Chats"
+                Icon={MessageSquare}
+                actions={canCreateChat ? (
                     <Dialog open={isNewChatOpen} onOpenChange={(open) => {
                         setIsNewChatOpen(open);
                         if (!open) {
@@ -145,12 +144,12 @@ export function ChatPortalPage() {
                         }
                     }}>
                         <DialogTrigger asChild>
-                            <Button className="gap-2 h-10">
-                                <Plus className="w-4 h-4" />
-                                Neuer Chat
-                            </Button>
+                            <Button className="h-11 w-11 sm:w-auto sm:px-5 gap-1.5 rounded-2xl shadow-sm">
+                                    <Plus className="w-5 h-5 flex-shrink-0" />
+                                    <span className="hidden sm:inline">Neuer Chat</span>
+                                </Button>
                         </DialogTrigger>
-                        <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col">
+                        <DialogContent topPlacement className="max-w-2xl max-h-[88dvh] flex flex-col">
                             <DialogHeader>
                                 <DialogTitle>Neuen Chat starten</DialogTitle>
                             </DialogHeader>
@@ -229,8 +228,8 @@ export function ChatPortalPage() {
                             </div>
                         </DialogContent>
                     </Dialog>
-                )}
-            </div>
+                ) : undefined}
+            />
 
             {/* Search */}
             <div className="relative">

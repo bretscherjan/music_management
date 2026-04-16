@@ -85,7 +85,7 @@ export function CreateUserDialog({ open, onOpenChange }: CreateUserDialogProps) 
 
     return (
         <Dialog open={open} onOpenChange={handleClose}>
-            <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
+            <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto" topPlacement>
                 <DialogHeader>
                     <DialogTitle>Neues Mitglied erstellen</DialogTitle>
                     <DialogDescription>

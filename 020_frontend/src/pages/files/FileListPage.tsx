@@ -53,6 +53,7 @@ import { MoveItemDialog } from '@/components/files/MoveItemDialog';
 import { WrapInFolderDialog } from '@/components/files/WrapInFolderDialog';
 import { RenameFolderDialog } from '@/components/files/RenameFolderDialog';
 import { Checkbox } from '@/components/ui/checkbox';
+import { PageHeader } from '@/components/common/PageHeader';
 
 export function FileListPage() {
     const can = useCan();
@@ -256,34 +257,34 @@ export function FileListPage() {
     return (
         <div className="space-y-6">
             {/* Header */}
-            <div className="flex items-center justify-between flex-wrap gap-4">
-                <div>
-                    <h1 className="text-3xl font-bold tracking-tight flex items-center gap-2">
-                        <FileText className="h-8 w-8" />
-                        Dateien
-                    </h1>
-                    <p className="text-muted-foreground">
-                        Noten, Dokumente und andere Dateien zum Download
-                    </p>
-                </div>
-
-                {(canUploadFiles || canManageFilePermissions) && (
+            <PageHeader
+                title="Dateien"
+                subtitle="Noten, Dokumente und andere Dateien zum Download"
+                Icon={FileText}
+                actions={(canUploadFiles || canManageFilePermissions) ? (
                     <div className="flex gap-2">
                         {canUploadFiles && (
                             <>
-                                <Button variant="outline" onClick={() => setIsCreateFolderOpen(true)}>
-                                    <FolderPlus className="h-4 w-4 mr-2" />
-                                    Ordner erstellen
+                                <Button
+                                    variant="outline"
+                                    className="h-11 w-11 sm:w-auto sm:px-5 gap-1.5 rounded-2xl"
+                                    onClick={() => setIsCreateFolderOpen(true)}
+                                >
+                                    <FolderPlus className="h-5 w-5 flex-shrink-0" />
+                                    <span className="hidden sm:inline">Ordner erstellen</span>
                                 </Button>
-                                <Button onClick={() => setIsUploadOpen(true)}>
-                                    <Upload className="h-4 w-4 mr-2" />
-                                    Datei hochladen
+                                <Button
+                                    className="h-11 w-11 sm:w-auto sm:px-5 gap-1.5 rounded-2xl shadow-sm"
+                                    onClick={() => setIsUploadOpen(true)}
+                                >
+                                    <Upload className="h-5 w-5 flex-shrink-0" />
+                                    <span className="hidden sm:inline">Datei hochladen</span>
                                 </Button>
                             </>
                         )}
                     </div>
-                )}
-            </div>
+                ) : undefined}
+            />
 
             {/* Breadcrumb Navigation */}
             <div className="flex items-center flex-wrap gap-2 text-sm bg-muted/20 p-2 rounded-md">

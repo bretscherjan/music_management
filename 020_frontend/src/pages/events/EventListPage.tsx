@@ -6,10 +6,11 @@ import { useCan } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
-import { Clock, Plus, HelpCircle, Archive } from 'lucide-react';
+import { Calendar, Clock, Plus, HelpCircle, Archive } from 'lucide-react';
 import type { Event, EventCategory } from '@/types';
 import { CalendarExportDialog } from '@/components/events/CalendarExportDialog';
 import { EventListItem } from '@/components/events/EventListItem';
+import { PageHeader } from '@/components/common/PageHeader';
 
 const categories: { value: EventCategory | 'all'; label: string }[] = [
     { value: 'all', label: 'Alle' },
@@ -76,23 +77,24 @@ export function EventListPage() {
     return (
         <div className="space-y-5">
             {/* Header */}
-            <div className="flex items-center justify-between gap-4 pt-1">
-                <div>
-                    <h1 className="text-2xl font-bold tracking-tight">Termine</h1>
-                    <p className="text-sm text-muted-foreground mt-0.5">Veranstaltungen &amp; Proben</p>
-                </div>
-                <div className="flex items-center gap-2 flex-shrink-0">
-                    <CalendarExportDialog events={filteredEvents} />
-                    {can('events:write') && (
-                        <Link to="/member/admin/events/new">
-                            <Button size="sm" className="gap-1.5">
-                                <Plus className="h-4 w-4" />
-                                <span className="hidden sm:inline">Neuer Termin</span>
-                            </Button>
-                        </Link>
-                    )}
-                </div>
-            </div>
+            <PageHeader
+                title="Termine"
+                subtitle="Veranstaltungen & Proben"
+                Icon={Calendar}
+                actions={
+                    <div className="flex items-center gap-2">
+                        <CalendarExportDialog events={filteredEvents} />
+                        {can('events:write') && (
+                            <Link to="/member/admin/events/new">
+                                <Button className="h-11 w-11 sm:w-auto sm:px-5 gap-1.5 rounded-2xl shadow-sm">
+                                    <Plus className="h-5 w-5 flex-shrink-0" />
+                                    <span className="hidden sm:inline">Neuer Termin</span>
+                                </Button>
+                            </Link>
+                        )}
+                    </div>
+                }
+            />
 
             {/* Category Filter – Segmented Control */}
             <div className="overflow-x-auto">

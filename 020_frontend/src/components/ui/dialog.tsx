@@ -49,10 +49,14 @@ function DialogContent({
   children,
   showCloseButton = true,
   size = "default",
+  topPlacement = false,
   ...props
 }: React.ComponentProps<typeof DialogPrimitive.Content> & {
   showCloseButton?: boolean
   size?: "sm" | "default" | "lg" | "xl"
+  /** On mobile, anchor near the top of the screen instead of the bottom.
+   *  Prevents the soft keyboard from pushing the modal off-screen. */
+  topPlacement?: boolean
 }) {
   const sizeClasses = {
     sm: "sm:max-w-sm",
@@ -69,12 +73,22 @@ function DialogContent({
           // Base: centered card with slide-up on mobile, scale on desktop
           "bg-background data-[state=open]:animate-in data-[state=closed]:animate-out",
           "data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
-          "data-[state=open]:slide-in-from-bottom-6 data-[state=closed]:slide-out-to-bottom-4",
-          "sm:data-[state=open]:slide-in-from-bottom-0 sm:data-[state=closed]:zoom-out-95 sm:data-[state=open]:zoom-in-95",
-          "fixed bottom-0 left-0 right-0 z-50 grid w-full gap-4 rounded-t-2xl border-x border-t px-6 pt-6 pb-[calc(1.5rem+env(safe-area-inset-bottom))] shadow-2xl duration-200 outline-none",
+          "fixed z-50 grid w-full gap-4 shadow-2xl duration-200 outline-none",
+          // Desktop: always centered
           "sm:bottom-auto sm:top-[50%] sm:left-[50%] sm:right-auto sm:translate-x-[-50%] sm:translate-y-[-50%]",
           "sm:max-w-[calc(100%-2rem)] sm:rounded-2xl sm:border sm:p-6",
+          "sm:data-[state=open]:slide-in-from-bottom-0 sm:data-[state=closed]:zoom-out-95 sm:data-[state=open]:zoom-in-95",
           sizeClasses[size],
+          // Mobile: bottom-sheet (default) vs top-placement
+          topPlacement ? [
+            "top-[4dvh] left-0 right-0 bottom-auto rounded-b-2xl rounded-t-2xl border px-6 pt-6 pb-6",
+            "max-h-[92dvh] overflow-y-auto",
+            "data-[state=open]:slide-in-from-top-4 data-[state=closed]:slide-out-to-top-4",
+          ] : [
+            "bottom-0 left-0 right-0 rounded-t-2xl border-x border-t px-6 pt-6 pb-[calc(1.5rem+env(safe-area-inset-bottom))]",
+            "max-h-[92dvh] overflow-y-auto",
+            "data-[state=open]:slide-in-from-bottom-6 data-[state=closed]:slide-out-to-bottom-4",
+          ],
           className
         )}
         {...props}

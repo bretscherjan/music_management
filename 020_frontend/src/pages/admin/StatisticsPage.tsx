@@ -10,12 +10,13 @@ import {
     BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend,
     ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line,
 } from 'recharts';
-import { Download, Calendar, Filter, Music, TrendingUp, BarChart2, Clock, Users, Award, UserX, CalendarDays } from 'lucide-react';
+import { Download, Calendar, Filter, Music, TrendingUp, BarChart2, Clock, Users, Award, UserX, CalendarDays, BarChart as BarChartIcon } from 'lucide-react';
 import { toast } from 'sonner';
 import { ZoomableTableWrapper } from '@/components/common/ZoomableTableWrapper';
 import { PdfExportDialog } from '@/components/ui/PdfExportDialog';
 import type { PdfOptions } from '@/utils/pdfTheme';
 import { cn } from '@/lib/utils';
+import { PageHeader } from '@/components/common/PageHeader';
 
 export function StatisticsPage() {
     const [activeTab, setActiveTab] = useState<'repertoire' | 'attendance' | 'termine'>('repertoire');
@@ -174,50 +175,51 @@ export function StatisticsPage() {
 
     return (
         <div className="space-y-6 max-w-7xl mx-auto pb-12">
-            <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4">
-                <div>
-                    <h1 className="text-2xl font-bold tracking-tight">Statistiken</h1>
-                    <p className="text-muted-foreground text-sm">Auswertung von Repertoire und Anwesenheit</p>
-                </div>
-                <div className="flex gap-2 items-center flex-wrap">
-                    <Select value={timeRange} onValueChange={setTimeRange}>
-                        <SelectTrigger className="w-[160px] sm:w-[180px]">
-                            <Calendar className="mr-2 h-4 w-4" />
-                            <SelectValue placeholder="Zeitraum" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="all">Gesamter Zeitraum</SelectItem>
-                            <SelectItem value="currentyear">Dieses Jahr ({new Date().getFullYear()})</SelectItem>
-                            <SelectItem value="lastyear">Letztes Jahr ({new Date().getFullYear() - 1})</SelectItem>
-                        </SelectContent>
-                    </Select>
-
-                    {activeTab === 'repertoire' && (
-                        <Select value={eventCategory} onValueChange={setEventCategory}>
+            <PageHeader
+                title="Statistiken"
+                subtitle="Auswertung von Repertoire und Anwesenheit"
+                Icon={BarChartIcon}
+                actions={
+                    <div className="flex gap-2 items-center flex-wrap">
+                        <Select value={timeRange} onValueChange={setTimeRange}>
                             <SelectTrigger className="w-[160px] sm:w-[180px]">
-                                <Filter className="mr-2 h-4 w-4" />
-                                <SelectValue placeholder="Kategorie" />
+                                <Calendar className="mr-2 h-4 w-4" />
+                                <SelectValue placeholder="Zeitraum" />
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="all">Alle Kategorien</SelectItem>
-                                <SelectItem value="rehearsal">Nur Proben</SelectItem>
-                                <SelectItem value="performance">Nur Auftritte</SelectItem>
+                                <SelectItem value="all">Gesamter Zeitraum</SelectItem>
+                                <SelectItem value="currentyear">Dieses Jahr ({new Date().getFullYear()})</SelectItem>
+                                <SelectItem value="lastyear">Letztes Jahr ({new Date().getFullYear() - 1})</SelectItem>
                             </SelectContent>
                         </Select>
-                    )}
 
-                    <PdfExportDialog
-                        trigger={
-                            <Button className="whitespace-nowrap">
-                                <Download className="mr-2 h-4 w-4" />
-                                Export PDF
-                            </Button>
-                        }
-                        title={activeTab === 'repertoire' ? 'Repertoire exportieren' : 'Anwesenheit exportieren'}
-                        onExport={handleDownloadPdf}
-                    />
-                </div>
-            </div>
+                        {activeTab === 'repertoire' && (
+                            <Select value={eventCategory} onValueChange={setEventCategory}>
+                                <SelectTrigger className="w-[160px] sm:w-[180px]">
+                                    <Filter className="mr-2 h-4 w-4" />
+                                    <SelectValue placeholder="Kategorie" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="all">Alle Kategorien</SelectItem>
+                                    <SelectItem value="rehearsal">Nur Proben</SelectItem>
+                                    <SelectItem value="performance">Nur Auftritte</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        )}
+
+                        <PdfExportDialog
+                            trigger={
+                                <Button className="whitespace-nowrap">
+                                    <Download className="mr-2 h-4 w-4" />
+                                    Export PDF
+                                </Button>
+                            }
+                            title={activeTab === 'repertoire' ? 'Repertoire exportieren' : 'Anwesenheit exportieren'}
+                            onExport={handleDownloadPdf}
+                        />
+                    </div>
+                }
+            />
 
             {/* Tabs Navigation – Segmented Control */}
             <div className="overflow-x-auto">
@@ -513,6 +515,18 @@ export function StatisticsPage() {
                                                         <div>
                                                             <p>{item.name}</p>
                                                             <p className="text-xs text-muted-foreground sm:hidden">{item.register || '-'}</p>
+                                                            {/* Mobile tally badges */}
+                                                            <div className="flex items-center gap-1 mt-1 sm:hidden">
+                                                                <span className="inline-flex items-center gap-0.5 text-[10px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-full px-1.5 py-0.5">
+                                                                    ✓ {item.present}
+                                                                </span>
+                                                                <span className="inline-flex items-center gap-0.5 text-[10px] font-semibold text-amber-600 bg-amber-50 border border-amber-200 rounded-full px-1.5 py-0.5">
+                                                                    ~ {item.excused}
+                                                                </span>
+                                                                <span className="inline-flex items-center gap-0.5 text-[10px] font-semibold text-red-500 bg-red-50 border border-red-200 rounded-full px-1.5 py-0.5">
+                                                                    ✗ {item.unexcused}
+                                                                </span>
+                                                            </div>
                                                         </div>
                                                     </td>
                                                     <td className="p-3 text-muted-foreground hidden sm:table-cell">{item.register || '-'}</td>

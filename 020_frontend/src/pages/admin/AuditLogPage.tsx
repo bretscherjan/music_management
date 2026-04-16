@@ -11,6 +11,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sh
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import api from '@/lib/api';
 import DiffViewer from '@/components/audit/DiffViewer';
+import { PageHeader } from '@/components/common/PageHeader';
 
 interface AuditLog {
     id: number;
@@ -70,23 +71,21 @@ const AuditLogPage: React.FC = () => {
 
     return (
         <div className="space-y-5">
-            {/* Header */}
-            <div className="flex items-center justify-between gap-4 pt-1">
-                <div>
-                    <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2">
-                        <History className="h-6 w-6 text-primary" /> Audit Log
-                    </h1>
-                    <p className="text-sm text-muted-foreground mt-0.5">Alle Änderungen im System</p>
-                </div>
-                <Button
-                    variant="outline"
-                    size="icon"
-                    className="md:hidden h-11 w-11"
-                    onClick={() => setFilterSheetOpen(true)}
-                >
-                    <SlidersHorizontal className="h-4 w-4" />
-                </Button>
-            </div>
+            <PageHeader
+                title="Audit Log"
+                subtitle="Alle Änderungen im System"
+                Icon={History}
+                actions={
+                    <Button
+                        variant="outline"
+                        size="icon"
+                        className="md:hidden h-11 w-11 rounded-2xl"
+                        onClick={() => setFilterSheetOpen(true)}
+                    >
+                        <SlidersHorizontal className="h-4 w-4" />
+                    </Button>
+                }
+            />
 
             {/* Search + inline filters */}
             <div className="native-group p-4">

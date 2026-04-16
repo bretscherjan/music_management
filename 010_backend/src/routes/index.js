@@ -45,6 +45,7 @@ router.use('/audit', require('./audit.routes'));
 router.use('/logs',  require('./logs.routes'));
 router.use('/register-device', require('./device.routes'));
 // router.use('/onlyoffice', require('./onlyoffice.routes'));
+router.use('/search', require('./search.routes'));
 
 module.exports = router;
 

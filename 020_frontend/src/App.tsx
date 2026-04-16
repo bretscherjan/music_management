@@ -5,6 +5,7 @@ import { Capacitor } from '@capacitor/core';
 const isAppMode = Capacitor.isNativePlatform() || import.meta.env.VITE_APP_MODE === 'app';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider } from '@/context/AuthContext';
+import { GlobalSearchProvider } from '@/context/GlobalSearchContext';
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { PublicLayout } from '@/components/layout/PublicLayout';
@@ -65,6 +66,7 @@ function App() {
       <BrowserRouter>
         <ScrollToTop />
         <AuthProvider>
+          <GlobalSearchProvider>
           <Routes>
             {/* ── Public website routes (skipped in app mode) ── */}
             {!isAppMode && (
@@ -121,6 +123,7 @@ function App() {
 
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
+          </GlobalSearchProvider>
           <Toaster position="top-center" richColors />
         </AuthProvider>
       </BrowserRouter>

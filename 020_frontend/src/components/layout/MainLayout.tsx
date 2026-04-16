@@ -4,8 +4,12 @@ import Header from './Header';
 import { Sidebar } from './Sidebar';
 import { BottomNav } from './BottomNav';
 import { pushNotificationService } from '@/services/pushNotificationService';
+import { useGlobalSearch } from '@/context/GlobalSearchContext';
+import { GlobalSearch } from '@/components/common/GlobalSearch';
 
 export function MainLayout() {
+    const { isOpen, close } = useGlobalSearch();
+
     // Sync push subscription on mount to ensure backend has the latest endpoint
     useEffect(() => {
         pushNotificationService.syncSubscription().catch(err =>
@@ -36,6 +40,9 @@ export function MainLayout() {
                 </div>
             </div>
             <BottomNav />
+
+            {/* Global Command Palette */}
+            <GlobalSearch open={isOpen} onClose={close} />
         </div>
     );
 }

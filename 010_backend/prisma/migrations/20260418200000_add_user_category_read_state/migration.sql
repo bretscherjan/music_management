@@ -1,6 +1,3 @@
--- CreateEnum
-CREATE TYPE "ReadCategory" AS ENUM ('EVENTS', 'NEWS', 'POLLS');
-
 -- CreateTable
 CREATE TABLE `UserCategoryReadState` (
     `id` INTEGER NOT NULL AUTO_INCREMENT,

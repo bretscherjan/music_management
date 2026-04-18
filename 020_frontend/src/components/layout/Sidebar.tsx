@@ -19,6 +19,7 @@ import {
     Database,
     TableProperties,
     MessageSquare,
+    BarChart2,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -35,6 +36,7 @@ const mainNavItems: NavItem[] = [
     { label: 'Mappen', href: '/member/music-folders', icon: <Folder className="h-5 w-5" />, permission: 'folders:read' },
     { label: 'Mitglieder', href: '/member/members', icon: <Users className="h-5 w-5" />, permission: 'members:read' },
     { label: 'Chat', href: '/member/chat', icon: <MessageSquare className="h-5 w-5" />, permission: 'chat:read' },
+    { label: 'Abstimmungen', href: '/member/polls', icon: <BarChart2 className="h-5 w-5" />, permission: 'polls:read' },
 ];
 
 const adminNavItems: NavItem[] = [

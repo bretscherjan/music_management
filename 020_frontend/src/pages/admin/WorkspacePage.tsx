@@ -417,7 +417,7 @@ export function WorkspacePage() {
 
                 {/* Tab Navigation */}
                 <div className="flex items-center gap-2 mb-6">
-                    <div className="segmented-control flex-1 max-w-xs">
+                    <div className="segmented-control flex">
                         <button
                             onClick={() => setActiveTab('tasks')}
                             className={cn('segmented-control-option flex items-center gap-1.5', activeTab === 'tasks' && 'is-active')}

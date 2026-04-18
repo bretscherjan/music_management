@@ -47,6 +47,11 @@ model User {
   chatParticipants     ChatParticipant[]
   chatReadStates       ChatReadState[]
   permissions          UserPermission[]
+  pollsCreated         Poll[]            @relation("PollCreator")
+  pollOptionsAdded     PollOption[]      @relation("PollOptionAdder")
+  pollVotes            PollVote[]        @relation("PollVoter")
+  pollTextAnswers      PollTextAnswer[]  @relation("PollTextAnswerer")
+  pollAudienceRules    PollAudience[]    @relation("PollAudienceUser")
 
   @@index([email])
   @@index([registerId])
@@ -191,6 +196,7 @@ model Register {
   folderAccess FolderAccess[]
   users        User[]
   events       Event[]        @relation("EventToRegister")
+  pollAudience PollAudience[] @relation("PollAudienceRegister")
 
   @@index([name])
 }
@@ -672,6 +678,126 @@ enum TaskPriority {
   low
   medium
   high
+}
+
+model Poll {
+  id                 Int                   @id @default(autoincrement())
+  title              String
+  question           String                @db.Text
+  pollKind           PollKind              @default(SURVEY)
+  type               PollType              @default(SINGLE)
+  maxChoices         Int                   @default(1)
+  anonymity          PollAnonymity         @default(FULLY_ANONYMOUS)
+  resultsVisibility  PollResultsVisibility @default(AFTER_VOTE)
+  allowCustomOptions Boolean               @default(false)
+  status             PollStatus            @default(ACTIVE)
+  endsAt             DateTime?
+  createdById        Int
+  createdAt          DateTime              @default(now())
+  updatedAt          DateTime              @updatedAt
+  createdBy          User                  @relation("PollCreator", fields: [createdById], references: [id])
+  options            PollOption[]
+  votes              PollVote[]
+  textAnswers        PollTextAnswer[]
+  audienceRules      PollAudience[]
+
+  @@index([status])
+  @@index([pollKind])
+  @@index([createdById])
+  @@index([endsAt])
+}
+
+model PollOption {
+  id        Int        @id @default(autoincrement())
+  pollId    Int
+  text      String
+  addedById Int?
+  createdAt DateTime   @default(now())
+  poll      Poll       @relation(fields: [pollId], references: [id], onDelete: Cascade)
+  addedBy   User?      @relation("PollOptionAdder", fields: [addedById], references: [id])
+  votes     PollVote[]
+
+  @@index([pollId])
+  @@index([addedById])
+}
+
+model PollVote {
+  id        Int        @id @default(autoincrement())
+  pollId    Int
+  optionId  Int
+  userId    Int
+  createdAt DateTime   @default(now())
+  poll      Poll       @relation(fields: [pollId], references: [id], onDelete: Cascade)
+  option    PollOption @relation(fields: [optionId], references: [id], onDelete: Cascade)
+  user      User       @relation("PollVoter", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([pollId, optionId, userId])
+  @@index([pollId])
+  @@index([optionId])
+  @@index([userId])
+}
+
+model PollAudience {
+  id         Int                    @id @default(autoincrement())
+  pollId     Int
+  targetType PollAudienceTargetType @default(ALL)
+  userId     Int?
+  registerId Int?
+  poll       Poll                   @relation(fields: [pollId], references: [id], onDelete: Cascade)
+  user       User?                  @relation("PollAudienceUser", fields: [userId], references: [id], onDelete: Cascade)
+  register   Register?              @relation("PollAudienceRegister", fields: [registerId], references: [id], onDelete: Cascade)
+
+  @@index([pollId])
+  @@index([userId])
+  @@index([registerId])
+}
+
+model PollTextAnswer {
+  id        Int      @id @default(autoincrement())
+  pollId    Int
+  userId    Int
+  answer    String   @db.Text
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  poll      Poll     @relation(fields: [pollId], references: [id], onDelete: Cascade)
+  user      User     @relation("PollTextAnswerer", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([pollId, userId])
+  @@index([pollId])
+  @@index([userId])
+}
+
+enum PollKind {
+  SURVEY
+  VOTE
+}
+
+enum PollType {
+  SINGLE
+  MULTIPLE
+}
+
+enum PollAnonymity {
+  FULLY_ANONYMOUS
+  VISIBLE_TO_ADMINS
+  VISIBLE_TO_ALL
+}
+
+enum PollResultsVisibility {
+  ADMINS_ONLY
+  AFTER_VOTE
+  ALWAYS
+}
+
+enum PollStatus {
+  ACTIVE
+  CLOSED
+}
+
+enum PollAudienceTargetType {
+  ALL
+  REGISTER
+  USER
 }
 
 model AuditLog {

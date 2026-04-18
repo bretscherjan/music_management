@@ -50,6 +50,7 @@ import { LogsPage } from '@/pages/admin/LogsPage';
 import { GrifftabelleEditorPage } from '@/pages/admin/GrifftabelleEditorPage';
 import { ChatPortalPage } from '@/pages/chat/ChatPortalPage';
 import { ChatDetailPage } from '@/pages/chat/ChatDetailPage';
+import PollsPage from '@/pages/polls/PollsPage';
 
 const queryClient = new QueryClient();
 
@@ -100,6 +101,7 @@ function App() {
               <Route path="members" element={<ProtectedRoute permission="members:read"><UserManagementPage /></ProtectedRoute>} />
               <Route path="chat" element={<ProtectedRoute permission="chat:read"><ChatPortalPage /></ProtectedRoute>} />
               <Route path="chat/:chatId" element={<ProtectedRoute permission="chat:read"><ChatDetailPage /></ProtectedRoute>} />
+              <Route path="polls" element={<ProtectedRoute permission="polls:read"><PollsPage /></ProtectedRoute>} />
 
               <Route path="grifftabelle" element={<ProtectedRoute permission="grifftabelle:read"><GrifftabellePage /></ProtectedRoute>} />
               <Route path="admin/toolkit" element={<ProtectedRoute permission="toolkit:read"><ToolkitPage /></ProtectedRoute>} />

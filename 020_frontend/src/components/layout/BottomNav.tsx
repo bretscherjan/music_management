@@ -8,7 +8,7 @@ import {
     MoreHorizontal, LogOut, Users, Download,
     Music, Newspaper, Library, BarChart,
     ClipboardList, Activity, ScrollText, Wrench,
-    BookOpen, Database, TableProperties, Shield,
+    BookOpen, Database, TableProperties, Shield, BarChart2,
 } from 'lucide-react';
 import {
     Sheet, SheetContent, SheetHeader, SheetTitle,
@@ -31,6 +31,7 @@ const primaryTabs: NavItem[] = [
 
 const moreMainItems: NavItem[] = [
     { label: 'Mitglieder', href: '/member/members', icon: Users, permission: 'members:read' },
+    { label: 'Abstimmungen', href: '/member/polls', icon: BarChart2, permission: 'polls:read' },
 ];
 
 const adminNavItems: NavItem[] = [

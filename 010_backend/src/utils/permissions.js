@@ -34,6 +34,8 @@ const PERMISSION_DEFINITIONS = [
     { key: 'cms:write', description: 'CMS-Inhalte erstellen und bearbeiten', category: 'CMS' },
     { key: 'chat:read', description: 'Zugeteilte Chats lesen und nutzen', category: 'Chat' },
     { key: 'chat:create', description: 'Neue Chats erstellen und Chat-Verwaltung nutzen', category: 'Chat' },
+    { key: 'polls:read', description: 'Abstimmungen ansehen und daran teilnehmen', category: 'Abstimmungen' },
+    { key: 'polls:write', description: 'Abstimmungen erstellen, bearbeiten und löschen', category: 'Abstimmungen' },
 ];
 
 const PERMISSION_DEPENDENCIES = {
@@ -54,6 +56,7 @@ const PERMISSION_DEPENDENCIES = {
     'news:write': ['news:read'],
     'db:write': ['db:read'],
     'cms:write': ['cms:read'],
+    'polls:write': ['polls:read'],
     'chat:create': ['chat:read'],
 };
 
@@ -63,6 +66,7 @@ const MEMBER_PRESET_KEYS = [
     'folders:read',
     'members:read',
     'chat:create',
+    'polls:read',
 ];
 
 const SYSTEM_PERMISSION_TEMPLATES = [

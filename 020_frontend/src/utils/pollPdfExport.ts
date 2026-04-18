@@ -40,7 +40,7 @@ export function exportPollAnalyticsPdf(
     data: PollAnalyticsData,
     opts: PollPdfOptions = DEFAULT_POLL_PDF_OPTIONS
 ) {
-    const { poll, analytics } = data;
+    const { poll } = data;
     const isSurvey = poll.pollKind === 'SURVEY';
 
     if (isSurvey) {

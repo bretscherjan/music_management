@@ -47,6 +47,7 @@ router.use('/register-device', require('./device.routes'));
 // router.use('/onlyoffice', require('./onlyoffice.routes'));
 router.use('/search', require('./search.routes'));
 router.use('/polls', require('./poll.routes'));
+router.use('/notifications', require('./notification.routes'));
 
 module.exports = router;
 

@@ -1,6 +1,7 @@
 import { Link, useLocation } from 'react-router-dom';
 import { Capacitor } from '@capacitor/core';
 import { useAuth, useCan } from '@/context/AuthContext';
+import { useUnread } from '@/context/UnreadContext';
 import {
     Calendar,
     Download,
@@ -28,15 +29,16 @@ interface NavItem {
     href: string;
     icon: React.ReactNode;
     permission?: string;
+    unreadKey?: 'chat' | 'events' | 'news' | 'polls';
 }
 
 const mainNavItems: NavItem[] = [
-    { label: 'Termine', href: '/member/events', icon: <Calendar className="h-5 w-5" />, permission: 'events:read' },
+    { label: 'Termine', href: '/member/events', icon: <Calendar className="h-5 w-5" />, permission: 'events:read', unreadKey: 'events' },
     { label: 'Dateien', href: '/member/files', icon: <FileText className="h-5 w-5" />, permission: 'files:read' },
     { label: 'Mappen', href: '/member/music-folders', icon: <Folder className="h-5 w-5" />, permission: 'folders:read' },
     { label: 'Mitglieder', href: '/member/members', icon: <Users className="h-5 w-5" />, permission: 'members:read' },
-    { label: 'Chat', href: '/member/chat', icon: <MessageSquare className="h-5 w-5" />, permission: 'chat:read' },
-    { label: 'Abstimmungen', href: '/member/polls', icon: <BarChart2 className="h-5 w-5" />, permission: 'polls:read' },
+    { label: 'Chat', href: '/member/chat', icon: <MessageSquare className="h-5 w-5" />, permission: 'chat:read', unreadKey: 'chat' },
+    { label: 'Abstimmungen', href: '/member/polls', icon: <BarChart2 className="h-5 w-5" />, permission: 'polls:read', unreadKey: 'polls' },
 ];
 
 const adminNavItems: NavItem[] = [
@@ -47,7 +49,7 @@ const adminNavItems: NavItem[] = [
     { label: 'Workspace', href: '/member/admin/workspace', icon: <Folder className="h-5 w-5" />, permission: 'workspace:read' },
     { label: 'Notenverwaltung', href: '/member/admin/sheet-music', icon: <Library className="h-5 w-5" />, permission: 'sheetMusic:read' },
     { label: 'Register', href: '/member/admin/registers', icon: <Music className="h-5 w-5" />, permission: 'registers:write' },
-    { label: 'News', href: '/member/admin/news', icon: <Newspaper className="h-5 w-5" />, permission: 'news:write' },
+    { label: 'News', href: '/member/admin/news', icon: <Newspaper className="h-5 w-5" />, permission: 'news:write', unreadKey: 'news' },
     { label: 'Statistiken', href: '/member/admin/statistics', icon: <BarChart className="h-5 w-5" />, permission: 'statistics:read' },
     { label: 'Engagement', href: '/member/admin/engagement', icon: <Activity className="h-5 w-5" />, permission: 'engagement:read' },
     { label: 'Protokoll', href: '/member/admin/protokoll', icon: <ClipboardList className="h-5 w-5" />, permission: 'protokoll:read' },
@@ -56,11 +58,21 @@ const adminNavItems: NavItem[] = [
     { label: 'DB', href: '/member/admin/db', icon: <Database className="h-5 w-5" />, permission: 'db:read' },
 ];
 
+function UnreadDot() {
+    return (
+        <span
+            className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-primary ring-1 ring-background"
+            aria-hidden="true"
+        />
+    );
+}
+
 export function Sidebar() {
     const { user } = useAuth();
     const can = useCan();
     const location = useLocation();
     const isAppMode = Capacitor.isNativePlatform();
+    const { unreadCounts } = useUnread();
     const downloadNavItem: NavItem = { label: 'Downloads', href: '/member/download', icon: <Download className="h-5 w-5" /> };
 
     const memberNavItems: NavItem[] = isAppMode
@@ -97,23 +109,25 @@ export function Sidebar() {
                 <nav className="flex flex-col gap-1">
                     {filteredMainNavItems.map((item) => {
                         const isActive = location.pathname === item.href;
+                        const hasUnread = item.unreadKey ? (unreadCounts[item.unreadKey] ?? 0) > 0 : false;
                         return (
                             <Link
                                 key={item.href}
                                 to={item.href}
                                 className={cn(
-                                    "flex flex-col items-center justify-center gap-1 p-2 rounded-xl transition-all duration-200 group",
+                                    "relative flex flex-col items-center justify-center gap-1 p-2 rounded-xl transition-all duration-200 group",
                                     isActive
                                         ? "bg-brand-red/10 text-brand-red shadow-sm brand-glow"
                                         : "text-muted-foreground hover:text-brand-red hover:bg-brand-red/5"
                                 )}
                             >
                                 <div className={cn(
-                                    "p-0.5 rounded-full transition-colors",
+                                    "relative p-0.5 rounded-full transition-colors",
                                 )}>
                                     <div className="!h-5 !w-5 [&>svg]:h-5 [&>svg]:w-5">
                                         {item.icon}
                                     </div>
+                                    {hasUnread && <UnreadDot />}
                                 </div>
                                 <span className="text-[10px] font-medium tracking-wide text-center leading-none">
                                     {item.label}
@@ -133,19 +147,21 @@ export function Sidebar() {
                     <nav className="flex flex-col gap-1">
                         {filteredAdminNavItems.map((item) => {
                             const isActive = location.pathname === item.href;
+                            const hasUnread = item.unreadKey ? (unreadCounts[item.unreadKey] ?? 0) > 0 : false;
                             return (
                                 <Link
                                     key={item.href}
                                     to={item.href}
                                     className={cn(
-                                        "flex flex-col items-center justify-center gap-1 p-2 rounded-xl transition-all duration-200 group",
+                                        "relative flex flex-col items-center justify-center gap-1 p-2 rounded-xl transition-all duration-200 group",
                                         isActive
                                             ? "bg-primary/10 text-primary shadow-sm"
                                             : "text-muted-foreground hover:text-foreground hover:bg-muted"
                                     )}
                                 >
-                                    <div className="!h-5 !w-5 [&>svg]:h-5 [&>svg]:w-5">
+                                    <div className="relative !h-5 !w-5 [&>svg]:h-5 [&>svg]:w-5">
                                         {item.icon}
+                                        {hasUnread && <UnreadDot />}
                                     </div>
                                     <span className="text-[10px] font-medium tracking-wide text-center leading-none">
                                         {item.label}

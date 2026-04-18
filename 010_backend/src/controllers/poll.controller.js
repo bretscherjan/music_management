@@ -81,12 +81,12 @@ function canSeeResults(poll, currentUserId, isAdmin) {
 async function getAudienceWhereClause(userId, isAdmin) {
     if (isAdmin) return {};
 
-    // Get all register IDs the user belongs to
+    // Users currently belong to at most one register in the Prisma schema.
     const user = await prisma.user.findUnique({
         where: { id: userId },
-        select: { registers: { select: { id: true } } },
+        select: { registerId: true },
     });
-    const userRegisterIds = (user?.registers ?? []).map(r => r.id);
+    const userRegisterIds = user?.registerId ? [user.registerId] : [];
 
     return {
         OR: [

@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Link, useSearchParams } from 'react-router-dom';
 import { eventService } from '@/services/eventService';
 import { useCan } from '@/context/AuthContext';
+import { useMarkRead } from '@/context/UnreadContext';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
@@ -31,6 +32,7 @@ function groupByMonth(events: Event[]): Array<{ monthLabel: string; events: Even
 
 export function EventListPage() {
     const can = useCan();
+    useMarkRead('EVENTS');
     const [searchParams] = useSearchParams();
     const eventIdParam = searchParams.get('id');
     const [selectedCategory, setSelectedCategory] = useState<EventCategory | 'all'>('all');

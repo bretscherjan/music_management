@@ -7,6 +7,7 @@ import { useCan } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import {
@@ -18,15 +19,17 @@ import {
     TableRow,
 } from '@/components/ui/table';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Search, Pencil, Plus, Trash2, SlidersHorizontal, MoreVertical, Users } from 'lucide-react';
+import { Search, Pencil, Plus, Trash2, SlidersHorizontal, MoreVertical, Users, ShieldCheck, X, CheckSquare } from 'lucide-react';
 import { getStatusLabel } from '@/lib/utils';
 import type { UserStatus, User } from '@/types';
 import { AdminEditUserDialog } from '@/components/admin/AdminEditUserDialog';
 import { CreateUserDialog } from '@/components/admin/CreateUserDialog';
+import { BulkPermissionDialog } from '@/components/admin/BulkPermissionDialog';
 import { ZoomableTableWrapper } from '@/components/common/ZoomableTableWrapper';
 import { ConfirmDialog } from '@/components/common/ConfirmDialog';
 import { toast } from 'sonner';
 import { PageHeader } from '@/components/common/PageHeader';
+import { cn } from '@/lib/utils';
 
 export function UserManagementPage() {
     const can = useCan();
@@ -48,6 +51,11 @@ export function UserManagementPage() {
     const [selectedUser, setSelectedUser] = useState<User | null>(null);
     const [filterSheetOpen, setFilterSheetOpen] = useState(false);
     const [actionDrawerUser, setActionDrawerUser] = useState<User | null>(null);
+
+    // Selection / Bulk state
+    const [selectionMode, setSelectionMode] = useState(false);
+    const [selectedUserIds, setSelectedUserIds] = useState<number[]>([]);
+    const [bulkPermDialogOpen, setBulkPermDialogOpen] = useState(false);
 
     const { data: users, isLoading: usersLoading } = useQuery({
         queryKey: ['users'],
@@ -128,6 +136,25 @@ export function UserManagementPage() {
         former: 'outline',
     };
 
+    const toggleSelectUser = (id: number) => {
+        setSelectedUserIds(prev =>
+            prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
+        );
+    };
+
+    const toggleSelectAll = () => {
+        if (selectedUserIds.length === filteredUsers.length) {
+            setSelectedUserIds([]);
+        } else {
+            setSelectedUserIds(filteredUsers.map(u => u.id));
+        }
+    };
+
+    const exitSelectionMode = () => {
+        setSelectionMode(false);
+        setSelectedUserIds([]);
+    };
+
     return (
         <div className="space-y-5">
             <PageHeader
@@ -144,6 +171,17 @@ export function UserManagementPage() {
                         >
                             <SlidersHorizontal className="h-4 w-4" />
                         </Button>
+                        {canManageMemberPermissions && (
+                            <Button
+                                variant={selectionMode ? 'secondary' : 'outline'}
+                                size="icon"
+                                className="md:hidden h-11 w-11 rounded-2xl"
+                                onClick={() => selectionMode ? exitSelectionMode() : setSelectionMode(true)}
+                                title={selectionMode ? 'Auswahl aufheben' : 'Auswählen'}
+                            >
+                                <CheckSquare className="h-4 w-4" />
+                            </Button>
+                        )}
                         {canWriteMembers && (
                             <Button size="sm" onClick={() => setIsCreateDialogOpen(true)} className="h-11 w-11 sm:w-auto sm:px-5 gap-1.5 rounded-2xl shadow-sm">
                                 <Plus className="h-5 w-5 flex-shrink-0" />
@@ -255,13 +293,30 @@ export function UserManagementPage() {
                 ) : (
                     <div className="native-group divide-y divide-border/40">
                         {filteredUsers.map((user) => (
-                            <div key={user.id} className="flex items-center gap-3 px-4 py-3">
+                            <div
+                                key={user.id}
+                                className={cn(
+                                    "flex items-center gap-3 px-4 py-3 transition-colors",
+                                    selectionMode && selectedUserIds.includes(user.id) && "bg-primary/5"
+                                )}
+                                onClick={selectionMode ? () => toggleSelectUser(user.id) : undefined}
+                            >
+                                {/* Selection checkbox */}
+                                {selectionMode && (
+                                    <Checkbox
+                                        checked={selectedUserIds.includes(user.id)}
+                                        onCheckedChange={() => toggleSelectUser(user.id)}
+                                        className="flex-shrink-0"
+                                    />
+                                )}
                                 {/* Left: avatar icon */}
-                                <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                                    <span className="text-sm font-bold text-primary">
-                                        {user.firstName[0]}{user.lastName[0]}
-                                    </span>
-                                </div>
+                                {!selectionMode && (
+                                    <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                                        <span className="text-sm font-bold text-primary">
+                                            {user.firstName[0]}{user.lastName[0]}
+                                        </span>
+                                    </div>
+                                )}
                                 {/* Center: info */}
                                 <div className="flex-1 min-w-0">
                                     <div className="flex items-center gap-2">
@@ -274,13 +329,13 @@ export function UserManagementPage() {
                                         {[user.register?.name, user.email].filter(Boolean).join(' · ')}
                                     </p>
                                 </div>
-                                {/* Right: 3-dots */}
-                                {canManageMembers && (
+                                {/* Right: 3-dots (hidden in selection mode) */}
+                                {canManageMembers && !selectionMode && (
                                     <Button
                                         variant="ghost"
                                         size="icon"
                                         className="h-9 w-9 flex-shrink-0"
-                                        onClick={() => setActionDrawerUser(user)}
+                                        onClick={(e) => { e.stopPropagation(); setActionDrawerUser(user); }}
                                     >
                                         <MoreVertical className="h-4 w-4" />
                                     </Button>
@@ -331,6 +386,15 @@ export function UserManagementPage() {
                     <Table>
                         <TableHeader>
                             <TableRow>
+                                {canManageMemberPermissions && (
+                                    <TableHead className="w-10">
+                                        <Checkbox
+                                            checked={filteredUsers.length > 0 && selectedUserIds.length === filteredUsers.length}
+                                            onCheckedChange={toggleSelectAll}
+                                            aria-label="Alle auswählen"
+                                        />
+                                    </TableHead>
+                                )}
                                 <TableHead>Name</TableHead>
                                 <TableHead>Register</TableHead>
                                 <TableHead>Status</TableHead>
@@ -342,6 +406,7 @@ export function UserManagementPage() {
                             {usersLoading ? (
                                 [1, 2, 3, 4, 5].map((i) => (
                                     <TableRow key={i}>
+                                        {canManageMemberPermissions && <TableCell><Skeleton className="h-4 w-4" /></TableCell>}
                                         <TableCell><Skeleton className="h-4 w-32" /></TableCell>
                                         <TableCell><Skeleton className="h-4 w-24" /></TableCell>
                                         <TableCell><Skeleton className="h-4 w-16" /></TableCell>
@@ -351,13 +416,27 @@ export function UserManagementPage() {
                                 ))
                             ) : filteredUsers.length === 0 ? (
                                 <TableRow>
-                                    <TableCell colSpan={canManageMembers ? 5 : 4} className="h-32 text-center text-muted-foreground">
+                                    <TableCell colSpan={(canManageMemberPermissions ? 1 : 0) + (canManageMembers ? 5 : 4)} className="h-32 text-center text-muted-foreground">
                                         Keine Mitglieder gefunden
                                     </TableCell>
                                 </TableRow>
                             ) : (
                                 filteredUsers.map((user) => (
-                                    <TableRow key={user.id} className="h-12 hover:bg-muted/50 transition-colors">
+                                    <TableRow
+                                        key={user.id}
+                                        className={cn(
+                                            "h-12 hover:bg-muted/50 transition-colors",
+                                            selectedUserIds.includes(user.id) && "bg-primary/5"
+                                        )}
+                                    >
+                                        {canManageMemberPermissions && (
+                                            <TableCell>
+                                                <Checkbox
+                                                    checked={selectedUserIds.includes(user.id)}
+                                                    onCheckedChange={() => toggleSelectUser(user.id)}
+                                                />
+                                            </TableCell>
+                                        )}
                                         <TableCell className="font-medium">
                                             {user.firstName} {user.lastName}
                                         </TableCell>
@@ -422,6 +501,41 @@ export function UserManagementPage() {
                 confirmText="Löschen"
                 variant="destructive"
             />
+
+            {/* Floating bulk-action pill */}
+            {selectedUserIds.length > 0 && (
+                <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 bg-background border border-border shadow-xl rounded-full px-4 py-2.5">
+                    <span className="text-sm font-medium text-foreground whitespace-nowrap">
+                        {selectedUserIds.length} ausgewählt
+                    </span>
+                    {canManageMemberPermissions && (
+                        <Button
+                            size="sm"
+                            className="rounded-full h-8 gap-1.5"
+                            onClick={() => setBulkPermDialogOpen(true)}
+                        >
+                            <ShieldCheck className="h-3.5 w-3.5" />
+                            Berechtigungen
+                        </Button>
+                    )}
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 rounded-full"
+                        onClick={exitSelectionMode}
+                    >
+                        <X className="h-4 w-4" />
+                    </Button>
+                </div>
+            )}
+
+            {canManageMemberPermissions && (
+                <BulkPermissionDialog
+                    open={bulkPermDialogOpen}
+                    onClose={() => { setBulkPermDialogOpen(false); exitSelectionMode(); }}
+                    selectedUserIds={selectedUserIds}
+                />
+            )}
         </div>
     );
 }

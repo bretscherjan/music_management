@@ -496,6 +496,15 @@ class ChatService {
             }).then(res => res.map(fo => ({ id: fo.id, type: 'folder', label: fo.name }))));
         }
 
+        if (!type || type === 'poll') {
+            queries.push(prisma.poll.findMany({
+                where: searchTerm ? { title: { contains: searchTerm } } : {},
+                select: { id: true, title: true },
+                take: limit,
+                orderBy: { createdAt: 'desc' }
+            }).then(res => res.map(p => ({ id: p.id, type: 'poll', label: p.title }))));
+        }
+
         const results = await Promise.all(queries);
         return results.flat();
     }

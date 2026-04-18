@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useSearchParams } from 'react-router-dom';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { useCan, useAuth } from '@/context/AuthContext';
+import { useMarkRead } from '@/context/UnreadContext';
 import { pollService } from '@/services/pollService';
 import api from '@/lib/api';
 import { PageHeader } from '@/components/common/PageHeader';
@@ -427,12 +429,14 @@ function PollCard({
     onDelete,
     onAnalytics,
     canManage,
+    highlighted = false,
 }: {
     poll: Poll;
     onEdit: (poll: Poll) => void;
     onDelete: (poll: Poll) => void;
     onAnalytics: (poll: Poll) => void;
     canManage: boolean;
+    highlighted?: boolean;
 }) {
     const [showChangeVote, setShowChangeVote] = useState(false);
     const queryClient = useQueryClient();
@@ -468,7 +472,13 @@ function PollCard({
     const showVoteForm = !closed && (!poll.hasVoted || showChangeVote);
 
     return (
-        <div className="bg-white rounded-2xl overflow-hidden shadow-sm">
+        <div
+            id={`poll-${poll.id}`}
+            className={cn(
+                'bg-white rounded-2xl overflow-hidden shadow-sm transition-all duration-500',
+                highlighted && 'ring-2 ring-primary shadow-lg'
+            )}
+        >
             {/* Header */}
             <div className="px-4 pt-4 pb-2 flex items-start justify-between gap-3">
                 <div className="flex-1 min-w-0">
@@ -1685,8 +1695,11 @@ function EmptyState({ tab }: { tab: FilterTab }) {
 export default function PollsPage() {
     const can = useCan();
     const { user } = useAuth();
+    useMarkRead('POLLS');
     const canWrite = can('polls:write');
     const isAdmin = user?.role === 'admin';
+    const [searchParams] = useSearchParams();
+    const linkedPollId = searchParams.get('id') ? parseInt(searchParams.get('id')!) : null;
 
     const [activeTab, setActiveTab] = useState<FilterTab>('active');
     const [showCreate, setShowCreate] = useState(false);
@@ -1694,6 +1707,7 @@ export default function PollsPage() {
     const [deletePoll, setDeletePoll] = useState<Poll | null>(null);
     const [analyticsPollId, setAnalyticsPollId] = useState<number | null>(null);
     const [showFilter, setShowFilter] = useState(false);
+    const [highlightedPollId, setHighlightedPollId] = useState<number | null>(linkedPollId);
 
     const pollsQuery = useQuery<Poll[]>({
         queryKey: ['polls'],
@@ -1701,6 +1715,25 @@ export default function PollsPage() {
     });
 
     const polls = pollsQuery.data ?? [];
+
+    // When polls load and a linked id is present, switch to correct tab + scroll
+    useEffect(() => {
+        if (!linkedPollId || polls.length === 0) return;
+        const target = polls.find(p => p.id === linkedPollId);
+        if (!target) return;
+        const closed = isPollClosed(target);
+        setActiveTab(closed ? 'archiv' : 'active');
+        // Scroll after render
+        setTimeout(() => {
+            const el = document.getElementById(`poll-${linkedPollId}`);
+            if (el) {
+                el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+        }, 150);
+        // Remove highlight after 3s
+        const t = setTimeout(() => setHighlightedPollId(null), 3000);
+        return () => clearTimeout(t);
+    }, [linkedPollId, polls]); // eslint-disable-line react-hooks/exhaustive-deps
 
     const filteredPolls = polls.filter((poll) => {
         const closed = isPollClosed(poll);
@@ -1793,6 +1826,7 @@ export default function PollsPage() {
                                         onEdit={(p) => setEditPoll(p)}
                                         onDelete={(p) => setDeletePoll(p)}
                                         onAnalytics={(p) => setAnalyticsPollId(p.id)}
+                                        highlighted={highlightedPollId === poll.id}
                                     />
                                 ))}
                             </div>

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Capacitor } from '@capacitor/core';
 import { useAuth, useCan } from '@/context/AuthContext';
+import { useUnread } from '@/context/UnreadContext';
 import { cn } from '@/lib/utils';
 import {
     Calendar, Folder, MessageSquare, FileText,
@@ -20,18 +21,19 @@ interface NavItem {
     href: string;
     icon: React.ComponentType<{ className?: string }>;
     permission?: string;
+    unreadKey?: 'chat' | 'events' | 'news' | 'polls';
 }
 
 const primaryTabs: NavItem[] = [
-    { label: 'Termine', href: '/member/events', icon: Calendar, permission: 'events:read' },
+    { label: 'Termine', href: '/member/events', icon: Calendar, permission: 'events:read', unreadKey: 'events' },
     { label: 'Mappen', href: '/member/music-folders', icon: Folder, permission: 'folders:read' },
-    { label: 'Chat', href: '/member/chat', icon: MessageSquare, permission: 'chat:read' },
+    { label: 'Chat', href: '/member/chat', icon: MessageSquare, permission: 'chat:read', unreadKey: 'chat' },
     { label: 'Dateien', href: '/member/files', icon: FileText, permission: 'files:read' },
 ];
 
 const moreMainItems: NavItem[] = [
     { label: 'Mitglieder', href: '/member/members', icon: Users, permission: 'members:read' },
-    { label: 'Abstimmungen', href: '/member/polls', icon: BarChart2, permission: 'polls:read' },
+    { label: 'Abstimmungen', href: '/member/polls', icon: BarChart2, permission: 'polls:read', unreadKey: 'polls' },
 ];
 
 const adminNavItems: NavItem[] = [
@@ -42,7 +44,7 @@ const adminNavItems: NavItem[] = [
     { label: 'Workspace', href: '/member/admin/workspace', icon: Folder, permission: 'workspace:read' },
     { label: 'Notenverwaltung', href: '/member/admin/sheet-music', icon: Library, permission: 'sheetMusic:read' },
     { label: 'Register', href: '/member/admin/registers', icon: Music, permission: 'registers:write' },
-    { label: 'News', href: '/member/admin/news', icon: Newspaper, permission: 'news:write' },
+    { label: 'News', href: '/member/admin/news', icon: Newspaper, permission: 'news:write', unreadKey: 'news' },
     { label: 'Statistiken', href: '/member/admin/statistics', icon: BarChart, permission: 'statistics:read' },
     { label: 'Engagement', href: '/member/admin/engagement', icon: Activity, permission: 'engagement:read' },
     { label: 'Protokoll', href: '/member/admin/protokoll', icon: ClipboardList, permission: 'protokoll:read' },
@@ -51,6 +53,19 @@ const adminNavItems: NavItem[] = [
     { label: 'DB', href: '/member/admin/db', icon: Database, permission: 'db:read' },
 ];
 
+/** Small red dot indicator */
+function UnreadDot({ className }: { className?: string }) {
+    return (
+        <span
+            className={cn(
+                'absolute w-2 h-2 rounded-full bg-primary ring-1 ring-background',
+                className
+            )}
+            aria-hidden="true"
+        />
+    );
+}
+
 export function BottomNav() {
     const location = useLocation();
     const navigate = useNavigate();
@@ -58,6 +73,7 @@ export function BottomNav() {
     const can = useCan();
     const isAppMode = Capacitor.isNativePlatform();
     const [moreOpen, setMoreOpen] = useState(false);
+    const { unreadCounts } = useUnread();
 
     const filteredPrimaryTabs = primaryTabs.filter(t => !t.permission || can(t.permission));
 
@@ -68,6 +84,12 @@ export function BottomNav() {
 
     const filteredAdminItems = adminNavItems.filter(t => !t.permission || can(t.permission));
     const hasAdminItems = filteredAdminItems.length > 0;
+
+    // Red dot on "Mehr" if any hidden item has unread
+    const moreItemsHaveUnread = [
+        ...filteredMoreMainItems,
+        ...filteredAdminItems,
+    ].some(item => item.unreadKey && (unreadCounts[item.unreadKey] ?? 0) > 0);
 
     const handleMoreNavClick = (href: string) => {
         setMoreOpen(false);
@@ -85,6 +107,7 @@ export function BottomNav() {
                     {filteredPrimaryTabs.slice(0, 4).map((tab) => {
                         const isActive = location.pathname.startsWith(tab.href);
                         const Icon = tab.icon;
+                        const hasUnread = tab.unreadKey ? (unreadCounts[tab.unreadKey] ?? 0) > 0 : false;
                         return (
                             <Link
                                 key={tab.href}
@@ -95,10 +118,11 @@ export function BottomNav() {
                                 )}
                             >
                                 <div className={cn(
-                                    'p-1 rounded-xl transition-colors',
+                                    'relative p-1 rounded-xl transition-colors',
                                     isActive && 'bg-primary/10'
                                 )}>
                                     <Icon className="h-[1.15rem] w-[1.15rem]" />
+                                    {hasUnread && <UnreadDot className="-top-0.5 -right-0.5" />}
                                 </div>
                                 <span className="text-[9px] font-semibold tracking-wide leading-none">{tab.label}</span>
                             </Link>
@@ -110,8 +134,9 @@ export function BottomNav() {
                         onClick={() => setMoreOpen(true)}
                         className="flex-1 flex flex-col items-center justify-center gap-1 text-muted-foreground active:scale-90 transition-all select-none"
                     >
-                        <div className="p-1 rounded-xl">
+                        <div className="relative p-1 rounded-xl">
                             <MoreHorizontal className="h-[1.15rem] w-[1.15rem]" />
+                            {moreItemsHaveUnread && <UnreadDot className="-top-0.5 -right-0.5" />}
                         </div>
                         <span className="text-[9px] font-semibold tracking-wide leading-none">Mehr</span>
                     </button>
@@ -135,6 +160,7 @@ export function BottomNav() {
                                 {filteredMoreMainItems.map((item) => {
                                     const Icon = item.icon;
                                     const isActive = location.pathname === item.href;
+                                    const hasUnread = item.unreadKey ? (unreadCounts[item.unreadKey] ?? 0) > 0 : false;
                                     return (
                                         <button
                                             key={item.href}
@@ -146,7 +172,10 @@ export function BottomNav() {
                                                     : 'text-muted-foreground hover:bg-muted hover:text-foreground'
                                             )}
                                         >
-                                            <Icon className="h-5 w-5 flex-shrink-0" />
+                                            <div className="relative">
+                                                <Icon className="h-5 w-5 flex-shrink-0" />
+                                                {hasUnread && <UnreadDot className="-top-1 -right-0\.5" />}
+                                            </div>
                                             {item.label}
                                         </button>
                                     );
@@ -166,6 +195,7 @@ export function BottomNav() {
                                 {filteredAdminItems.map((item) => {
                                     const Icon = item.icon;
                                     const isActive = location.pathname === item.href;
+                                    const hasUnread = item.unreadKey ? (unreadCounts[item.unreadKey] ?? 0) > 0 : false;
                                     return (
                                         <button
                                             key={item.href}
@@ -177,7 +207,10 @@ export function BottomNav() {
                                                     : 'text-muted-foreground hover:bg-muted hover:text-foreground'
                                             )}
                                         >
-                                            <Icon className="h-5 w-5 flex-shrink-0" />
+                                            <div className="relative">
+                                                <Icon className="h-5 w-5 flex-shrink-0" />
+                                                {hasUnread && <UnreadDot className="-top-1 -right-0\.5" />}
+                                            </div>
                                             {item.label}
                                         </button>
                                     );

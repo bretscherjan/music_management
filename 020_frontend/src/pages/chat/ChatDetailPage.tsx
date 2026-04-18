@@ -4,6 +4,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import chatService from '@/services/chatService';
 import socketService from '@/services/socketService';
 import { userService } from '@/services/userService';
+import { useMarkAsRead } from '@/context/UnreadContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -11,7 +12,7 @@ import {
     ChevronLeft, Send, Info, 
     Smile, Reply, Trash, UserPlus, X, Check, MessageSquare,
     Calendar, FileText, Folder as FolderIcon, User as UserIcon,
-    Hash, Copy
+    Hash, Copy, BarChart2
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { useAuth } from '@/context/AuthContext';
@@ -33,6 +34,7 @@ const CATEGORIES = [
     { key: 'datei', label: 'Dateien', type: 'file', icon: FileText },
     { key: 'ordner', label: 'Ordner', type: 'folder', icon: FolderIcon },
     { key: 'benutzer', label: 'Mitglieder', type: 'user', icon: UserIcon },
+    { key: 'umfrage', label: 'Umfragen', type: 'poll', icon: BarChart2 },
 ];
 
 export function ChatDetailPage() {
@@ -40,6 +42,8 @@ export function ChatDetailPage() {
     const navigate = useNavigate();
     const { user } = useAuth();
     const queryClient = useQueryClient();
+    const chatIdInt = parseInt(chatId!, 10);
+    useMarkAsRead('CHAT', chatIdInt);
     
     const [newMessage, setNewMessage] = useState('');
     const [replyTo, setReplyTo] = useState<ChatMessage | null>(null);
@@ -63,8 +67,6 @@ export function ChatDetailPage() {
     const inputRef = useRef<HTMLInputElement>(null);
     const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
     const longPressRef = useRef<NodeJS.Timeout | null>(null);
-
-    const chatIdInt = parseInt(chatId!);
 
     const { data: chats } = useQuery({
         queryKey: ['chats'],
@@ -323,10 +325,10 @@ export function ChatDetailPage() {
     };
 
     const renderMessageText = (text: string, isMine: boolean) => {
-        const parts = text.split(/(\[\[(?:event|file|folder|user):\d+\|[^\]]+\]\])/g);
+        const parts = text.split(/(\[\[(?:event|file|folder|user|poll):\d+\|[^\]]+\]\])/g);
         
         return parts.map((part, i) => {
-            const match = part.match(/\[\[(event|file|folder|user):(\d+)\|([^\]]+)\]\]/);
+            const match = part.match(/\[\[(event|file|folder|user|poll):(\d+)\|([^\]]+)\]\]/);
             if (match) {
                 const [, type, id, label] = match;
                 let url = '';
@@ -348,6 +350,10 @@ export function ChatDetailPage() {
                     case 'user': 
                         url = `/member/members?search=${encodeURIComponent(label)}`; 
                         Icon = UserIcon; 
+                        break;
+                    case 'poll':
+                        url = `/member/polls?id=${id}`;
+                        Icon = BarChart2;
                         break;
                 }
 

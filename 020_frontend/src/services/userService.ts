@@ -120,6 +120,10 @@ export const userService = {
         const response = await api.patch<{ user: User }>(`/users/${userId}/permissions`, { permissionKeys });
         return response.data.user;
     },
+
+    async bulkUpdatePermissions(userIds: number[], permissionKeys: string[]): Promise<void> {
+        await Promise.all(userIds.map(id => userService.updatePermissions(id, permissionKeys)));
+    },
 };
 
 export default userService;

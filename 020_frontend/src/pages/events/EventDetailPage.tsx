@@ -2,6 +2,7 @@ import { useParams, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { eventService } from '@/services/eventService';
 import { useCan } from '@/context/AuthContext';
+import { useMarkAsRead } from '@/context/UnreadContext';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -18,6 +19,7 @@ export function EventDetailPage() {
     const canManageEvent = can('events:write');
     const canAdminEvent = can('events:admin');
     const eventId = parseInt(id || '0', 10);
+    useMarkAsRead('EVENTS');
 
     const { data: event, isLoading, error } = useQuery({
         queryKey: ['event', eventId],

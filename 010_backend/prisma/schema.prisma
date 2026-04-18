@@ -52,6 +52,7 @@ model User {
   pollVotes            PollVote[]        @relation("PollVoter")
   pollTextAnswers      PollTextAnswer[]  @relation("PollTextAnswerer")
   pollAudienceRules    PollAudience[]    @relation("PollAudienceUser")
+  categoryReadStates   UserCategoryReadState[]
 
   @@index([email])
   @@index([registerId])
@@ -831,3 +832,21 @@ model DeviceToken {
   @@index([userId])
 }
 
+// ─── Unread / Notification state ────────────────────────────────────────────
+
+model UserCategoryReadState {
+  id            Int           @id @default(autoincrement())
+  userId        Int
+  category      ReadCategory
+  lastCheckedAt DateTime      @default(now())
+  user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, category])
+  @@index([userId])
+}
+
+enum ReadCategory {
+  EVENTS
+  NEWS
+  POLLS
+}

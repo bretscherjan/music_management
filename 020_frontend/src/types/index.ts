@@ -8,6 +8,7 @@ export * from './file';
 export * from './sheetMusic';
 export * from './stats';
 export * from './poll';
+export * from './calendar';
 
 // Common API response types
 export interface ApiResponse<T> {

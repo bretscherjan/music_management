@@ -809,6 +809,78 @@ const getAttendanceStats = asyncHandler(async (req, res) => {
     res.json({ stats });
 });
 
+// ============================================================
+// Calendar Preferences & Token Rotation
+// ============================================================
+
+const DEFAULT_CALENDAR_PREFS = {
+    onlyConfirmed: false,
+    categories: [],       // [] = all categories
+    reminderMinutes: 0,   // 0 = no reminder
+};
+
+/**
+ * GET /users/me/calendar/preferences
+ * Returns stored calendar preferences for the authenticated user.
+ */
+const getCalendarPreferences = asyncHandler(async (req, res) => {
+    const user = await prisma.user.findUnique({
+        where: { id: req.user.id },
+        select: { calendarPreferences: true },
+    });
+
+    const prefs = user?.calendarPreferences ?? DEFAULT_CALENDAR_PREFS;
+    res.json({ preferences: prefs });
+});
+
+/**
+ * PUT /users/me/calendar/preferences
+ * Saves calendar preferences for the authenticated user.
+ * Body: { onlyConfirmed?: boolean, categories?: string[], reminderMinutes?: number }
+ */
+const saveCalendarPreferences = asyncHandler(async (req, res) => {
+    const { onlyConfirmed, categories, reminderMinutes } = req.body;
+
+    const current = await prisma.user.findUnique({
+        where: { id: req.user.id },
+        select: { calendarPreferences: true },
+    });
+
+    const existing = current?.calendarPreferences ?? DEFAULT_CALENDAR_PREFS;
+
+    const updated = {
+        ...existing,
+        ...(onlyConfirmed !== undefined && { onlyConfirmed: Boolean(onlyConfirmed) }),
+        ...(Array.isArray(categories) && { categories }),
+        ...(reminderMinutes !== undefined && { reminderMinutes: Number(reminderMinutes) }),
+    };
+
+    const user = await prisma.user.update({
+        where: { id: req.user.id },
+        data: { calendarPreferences: updated },
+        select: { calendarPreferences: true },
+    });
+
+    res.json({ preferences: user.calendarPreferences });
+});
+
+/**
+ * POST /users/me/calendar/rotate-token
+ * Generates a new calendarToken, invalidating the old one.
+ */
+const rotateCalendarToken = asyncHandler(async (req, res) => {
+    const crypto = require('crypto');
+    const newToken = crypto.randomBytes(32).toString('hex');
+
+    const user = await prisma.user.update({
+        where: { id: req.user.id },
+        data: { calendarToken: newToken },
+        select: { calendarToken: true },
+    });
+
+    res.json({ calendarToken: user.calendarToken });
+});
+
 module.exports = {
     getProfile,
     updateProfile,
@@ -830,4 +902,7 @@ module.exports = {
     updatePermissionTemplate,
     deletePermissionTemplate,
     updateUserPermissions,
+    getCalendarPreferences,
+    saveCalendarPreferences,
+    rotateCalendarToken,
 };

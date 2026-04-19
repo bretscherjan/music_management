@@ -28,6 +28,7 @@ import { UpcommingEvents } from '@/pages/public/UpcommingEvents';
 import { EventListPage } from '@/pages/events/EventListPage';
 import { EventArchivePage } from '@/pages/events/EventArchivePage';
 import { EventDetailPage } from '@/pages/events/EventDetailPage';
+import { CalendarDashboard } from '@/pages/events/CalendarDashboard';
 import { UserManagementPage } from '@/pages/admin/UserManagementPage';
 import { FileListPage } from '@/pages/files/FileListPage';
 import { CreateEventPage } from '@/pages/admin/CreateEventPage';
@@ -95,6 +96,7 @@ function App() {
               {!isAppMode && <Route path="download" element={<AppDownloadPage />} />}
               <Route path="events" element={<ProtectedRoute permission="events:read"><EventListPage /></ProtectedRoute>} />
               <Route path="events/archiv" element={<ProtectedRoute permission="events:read"><EventArchivePage /></ProtectedRoute>} />
+              <Route path="events/calendar" element={<ProtectedRoute permission="events:read"><CalendarDashboard /></ProtectedRoute>} />
               <Route path="events/:id" element={<ProtectedRoute permission="events:read"><EventDetailPage /></ProtectedRoute>} />
               <Route path="files" element={<ProtectedRoute permission="files:read"><FileListPage /></ProtectedRoute>} />
               <Route path="music-folders" element={<ProtectedRoute permission="folders:read"><MusicFolderPage /></ProtectedRoute>} />

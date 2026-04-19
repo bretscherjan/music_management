@@ -24,6 +24,7 @@ model User {
   updatedAt            DateTime              @updatedAt
   phoneNumber          String?
   calendarToken        String?               @unique
+  calendarPreferences  Json?
   resetToken           String?               @unique
   resetTokenExpiry     DateTime?
   lastLoginAt          DateTime?

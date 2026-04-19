@@ -66,6 +66,31 @@ router.get('/me/notifications', authMiddleware, userController.getNotificationSe
  */
 router.put('/me/notifications', authMiddleware, userController.updateNotificationSettings);
 
+// ============================================================
+// Calendar preferences & token rotation
+// ============================================================
+
+/**
+ * @route   GET /api/users/me/calendar/preferences
+ * @desc    Get calendar sync preferences
+ * @access  Private
+ */
+router.get('/me/calendar/preferences', authMiddleware, userController.getCalendarPreferences);
+
+/**
+ * @route   PUT /api/users/me/calendar/preferences
+ * @desc    Save calendar sync preferences
+ * @access  Private
+ */
+router.put('/me/calendar/preferences', authMiddleware, userController.saveCalendarPreferences);
+
+/**
+ * @route   POST /api/users/me/calendar/rotate-token
+ * @desc    Rotate (reset) the personal calendar token
+ * @access  Private
+ */
+router.post('/me/calendar/rotate-token', authMiddleware, userController.rotateCalendarToken);
+
 
 // ============================================
 // Admin routes

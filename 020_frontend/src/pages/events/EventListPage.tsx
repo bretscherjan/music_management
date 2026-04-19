@@ -7,7 +7,7 @@ import { useMarkRead } from '@/context/UnreadContext';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
-import { Calendar, Clock, Plus, HelpCircle, Archive } from 'lucide-react';
+import { Calendar, Clock, Plus, HelpCircle, Archive, LayoutGrid } from 'lucide-react';
 import type { Event, EventCategory } from '@/types';
 import { CalendarExportDialog } from '@/components/events/CalendarExportDialog';
 import { EventListItem } from '@/components/events/EventListItem';
@@ -85,6 +85,11 @@ export function EventListPage() {
                 Icon={Calendar}
                 actions={
                     <div className="flex items-center gap-2">
+                        <Link to="/member/events/calendar">
+                            <Button variant="outline" size="icon" className="h-11 w-11 rounded-2xl" title="Kalendervorschau">
+                                <LayoutGrid className="h-5 w-5" />
+                            </Button>
+                        </Link>
                         <CalendarExportDialog events={filteredEvents} />
                         {can('events:write') && (
                             <Link to="/member/admin/events/new">

@@ -82,13 +82,12 @@ export function TrafficAnalyticsPage() {
     const totalDevices = deviceBreakdown.desktop + deviceBreakdown.mobile + deviceBreakdown.tablet || 1;
 
     const topPages = pages?.pages?.slice(0, 8) ?? [];
-    const maxPageViews = topPages[0]?.views ?? 1;
 
     return (
         <div className="space-y-6 p-6 max-w-screen-xl mx-auto">
             <PageHeader
                 title="Traffic Analytics"
-                description="Cookie-freie Besucheranalyse – datenschutzkonform"
+                subtitle="Cookie-freie Besucheranalyse – datenschutzkonform"
             />
 
             {/* Period Toggle */}

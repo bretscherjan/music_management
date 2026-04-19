@@ -21,6 +21,7 @@ import {
     TableProperties,
     MessageSquare,
     BarChart2,
+    Globe,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -29,6 +30,7 @@ interface NavItem {
     href: string;
     icon: React.ReactNode;
     permission?: string;
+    adminOnly?: boolean;
     unreadKey?: 'chat' | 'events' | 'news' | 'polls';
 }
 
@@ -51,6 +53,7 @@ const adminNavItems: NavItem[] = [
     { label: 'Register', href: '/member/admin/registers', icon: <Music className="h-5 w-5" />, permission: 'registers:write' },
     { label: 'News', href: '/member/admin/news', icon: <Newspaper className="h-5 w-5" />, permission: 'news:write', unreadKey: 'news' },
     { label: 'Statistiken', href: '/member/admin/statistics', icon: <BarChart className="h-5 w-5" />, permission: 'statistics:read' },
+    { label: 'Traffic', href: '/member/admin/traffic', icon: <Globe className="h-5 w-5" />, adminOnly: true },
     { label: 'Engagement', href: '/member/admin/engagement', icon: <Activity className="h-5 w-5" />, permission: 'engagement:read' },
     { label: 'Protokoll', href: '/member/admin/protokoll', icon: <ClipboardList className="h-5 w-5" />, permission: 'protokoll:read' },
     { label: 'Logs', href: '/member/admin/logs', icon: <ScrollText className="h-5 w-5" />, permission: 'db:read' },
@@ -83,7 +86,10 @@ export function Sidebar() {
         !item.permission || can(item.permission)
     );
 
-    const filteredAdminNavItems = adminNavItems.filter(item => !item.permission || can(item.permission));
+    const filteredAdminNavItems = adminNavItems.filter(item => {
+        if (item.adminOnly) return user?.role === 'admin';
+        return !item.permission || can(item.permission);
+    });
 
     const showAdminNav = filteredAdminNavItems.length > 0;
 

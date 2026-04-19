@@ -38,6 +38,7 @@ import { EventManagementPage } from '@/pages/admin/EventManagementPage';
 import { UserSettingsPage } from '@/pages/UserSettingsPage';
 import { SheetMusicManagementPage } from '@/pages/admin/SheetMusicManagementPage';
 import { StatisticsPage } from '@/pages/admin/StatisticsPage';
+import { TrafficAnalyticsPage } from '@/pages/admin/TrafficAnalyticsPage';
 import { EngagementPage } from '@/pages/admin/EngagementPage';
 import { MusicFolderPage } from '@/pages/secured/music-folder/MusicFolderPage';
 import { ToolkitPage } from '@/pages/secured/toolkit/ToolkitPage';
@@ -117,6 +118,7 @@ function App() {
               <Route path="admin/events" element={<ProtectedRoute permission="events:write"><EventManagementPage /></ProtectedRoute>} />
               <Route path="admin/sheet-music" element={<ProtectedRoute permission="sheetMusic:read"><SheetMusicManagementPage /></ProtectedRoute>} />
               <Route path="admin/statistics" element={<ProtectedRoute permission="statistics:read"><StatisticsPage /></ProtectedRoute>} />
+              <Route path="admin/traffic" element={<ProtectedRoute requireAdmin><TrafficAnalyticsPage /></ProtectedRoute>} />
               <Route path="admin/engagement" element={<ProtectedRoute permission="engagement:read"><EngagementPage /></ProtectedRoute>} />
               <Route path="admin/workspace" element={<ProtectedRoute permission="workspace:read"><WorkspacePage /></ProtectedRoute>} />
               <Route path="admin/cms" element={<ProtectedRoute permission="cms:write"><CmsManagementPage /></ProtectedRoute>} />

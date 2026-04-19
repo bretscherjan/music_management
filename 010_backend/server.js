@@ -89,6 +89,11 @@ app.get('/health', (req, res) => {
 // API Routes
 app.use('/api', routes);
 
+// Apply traffic tracking to public CMS / events routes (non-blocking)
+const { trackPageView } = require('./src/middlewares/traffic.middleware');
+app.use('/api/cms', trackPageView);
+app.use('/api/events', trackPageView);
+
 // 404 Handler
 app.use((req, res, next) => {
   res.status(404).json({

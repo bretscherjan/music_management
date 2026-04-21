@@ -1,0 +1,110 @@
+services:
+
+  # ── MySQL 8 Database ────────────────────────────────────────────────────────
+  db:
+    image: mysql:8.0
+    container_name: music_management_db
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - app_network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  # ── Node.js Backend (Monolith) ──────────────────────────────────────────────
+  backend:
+    build:
+      context: ./010_backend
+      dockerfile: Dockerfile
+    container_name: music_management_backend
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      DATABASE_URL: mysql://${MYSQL_USER}:${MYSQL_PASSWORD}@db:3306/${MYSQL_DATABASE}
+      NODE_ENV: production
+    volumes:
+      - uploads_data:/app/uploads
+    ports:
+      - "3004:3004"
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - app_network
+    # Run Prisma migrations on startup, then start the server
+    command: >
+      sh -c "npx --yes prisma@5.8.0 migrate deploy && node server.js"
+
+  # ── React Frontend (Nginx) ──────────────────────────────────────────────────
+  frontend:
+    build:
+      context: ./020_frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_API_URL: ${VITE_API_URL:-}
+    container_name: music_management_frontend
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    networks:
+      - app_network
+
+  # ── Whisper AI (Speech-to-Text) ─────────────────────────────────────────────
+  whisper:
+    build:
+      context: ./deployment/whisper
+      dockerfile: Dockerfile
+    container_name: music_management_whisper
+    restart: unless-stopped
+    volumes:
+      - whisper_models:/app/models
+      - whisper_outputs:/app/outputs
+    ports:
+      - "8000:8000"
+    networks:
+      - app_network
+    environment:
+      - WHISPER_MODEL=${WHISPER_MODEL:-base}
+
+  # ── Ollama AI (LLM) ─────────────────────────────────────────────────────────
+  ollama:
+    image: ollama/ollama:latest
+    container_name: music_management_ollama
+    restart: unless-stopped
+    volumes:
+      - ollama_data:/root/.ollama
+    ports:
+      - "11434:11434"
+    networks:
+      - app_network
+    # GPU support (optional — remove 'deploy' block if no NVIDIA GPU available)
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+
+volumes:
+  mysql_data:
+  uploads_data:
+  whisper_models:
+  whisper_outputs:
+  ollama_data:
+
+networks:
+  app_network:
+    driver: bridge

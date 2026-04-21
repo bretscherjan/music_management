@@ -12,6 +12,12 @@ deployment/whisper/models/*
 deployment/whisper/outputs/*
 !deployment/whisper/outputs/.gitkeep
 
+# ── Environment Variables ─────────────────────────────────────────────────────
+.env
+010_backend/.env
+020_frontend/.env
+020_frontend/.env.app
+
 # ── OS / Editor ──────────────────────────────────────────────────────────────
 .DS_Store
 Thumbs.db

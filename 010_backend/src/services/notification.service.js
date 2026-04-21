@@ -1,7 +1,11 @@
 const { PrismaClient } = require('@prisma/client');
 const emailService = require('./email.service');
-const pushService = require('./push.service');
 const prisma = new PrismaClient();
+
+// Push notifications are disabled — stub to avoid breaking call sites
+const pushService = {
+    sendPushToUser: async () => {},
+};
 
 /**
  * Notification Service

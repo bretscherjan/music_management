@@ -227,6 +227,7 @@ model Event {
   workspaceTasks        Task[]
   verifiedAttendances   VerifiedAttendance[]
   targetRegisters       Register[]           @relation("EventToRegister")
+  setlists              Setlist[]
 
   @@index([date])
   @@index([category])
@@ -330,6 +331,7 @@ model SheetMusic {
   files       File[]
   folderItems MusicFolderItem[]
   bookmarks   SheetMusicBookmark[]
+  setlistItems SetlistItem[]
 
   @@index([title])
   @@index([genre])
@@ -364,6 +366,37 @@ model EventSheetMusic {
 
   @@unique([eventId, position])
   @@index([eventId])
+  @@index([sheetMusicId])
+}
+
+// ─── Standalone Setlists (reusable, optionally linked to an event) ────────────
+
+model Setlist {
+  id          Int           @id @default(autoincrement())
+  name        String
+  description String?       @db.Text
+  eventId     Int?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  items       SetlistItem[]
+  event       Event?        @relation(fields: [eventId], references: [id], onDelete: SetNull)
+
+  @@index([eventId])
+}
+
+model SetlistItem {
+  id           Int             @id @default(autoincrement())
+  setlistId    Int
+  sheetMusicId Int?
+  position     Int             @default(0)
+  title        String?
+  notes        String?         @db.Text
+  duration     Int?
+  type         SetlistItemType @default(sheetMusic)
+  setlist      Setlist         @relation(fields: [setlistId], references: [id], onDelete: Cascade)
+  sheetMusic   SheetMusic?     @relation(fields: [sheetMusicId], references: [id], onDelete: SetNull)
+
+  @@index([setlistId])
   @@index([sheetMusicId])
 }
 

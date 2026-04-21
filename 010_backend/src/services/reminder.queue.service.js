@@ -1,11 +1,17 @@
-const { Queue, Worker } = require('bullmq');
-const Redis = require('ioredis');
-const notificationService = require('./notification.service');
-const { DateTime } = require('luxon');
-const logger = require('../utils/logger');
+// Reminder queue is disabled (BullMQ/Redis removed).
+// Provides no-op stubs so existing call sites don't crash.
 
-const { PrismaClient } = require('@prisma/client');
-const prisma = new PrismaClient();
+const scheduleEventReminders = async () => {};
+const cancelEventReminders = async () => {};
+const syncReminders = async () => {};
+const initializeReminderQueue = () => {};
+
+module.exports = {
+    scheduleEventReminders,
+    cancelEventReminders,
+    syncReminders,
+    initializeReminderQueue,
+};
 
 // Connection to Redis
 const connection = new Redis({

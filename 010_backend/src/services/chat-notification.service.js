@@ -1,6 +1,7 @@
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
-const pushService = require('./push.service');
+// Push notifications disabled — stub to keep call sites working
+const pushService = { sendPushToUser: async () => {} };
 const websocketService = require('./websocket.service');
 
 /**

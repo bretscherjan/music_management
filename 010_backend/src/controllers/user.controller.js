@@ -169,12 +169,6 @@ const getNotificationSettings = asyncHandler(async (req, res) => {
             notifyOnFileDelete: false,
             notifyEventReminder: true,
             reminderTimeBeforeHours: 24,
-            pushNewEvents: true,
-            pushEventUpdates: true,
-            pushEventCancellations: true,
-            pushNewFiles: true,
-            pushFileDeleted: false,
-            pushReminders: true
         }
     });
 });
@@ -192,11 +186,6 @@ const updateNotificationSettings = asyncHandler(async (req, res) => {
         notifyOnEventDelete,
         notifyOnFileUpload,
         notifyOnFileDelete,
-        pushNewEvents,
-        pushEventUpdates,
-        pushEventCancellations,
-        pushNewFiles,
-        pushFileDeleted,
         reminderSettings
     } = req.body;
 
@@ -208,11 +197,6 @@ const updateNotificationSettings = asyncHandler(async (req, res) => {
             notifyOnEventDelete,
             notifyOnFileUpload,
             notifyOnFileDelete,
-            pushNewEvents,
-            pushEventUpdates,
-            pushEventCancellations,
-            pushNewFiles,
-            pushFileDeleted,
             reminderSettings
         },
         create: {
@@ -222,11 +206,6 @@ const updateNotificationSettings = asyncHandler(async (req, res) => {
             notifyOnEventDelete,
             notifyOnFileUpload,
             notifyOnFileDelete,
-            pushNewEvents,
-            pushEventUpdates,
-            pushEventCancellations,
-            pushNewFiles,
-            pushFileDeleted,
             reminderSettings
         }
     });
@@ -652,17 +631,6 @@ const updateUserPermissions = asyncHandler(async (req, res) => {
     const updatedUser = await prisma.user.findUnique({
         where: { id: userId },
         select: userWithPermissionsSelect,
-    });
-
-    // Log the change
-    const auditLogService = require('../utils/auditLog.service');
-    await auditLogService.logEvent({
-        action: 'user_permissions_updated',
-        entity: 'User',
-        entityId: id,
-        userId: req.user.id,
-        newValue: { permissionKeys: uniquePermissionKeys },
-        req
     });
 
     res.json({

@@ -30,7 +30,8 @@ import { ListMusic, Plus, MoreVertical, Pencil, Trash2, Music2 } from 'lucide-re
 export function SetlistPage() {
     const navigate = useNavigate();
     const queryClient = useQueryClient();
-    const canWrite = useCan('setlists:write');
+    const can = useCan();
+    const canWrite = can('setlists:write');
 
     const [createOpen, setCreateOpen] = useState(false);
     const [editTarget, setEditTarget] = useState<Setlist | null>(null);

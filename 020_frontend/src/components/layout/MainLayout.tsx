@@ -1,21 +1,12 @@
-import { useEffect } from 'react';
 import { Outlet } from 'react-router-dom';
 import Header from './Header';
 import { Sidebar } from './Sidebar';
 import { BottomNav } from './BottomNav';
-import { pushNotificationService } from '@/services/pushNotificationService';
 import { useGlobalSearch } from '@/context/GlobalSearchContext';
 import { GlobalSearch } from '@/components/common/GlobalSearch';
 
 export function MainLayout() {
     const { isOpen, close } = useGlobalSearch();
-
-    // Sync push subscription on mount to ensure backend has the latest endpoint
-    useEffect(() => {
-        pushNotificationService.syncSubscription().catch(err =>
-            console.error('Failed to sync push subscription:', err)
-        );
-    }, []);
 
     return (
         <div className="theme-member bg-background md:min-h-screen">

@@ -23,7 +23,6 @@ router.use('/registers', registerRoutes);
 router.use('/settings', settingsRoutes);
 router.use('/sheet-music', sheetMusicRoutes);
 router.use('/calendar', require('./calendar.routes'));
-router.use('/stats', require('./stats.routes'));
 router.use('/music-folders', require('./musicFolder.routes'));
 router.use('/public', require('./public.routes'));
 router.use('/chat', chatRoutes);

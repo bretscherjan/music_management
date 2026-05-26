@@ -1,7 +1,6 @@
 import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from 'react';
 import { authService } from '@/services/authService';
 import socketService from '@/services/socketService';
-import { fcmPushService } from '@/services/fcmPushService';
 import { storage } from '@/lib/storage';
 import type { User, LoginDto } from '@/types';
 
@@ -69,14 +68,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
         socketService.connect(response.token).catch(err =>
             console.warn('WebSocket connection failed:', err)
         );
-        // Register FCM token on native app (fire-and-forget)
-        fcmPushService.registerAndSendToken().catch(err =>
-            console.warn('[FCM] Token registration failed:', err)
-        );
     };
 
     const logout = () => {
-        fcmPushService.removeAllListeners().catch(() => {});
         socketService.disconnect();
         authService.logout();
         setUser(null);

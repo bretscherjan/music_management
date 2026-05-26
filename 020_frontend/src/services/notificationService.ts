@@ -1,11 +1,10 @@
 import api from '@/lib/api';
 
-export type ReadCategory = 'EVENTS' | 'NEWS' | 'POLLS';
+export type ReadCategory = 'EVENTS' | 'POLLS';
 
 export interface UnreadCounts {
     chat: number;
     events: number;
-    news: number;
     polls: number;
 }
 
@@ -13,7 +12,6 @@ export interface UnreadCountsResponse {
     counts: UnreadCounts;
     lastCheckedAt: {
         events: string | null;
-        news: string | null;
         polls: string | null;
     };
 }

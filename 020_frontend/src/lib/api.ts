@@ -24,22 +24,6 @@ export const resolveMediaUrl = (url: string | null | undefined): string => {
 
 export const getMediaUrl = (path: string) => resolveMediaUrl(path);
 
-export const getSponsorLogoUrl = (logoUrl: string | null | undefined): string => {
-    if (!logoUrl) return '';
-    const trimmed = logoUrl.trim();
-    if (!trimmed) return '';
-    if (trimmed.includes('/')) return resolveMediaUrl(trimmed);
-    return resolveMediaUrl(`/uploads/cms/sponsors/${trimmed}`);
-};
-
-export const getFlyerUrl = (filename: string | null | undefined): string => {
-    if (!filename) return '';
-    const trimmed = filename.trim();
-    if (!trimmed) return '';
-    if (trimmed.includes('/')) return resolveMediaUrl(trimmed);
-    return resolveMediaUrl(`/uploads/cms/flyers/${trimmed}`);
-};
-
 const api = axios.create({
     baseURL: API_BASE_URL,
     headers: {

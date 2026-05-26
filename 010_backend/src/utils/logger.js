@@ -1,6 +1,6 @@
 /**
  * Application Logger
- * Winston with daily log rotation + in-memory circular buffer for the admin live-feed.
+ * Winston with daily log rotation + in-memory circular buffer.
  *
  * Log format:
  *   2024-05-20 19:00:10 INFO  User:123        - Login erfolgreich (Browser: Chrome)
@@ -173,41 +173,6 @@ function broadcastEntry(entry) {
     }
 }
 
-/**
- * Save log entry to the database via auditLog (lazy import).
- */
-function saveToDb(entry, params) {
-    try {
-        const { logEvent } = require('./auditLog.service');
-        const entity = params.entity || 'SystemLog';
-
-        let newValue = params.newValue;
-        // If it has info or error details, store them in newValue
-        if (!newValue && (entry.info || entry.error)) {
-            newValue = {
-                level: entry.level,
-                message: entry.message,
-                ...(entry.info && { info: entry.info }),
-                ...(params.error && { error: params.error instanceof Error ? params.error.message : String(params.error) })
-            };
-        }
-
-        logEvent({
-            action: entry.action,
-            entity,
-            entityId: params.entityId || null,
-            userId: entry.userId,
-            req: params.req || null,
-            ip: entry.ip,
-            userAgent: params.userAgent || null,
-            oldValue: params.oldValue,
-            newValue
-        });
-    } catch (err) {
-        console.error('[Logger] Failed to save to DB:', err.message);
-    }
-}
-
 // ── Public API ───────────────────────────────────────────────────────────────
 
 const logger = {
@@ -222,7 +187,6 @@ const logger = {
         pushToBuffer(entry);
         writeJsonEntry(entry);
         broadcastEntry(entry);
-        saveToDb(entry, params);
     },
 
     /**
@@ -234,7 +198,6 @@ const logger = {
         pushToBuffer(entry);
         writeJsonEntry(entry);
         broadcastEntry(entry);
-        saveToDb(entry, params);
     },
 
     /**
@@ -247,7 +210,6 @@ const logger = {
         pushToBuffer(entry);
         writeJsonEntry(entry);
         broadcastEntry(entry);
-        saveToDb(entry, params);
     },
 
     /** Returns last N buffer entries (newest first). */

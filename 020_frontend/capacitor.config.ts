@@ -10,12 +10,6 @@ const config: CapacitorConfig = {
     url: 'https://musig-elgg.ch', // Die URL, unter der dein Frontend erreichbar ist
     cleartext: true
   },
-  plugins: {
-    PushNotifications: {
-      // Which notification types to show while app is in foreground
-      presentationOptions: ['badge', 'sound', 'alert'],
-    },
-  },
 };
 
 export default config;

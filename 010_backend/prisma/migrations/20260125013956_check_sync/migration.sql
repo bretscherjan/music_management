@@ -5,7 +5,6 @@
   - You are about to drop the column `remindersSent` on the `Event` table. All the data in the column will be lost.
   - You are about to drop the column `defaultReminderIntervals` on the `NotificationSettings` table. All the data in the column will be lost.
   - You are about to drop the column `notifyEventReminder` on the `NotificationSettings` table. All the data in the column will be lost.
-  - You are about to drop the column `pushReminders` on the `NotificationSettings` table. All the data in the column will be lost.
   - You are about to drop the column `reminderTimeBeforeHours` on the `NotificationSettings` table. All the data in the column will be lost.
 
 */
@@ -22,6 +21,5 @@ ALTER TABLE `FolderAccess` MODIFY `targetType` ENUM('USER', 'REGISTER', 'ADMIN_O
 -- AlterTable
 ALTER TABLE `NotificationSettings` DROP COLUMN `defaultReminderIntervals`,
     DROP COLUMN `notifyEventReminder`,
-    DROP COLUMN `pushReminders`,
     DROP COLUMN `reminderTimeBeforeHours`,
     ADD COLUMN `reminderSettings` JSON NULL;

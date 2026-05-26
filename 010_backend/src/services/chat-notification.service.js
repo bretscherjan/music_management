@@ -1,77 +1,35 @@
 const { PrismaClient } = require('@prisma/client');
-const prisma = new PrismaClient();
-// Push notifications disabled — stub to keep call sites working
-const pushService = { sendPushToUser: async () => {} };
 const websocketService = require('./websocket.service');
 
+const prisma = new PrismaClient();
+
 /**
- * Chat Notification Service
- * Handles sending push notifications and other alerts for chat messages.
+ * Keeps chat notification hooks in one place.
+ * Mobile push notifications have been removed; unread counters and websocket
+ * updates continue to notify users inside the app.
  */
 class ChatNotificationService {
-    /**
-     * Notify participants of a new message
-     */
-    async notifyNewMessage(chatId, senderId, message) {
+    async notifyNewMessage(chatId, senderId) {
         try {
             const chat = await prisma.chat.findUnique({
                 where: { id: chatId },
                 include: {
                     participants: {
                         where: { userId: { not: senderId } },
-                        include: {
-                            user: {
-                                select: {
-                                    id: true,
-                                    firstName: true,
-                                    lastName: true,
-                                    notificationSettings: true
-                                }
-                            }
-                        }
-                    }
-                }
+                        select: { userId: true, muted: true },
+                    },
+                },
             });
 
             if (!chat) return;
 
-            const sender = await prisma.user.findUnique({
-                where: { id: senderId },
-                select: { firstName: true, lastName: true }
-            });
-
-            const chatTitle = chat.type === 'group' 
-                ? chat.title 
-                : `${sender.firstName} ${sender.lastName}`;
-
-            // Get list of online users to avoid spamming people who are already looking at the chat
             const onlineUsers = websocketService.getOnlineUsersList();
-            const onlineUserIds = new Set(onlineUsers.map(u => u.id));
+            const onlineUserIds = new Set(onlineUsers.map(user => user.id));
 
             for (const participant of chat.participants) {
-                const targetUserId = participant.userId;
-
-                // Skip if user is muted (logic to be added to ChatParticipant later)
-                if (participant.muted) continue;
-
-                // Push Notification
-                // We send it if user is NOT online or if they are online but maybe not in the specific chat
-                // The frontend can handle not showing a push if the user is already in the chat.
-                // But for now, we just send it if they are not active in the workspace or as a general rule.
-                
-                await pushService.sendPushToUser(targetUserId, {
-                    title: chat.type === 'group' ? `${chatTitle}` : 'Neue Nachricht',
-                    body: chat.type === 'group' 
-                        ? `${sender.firstName}: ${message.text.substring(0, 50)}`
-                        : `${sender.firstName}: ${message.text.substring(0, 50)}`,
-                    icon: '/logos/logo_on_white.svg',
-                    badge: '/logos/logo_on_white.svg',
-                    data: {
-                        type: 'chat_message',
-                        chatId: chatId,
-                        url: `/member/chat/${chatId}`
-                    }
-                });
+                if (participant.muted || onlineUserIds.has(participant.userId)) {
+                    continue;
+                }
             }
         } catch (error) {
             console.error('Error in notifyNewMessage:', error);

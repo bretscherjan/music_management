@@ -7,9 +7,8 @@ import { cn } from '@/lib/utils';
 import {
     Calendar, Folder, MessageSquare, FileText,
     MoreHorizontal, LogOut, Users, Download,
-    Music, Newspaper, Library, BarChart,
-    ClipboardList, Activity, ScrollText, Wrench,
-    BookOpen, Database, TableProperties, Shield, BarChart2,
+    Music, Library,
+    ClipboardList, Shield, BarChart2,
 } from 'lucide-react';
 import {
     Sheet, SheetContent, SheetHeader, SheetTitle,
@@ -21,7 +20,7 @@ interface NavItem {
     href: string;
     icon: React.ComponentType<{ className?: string }>;
     permission?: string;
-    unreadKey?: 'chat' | 'events' | 'news' | 'polls';
+    unreadKey?: 'chat' | 'events' | 'polls';
 }
 
 const primaryTabs: NavItem[] = [
@@ -37,20 +36,11 @@ const moreMainItems: NavItem[] = [
 ];
 
 const adminNavItems: NavItem[] = [
-    { label: 'Toolkit', href: '/member/admin/toolkit', icon: Wrench, permission: 'toolkit:read' },
-    { label: 'Theorie', href: '/member/admin/theory', icon: BookOpen, permission: 'theory:read' },
-    { label: 'Grifftabelle', href: '/member/grifftabelle', icon: TableProperties, permission: 'grifftabelle:read' },
     { label: 'Termine verwalten', href: '/member/admin/events', icon: Calendar, permission: 'events:write' },
     { label: 'Workspace', href: '/member/admin/workspace', icon: Folder, permission: 'workspace:read' },
     { label: 'Notenverwaltung', href: '/member/admin/sheet-music', icon: Library, permission: 'sheetMusic:read' },
     { label: 'Register', href: '/member/admin/registers', icon: Music, permission: 'registers:write' },
-    { label: 'News', href: '/member/admin/news', icon: Newspaper, permission: 'news:write', unreadKey: 'news' },
-    { label: 'Statistiken', href: '/member/admin/statistics', icon: BarChart, permission: 'statistics:read' },
-    { label: 'Engagement', href: '/member/admin/engagement', icon: Activity, permission: 'engagement:read' },
     { label: 'Protokoll', href: '/member/admin/protokoll', icon: ClipboardList, permission: 'protokoll:read' },
-    { label: 'Logs', href: '/member/admin/logs', icon: ScrollText, permission: 'db:read' },
-    { label: 'CMS', href: '/member/admin/cms', icon: Newspaper, permission: 'cms:write' },
-    { label: 'DB', href: '/member/admin/db', icon: Database, permission: 'db:read' },
 ];
 
 /** Small red dot indicator */

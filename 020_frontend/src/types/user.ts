@@ -67,12 +67,6 @@ export interface NotificationSettings {
     // User-Individual Reminder Settings
     reminderSettings?: ReminderSettingsPerCategory;
 
-    // Push notifications
-    pushNewEvents: boolean;
-    pushEventUpdates: boolean;
-    pushEventCancellations: boolean;
-    pushNewFiles: boolean;
-    pushFileDeleted: boolean;
 }
 
 export interface ReminderSettingsPerCategory {
@@ -84,7 +78,6 @@ export interface ReminderSettingsPerCategory {
 export interface CategoryReminderSettings {
     enabled: boolean;
     emailEnabled: boolean;
-    pushEnabled: boolean;
     minutesBefore: number[]; // Array of minutes (e.g. [60, 1440])
     onlyIfAttending: boolean; // false = all invited, true = only "yes"
 }

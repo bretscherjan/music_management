@@ -5,7 +5,6 @@ const eventController = require('../controllers/event.controller');
 const { authMiddleware, optionalAuth } = require('../middlewares/auth.middleware');
 const { permissionCheck } = require('../middlewares/permission.middleware');
 const { validate } = require('../middlewares/validate.middleware');
-const { auditMiddleware } = require('../middlewares/auditLog.middleware');
 const {
     createEventSchema,
     updateEventSchema,
@@ -31,8 +30,8 @@ router.get('/', optionalAuth, validate(queryEventsSchema), eventController.getAl
  * @desc    Get event by ID
  * @access  Public (filtered by visibility)
  */
-router.get('/:id', optionalAuth, validate(getEventByIdSchema), auditMiddleware('EVENT_VIEW', 'Event', req => req.params.id), eventController.getEventById);
-router.get('/:id/export-pdf', authMiddleware, permissionCheck('events:read'), validate(getEventByIdSchema), auditMiddleware('EVENT_EXPORT_PDF', 'Event', req => req.params.id), eventController.exportSetlistPdf);
+router.get('/:id', optionalAuth, validate(getEventByIdSchema), eventController.getEventById);
+router.get('/:id/export-pdf', authMiddleware, permissionCheck('events:read'), validate(getEventByIdSchema), eventController.exportSetlistPdf);
 
 /**
  * @route   POST /api/events
@@ -74,7 +73,7 @@ router.post('/:id/exclude-date', authMiddleware, permissionCheck('events:write')
  * @desc    Set attendance for an event
  * @access  Private (authenticated users)
  */
-router.post('/:id/attendance', authMiddleware, permissionCheck('events:read'), validate(setAttendanceSchema), auditMiddleware('ATTENDANCE_UPDATE', 'Event', req => req.params.id), eventController.setAttendance);
+router.post('/:id/attendance', authMiddleware, permissionCheck('events:read'), validate(setAttendanceSchema), eventController.setAttendance);
 
 /**
  * @route   GET /api/events/:id/attendances

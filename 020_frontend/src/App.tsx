@@ -23,9 +23,9 @@ import { FileListPage } from '@/pages/files/FileListPage';
 import { CreateEventPage } from '@/pages/admin/CreateEventPage';
 import { RegisterManagementPage } from '@/pages/admin/RegisterManagementPage';
 import { EventManagementPage } from '@/pages/admin/EventManagementPage';
+import { WorkspacePage } from '@/pages/admin/WorkspacePage';
 import { UserSettingsPage } from '@/pages/UserSettingsPage';
 import { SheetMusicManagementPage } from '@/pages/admin/SheetMusicManagementPage';
-import { StatisticsPage } from '@/pages/admin/StatisticsPage';
 import { ProtokollPage } from '@/pages/admin/ProtokollPage';
 import { MusicFolderPage } from '@/pages/secured/music-folder/MusicFolderPage';
 import { ChatPortalPage } from '@/pages/chat/ChatPortalPage';
@@ -71,8 +71,8 @@ function App() {
                   <Route path="admin/events/:id/edit" element={<ProtectedRoute permission="events:write"><CreateEventPage /></ProtectedRoute>} />
                   <Route path="admin/registers" element={<ProtectedRoute permission="registers:write"><RegisterManagementPage /></ProtectedRoute>} />
                   <Route path="admin/events" element={<ProtectedRoute permission="events:write"><EventManagementPage /></ProtectedRoute>} />
+                  <Route path="admin/workspace" element={<ProtectedRoute permission="workspace:read"><WorkspacePage /></ProtectedRoute>} />
                   <Route path="admin/sheet-music" element={<ProtectedRoute permission="sheetMusic:read"><SheetMusicManagementPage /></ProtectedRoute>} />
-                  <Route path="admin/statistics" element={<ProtectedRoute permission="statistics:read"><StatisticsPage /></ProtectedRoute>} />
                   <Route path="admin/protokoll" element={<ProtectedRoute permission="protokoll:read"><ProtokollPage /></ProtectedRoute>} />
                 </Route>
 

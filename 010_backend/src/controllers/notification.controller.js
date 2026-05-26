@@ -3,11 +3,11 @@ const { asyncHandler } = require('../middlewares/errorHandler.middleware');
 
 const prisma = new PrismaClient();
 
-const VALID_CATEGORIES = ['EVENTS', 'NEWS', 'POLLS'];
+const VALID_CATEGORIES = ['EVENTS', 'POLLS'];
 
 /**
  * GET /notifications/unread-counts
- * Returns unread counts for CHAT, EVENTS, NEWS, and POLLS for the current user.
+ * Returns unread counts for CHAT, EVENTS, and POLLS for the current user.
  * Also returns lastCheckedAt per category for frontend item-level dot comparison.
  */
 const getUnreadCounts = asyncHandler(async (req, res) => {
@@ -21,7 +21,7 @@ const getUnreadCounts = asyncHandler(async (req, res) => {
     });
     const chatCount = chatUnread._sum.unreadCount ?? 0;
 
-    // ── Fetch the user's read states for EVENTS / NEWS / POLLS ─────────────
+    // Fetch the user's read states for EVENTS / POLLS.
     const readStates = await prisma.userCategoryReadState.findMany({
         where: { userId },
     });
@@ -32,7 +32,6 @@ const getUnreadCounts = asyncHandler(async (req, res) => {
 
     const epochStart = new Date(0);
     const eventsLastChecked  = stateMap['EVENTS'] ?? epochStart;
-    const newsLastChecked    = stateMap['NEWS']   ?? epochStart;
     const pollsLastChecked   = stateMap['POLLS']  ?? epochStart;
 
     // ── Events: count events visible to user created/updated after lastChecked ─
@@ -48,11 +47,6 @@ const getUnreadCounts = asyncHandler(async (req, res) => {
         ],
     };
     const eventsCount = await prisma.event.count({ where: eventWhere });
-
-    // ── News: count news created/updated after lastChecked ──────────────────
-    const newsCount = await prisma.news.count({
-        where: { updatedAt: { gt: newsLastChecked } },
-    });
 
     // ── Polls: count polls visible to user updated after lastChecked ─────────
     const pollWhere = {
@@ -72,12 +66,10 @@ const getUnreadCounts = asyncHandler(async (req, res) => {
         counts: {
             chat: chatCount,
             events: eventsCount,
-            news: newsCount,
             polls: pollsCount,
         },
         lastCheckedAt: {
             events: stateMap['EVENTS'] ?? null,
-            news:   stateMap['NEWS']   ?? null,
             polls:  stateMap['POLLS']  ?? null,
         },
     });
@@ -85,7 +77,7 @@ const getUnreadCounts = asyncHandler(async (req, res) => {
 
 /**
  * POST /notifications/mark-read
- * Body: { category: 'EVENTS' | 'NEWS' | 'POLLS' }
+ * Body: { category: 'EVENTS' | 'POLLS' }
  * Upserts UserCategoryReadState for the current user, setting lastCheckedAt = now().
  */
 const markCategoryRead = asyncHandler(async (req, res) => {

@@ -2,7 +2,7 @@
 CREATE TABLE `UserCategoryReadState` (
     `id` INTEGER NOT NULL AUTO_INCREMENT,
     `userId` INTEGER NOT NULL,
-    `category` ENUM('EVENTS', 'NEWS', 'POLLS') NOT NULL,
+    `category` ENUM('EVENTS', 'POLLS') NOT NULL,
     `lastCheckedAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
 
     INDEX `UserCategoryReadState_userId_idx`(`userId`),

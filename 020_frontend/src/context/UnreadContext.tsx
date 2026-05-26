@@ -18,14 +18,13 @@ export type MarkAsReadContentType = ReadCategory | 'CHAT';
 
 interface LastCheckedAt {
     events: string | null;
-    news: string | null;
     polls: string | null;
 }
 
 interface UnreadContextType {
     unreadCounts: UnreadCounts;
     lastCheckedAt: LastCheckedAt;
-    /** Mark a category (EVENTS/NEWS/POLLS) as read — optimistic + backend */
+    /** Mark a category (EVENTS/POLLS) as read optimistically and on the backend */
     markRead: (category: ReadCategory) => void;
     /** Mark a specific chat as read — optimistic decrement + backend */
     markChatRead: (chatId: number) => void;
@@ -33,8 +32,8 @@ interface UnreadContextType {
     isLoading: boolean;
 }
 
-const defaultCounts: UnreadCounts = { chat: 0, events: 0, news: 0, polls: 0 };
-const defaultLastChecked: LastCheckedAt = { events: null, news: null, polls: null };
+const defaultCounts: UnreadCounts = { chat: 0, events: 0, polls: 0 };
+const defaultLastChecked: LastCheckedAt = { events: null, polls: null };
 
 const UnreadContext = createContext<UnreadContextType>({
     unreadCounts: defaultCounts,
@@ -87,7 +86,7 @@ export function UnreadProvider({ children }: { children: ReactNode }) {
         return () => window.removeEventListener('focus', onFocus);
     }, [isAuthenticated, fetchCounts]);
 
-    /** Marks a whole category (EVENTS/NEWS/POLLS) read — instant optimistic update */
+    /** Marks a whole category (EVENTS/POLLS) read with an instant optimistic update */
     const markRead = useCallback((category: ReadCategory) => {
         const key = category.toLowerCase() as keyof UnreadCounts;
         setCounts(prev => ({ ...prev, [key]: 0 }));
@@ -126,7 +125,7 @@ export function useUnread() {
 /**
  * Unified hook: call on mount of any content page to mark it as read.
  *
- * - contentType EVENTS | NEWS | POLLS: marks the whole category read.
+ * - contentType EVENTS | POLLS: marks the whole category read.
  * - contentType CHAT: marks the specific chat (contentId) read.
  *   contentId is required when contentType is 'CHAT'.
  */

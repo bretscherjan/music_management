@@ -4,8 +4,6 @@ import { Calendar, MapPin, ArrowRight } from 'lucide-react';
 import { formatTime } from '@/lib/utils';
 import { eventService } from '@/services/eventService';
 import type { Event } from '@/types';
-import { SponsorSlider } from '@/components/public/SponsorSlider';
-import { WerbungGrid } from '@/components/public/WerbungGrid';
 import { Reveal } from '@/components/ui/Reveal';
 
 export function HomePage() {
@@ -86,9 +84,6 @@ export function HomePage() {
                 </div>
             </section>
 
-            {/* Werbung / Promotions Section */}
-            <WerbungGrid />
-
             {/* Upcoming Events */}
             <section className="py-20 md:py-32 bg-background relative overflow-hidden">
                 {/* Decorative accent */}
@@ -140,8 +135,6 @@ export function HomePage() {
                     )}
                 </div>
             </section>
-
-            <SponsorSlider />
 
             {/* Call to Action */}
             <section className="py-20 md:py-32 relative overflow-hidden">

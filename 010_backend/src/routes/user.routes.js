@@ -133,13 +133,6 @@ router.post('/', authMiddleware, permissionCheck('members:write'), validate(crea
 router.get('/', authMiddleware, permissionCheck('members:read'), validate(queryUsersSchema), userController.getAllUsers);
 
 /**
- * @route   GET /api/users/stats/attendance
- * @desc    Get attendance statistics
- * @access  Admin only
- */
-router.get('/stats/attendance', authMiddleware, permissionCheck('statistics:read'), userController.getAttendanceStats);
-
-/**
  * @route   GET /api/users/:id
  * @desc    Get user by ID
  * @access  Admin only

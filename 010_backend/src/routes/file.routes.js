@@ -6,7 +6,6 @@ const onlyOfficeController = require('../controllers/onlyoffice.controller');
 const { authMiddleware } = require('../middlewares/auth.middleware');
 const { permissionCheck } = require('../middlewares/permission.middleware');
 const { validate } = require('../middlewares/validate.middleware');
-const { auditMiddleware } = require('../middlewares/auditLog.middleware');
 const {
     getFileByIdSchema,
     queryFilesSchema,
@@ -53,7 +52,7 @@ router.get('/:id/onlyoffice/config', authMiddleware, permissionCheck('files:read
  * @desc    Download file (protected)
  * @access  Private (based on visibility)
  */
-router.get('/:id', authMiddleware, permissionCheck('files:read'), validate(getFileByIdSchema), auditMiddleware('FILE_DOWNLOAD', 'File', req => req.params.id), fileController.getFileById);
+router.get('/:id', authMiddleware, permissionCheck('files:read'), validate(getFileByIdSchema), fileController.getFileById);
 
 /**
  * @route   GET /api/files/:id/info
@@ -88,7 +87,7 @@ router.post('/bulk-access', authMiddleware, permissionCheck('files:permissions')
  * @desc    Generate a one-time public view token
  * @access  Private (based on visibility)
  */
-router.post('/:id/view-token', authMiddleware, permissionCheck('files:read'), validate(getFileByIdSchema), auditMiddleware('FILE_PREVIEW', 'File', req => req.params.id), fileController.generateViewToken);
+router.post('/:id/view-token', authMiddleware, permissionCheck('files:read'), validate(getFileByIdSchema), fileController.generateViewToken);
 
 /**
  * @route   PATCH /api/files/:id/move

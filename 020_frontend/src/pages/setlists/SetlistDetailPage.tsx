@@ -53,7 +53,8 @@ export function SetlistDetailPage() {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
     const queryClient = useQueryClient();
-    const canWrite = useCan('setlists:write');
+    const can = useCan();
+    const canWrite = can('setlists:write');
 
     const [addOpen, setAddOpen] = useState(false);
     const [deleteTarget, setDeleteTarget] = useState<SetlistItem | null>(null);
@@ -123,7 +124,7 @@ export function SetlistDetailPage() {
     };
     const handleDragEnd = () => setDraggedIdx(null);
 
-    const filteredSheetMusic = (sheetMusicList?.data ?? sheetMusicList?.sheetMusic ?? []).filter((sm: { title: string; composer?: string | null }) =>
+    const filteredSheetMusic = (sheetMusicList?.sheetMusic ?? []).filter((sm: { title: string; composer?: string | null }) =>
         sm.title.toLowerCase().includes(sheetMusicSearch.toLowerCase()) ||
         (sm.composer ?? '').toLowerCase().includes(sheetMusicSearch.toLowerCase())
     );

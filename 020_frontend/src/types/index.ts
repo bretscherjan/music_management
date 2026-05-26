@@ -3,10 +3,8 @@ export * from './user';
 export * from './event';
 export * from './attendance';
 export * from './register';
-export * from './news';
 export * from './file';
 export * from './sheetMusic';
-export * from './stats';
 export * from './poll';
 export * from './calendar';
 

@@ -8,20 +8,11 @@ import {
     Users,
     FileText,
     Music,
-    Newspaper,
     Library,
-    BarChart,
     Folder,
     ClipboardList,
-    Activity,
-    ScrollText,
-    Wrench,
-    BookOpen,
-    Database,
-    TableProperties,
     MessageSquare,
     BarChart2,
-    Globe,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -31,7 +22,7 @@ interface NavItem {
     icon: React.ReactNode;
     permission?: string;
     adminOnly?: boolean;
-    unreadKey?: 'chat' | 'events' | 'news' | 'polls';
+    unreadKey?: 'chat' | 'events' | 'polls';
 }
 
 const mainNavItems: NavItem[] = [
@@ -44,21 +35,11 @@ const mainNavItems: NavItem[] = [
 ];
 
 const adminNavItems: NavItem[] = [
-    { label: 'Toolkit', href: '/member/admin/toolkit', icon: <Wrench className="h-5 w-5" />, permission: 'toolkit:read' },
-    { label: 'Theorie', href: '/member/admin/theory', icon: <BookOpen className="h-5 w-5" />, permission: 'theory:read' },
-    { label: 'Grifftabelle', href: '/member/grifftabelle', icon: <TableProperties className="h-5 w-5" />, permission: 'grifftabelle:read' },
     { label: 'Termine verwalten', href: '/member/admin/events', icon: <Calendar className="h-5 w-5" />, permission: 'events:write' },
     { label: 'Workspace', href: '/member/admin/workspace', icon: <Folder className="h-5 w-5" />, permission: 'workspace:read' },
     { label: 'Notenverwaltung', href: '/member/admin/sheet-music', icon: <Library className="h-5 w-5" />, permission: 'sheetMusic:read' },
     { label: 'Register', href: '/member/admin/registers', icon: <Music className="h-5 w-5" />, permission: 'registers:write' },
-    { label: 'News', href: '/member/admin/news', icon: <Newspaper className="h-5 w-5" />, permission: 'news:write', unreadKey: 'news' },
-    { label: 'Statistiken', href: '/member/admin/statistics', icon: <BarChart className="h-5 w-5" />, permission: 'statistics:read' },
-    { label: 'Traffic', href: '/member/admin/traffic', icon: <Globe className="h-5 w-5" />, adminOnly: true },
-    { label: 'Engagement', href: '/member/admin/engagement', icon: <Activity className="h-5 w-5" />, permission: 'engagement:read' },
     { label: 'Protokoll', href: '/member/admin/protokoll', icon: <ClipboardList className="h-5 w-5" />, permission: 'protokoll:read' },
-    { label: 'Logs', href: '/member/admin/logs', icon: <ScrollText className="h-5 w-5" />, permission: 'db:read' },
-    { label: 'CMS', href: '/member/admin/cms', icon: <Newspaper className="h-5 w-5" />, permission: 'cms:write' },
-    { label: 'DB', href: '/member/admin/db', icon: <Database className="h-5 w-5" />, permission: 'db:read' },
 ];
 
 function UnreadDot() {

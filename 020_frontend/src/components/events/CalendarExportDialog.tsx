@@ -189,7 +189,7 @@ export function CalendarExportDialog({ events }: { events: Event[] }) {
             }),
         });
 
-        doc.save('musig_elgg_termine.pdf');
+        doc.save('music-management_termine.pdf');
         toast.success('PDF Download gestartet');
     };
 
@@ -210,14 +210,14 @@ export function CalendarExportDialog({ events }: { events: Event[] }) {
                 location: event.location || '',
                 status: 'CONFIRMED' as const,
                 busyStatus: 'BUSY' as const,
-                uid: `event-${event.id}@musig-elgg.ch`,
+                uid: `event-${event.id}@music-management.ch`,
             };
         });
 
         createEvents(icsEvents, (error, value) => {
             if (error) { toast.error('Fehler beim Erstellen der Datei'); return; }
             const blob = new Blob([value], { type: 'text/calendar;charset=utf-8' });
-            saveAs(blob, 'musig_elgg_termine.ics');
+            saveAs(blob, 'music-management_termine.ics');
             toast.success(`${eventsToExport.length} Termine exportiert`);
         });
     };

@@ -10,7 +10,7 @@ export function Footer() {
                     <div>
                         <h3 className="font-bold text-xl mb-6 flex items-center gap-2 justify-center md:justify-start">
                             <Music className="h-6 w-6 text-brand-primary" />
-                            Musig Elgg
+                            Music Management
                         </h3>
                         <p className="text-base text-white/60 leading-relaxed max-w-sm mx-auto md:mx-0">
                             Wir verbinden Tradition mit moderner Spielfreude. Als Dorfmusikverein von Elgg gestalten wir das kulturelle Leben aktiv mit.
@@ -70,10 +70,10 @@ export function Footer() {
                                 <Mail className="h-5 w-5 mt-1 text-brand-primary/80 shrink-0" />
                                 <div>
                                     <a
-                                        href="mailto:info@musig-elgg.ch"
+                                        href="mailto:info@music-management.ch"
                                         className="text-white/60 hover:text-brand-primary transition-colors"
                                     >
-                                        info@musig-elgg.ch
+                                        info@music-management.ch
                                     </a>
                                 </div>
                             </li>
@@ -82,7 +82,7 @@ export function Footer() {
                 </div>
 
                 <div className="border-t border-white/10 mt-16 pt-8 flex flex-col md:flex-row justify-between items-center gap-4 text-sm text-white/40">
-                    <p>&copy; {new Date().getFullYear()} Musig Elgg - Alle Rechte vorbehalten.</p>
+                    <p>&copy; {new Date().getFullYear()} Music Management - Alle Rechte vorbehalten.</p>
                     <div className="flex gap-6">
                         <Link to="/contact" className="hover:text-white transition-colors">Impressum</Link>
                     </div>

@@ -1,6 +1,6 @@
 -- MySQL dump 10.13  Distrib 8.0.42, for Linux (x86_64)
 --
--- Host: localhost    Database: musig_elgg_development
+-- Host: localhost    Database: music_management_development
 -- ------------------------------------------------------
 -- Server version	8.0.42-0ubuntu0.22.04.2
 

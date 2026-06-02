@@ -28,10 +28,13 @@ services:
       dockerfile: Dockerfile
     container_name: music_management_backend
     restart: unless-stopped
-    env_file: .env
+    env_file: ./010_backend/.env
     environment:
       DATABASE_URL: mysql://${MYSQL_USER}:${MYSQL_PASSWORD}@db:3306/${MYSQL_DATABASE}
       NODE_ENV: production
+      CORS_ORIGIN: http://localhost
+      WHISPER_URL: http://whisper:8000
+      OLLAMA_URL: http://ollama:11434
     volumes:
       - uploads_data:/app/uploads
     ports:
@@ -41,9 +44,9 @@ services:
         condition: service_healthy
     networks:
       - app_network
-    # Run Prisma migrations on startup, then start the server
+    # Run Prisma migrations, seed database, then start the server
     command: >
-      sh -c "npx --yes prisma@5.8.0 migrate deploy && node server.js"
+      sh -c "npx --yes prisma@5.8.0 migrate deploy && node prisma/seed.js && node server.js"
 
   # ── React Frontend (Nginx) ──────────────────────────────────────────────────
   frontend:
@@ -90,13 +93,6 @@ services:
     networks:
       - app_network
     # GPU support (optional — remove 'deploy' block if no NVIDIA GPU available)
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: all
-              capabilities: [gpu]
 
 volumes:
   mysql_data:

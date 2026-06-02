@@ -4,7 +4,6 @@ import { useAuth, useCan } from '@/context/AuthContext';
 import { useUnread } from '@/context/UnreadContext';
 import {
     Calendar,
-    Download,
     Users,
     FileText,
     Music,
@@ -57,13 +56,8 @@ export function Sidebar() {
     const location = useLocation();
     const isAppMode = Capacitor.isNativePlatform();
     const { unreadCounts } = useUnread();
-    const downloadNavItem: NavItem = { label: 'Downloads', href: '/member/download', icon: <Download className="h-5 w-5" /> };
 
-    const memberNavItems: NavItem[] = isAppMode
-        ? mainNavItems
-        : [...mainNavItems, downloadNavItem];
-
-    const filteredMainNavItems = memberNavItems.filter(item => 
+    const filteredMainNavItems = mainNavItems.filter(item => 
         !item.permission || can(item.permission)
     );
 

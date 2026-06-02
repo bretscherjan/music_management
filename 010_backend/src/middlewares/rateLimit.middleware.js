@@ -1,7 +1,3 @@
-/**
- * In-memory rate limiter (no Redis dependency).
- * Windows are tracked per-key with a simple counter + expiry timestamp.
- */
 const _store = {};
 
 const getClientIp = (req) => {

@@ -15,9 +15,9 @@ export function Navbar() {
                 <div className="flex items-center justify-between h-20">
                     {/* Logo */}
                     <Link to="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity" onClick={closeMenu}>
-                        <img src="/logos/musig.svg" alt="Musig Elgg Logo" className="h-14 w-auto" />
+                        <img src="/logos/musig.svg" alt="Music Management Logo" className="h-14 w-auto" />
                         <div className="flex flex-col">
-                            <span className="text-2xl font-bold text-foreground tracking-tight">Elgg</span>
+                            <span className="text-2xl font-bold text-foreground tracking-tight">Music Management</span>
                         </div>
                     </Link>
 

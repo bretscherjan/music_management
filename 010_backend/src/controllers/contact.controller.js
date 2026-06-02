@@ -1,4 +1,3 @@
-const emailService = require('../services/email.service');
 const { z } = require('zod');
 
 /**
@@ -21,12 +20,10 @@ const submitContactForm = async (req, res, next) => {
         // Validate request body
         const validatedData = contactSchema.parse(req.body);
 
-        // Send email
-        await emailService.sendContactFormEmail(validatedData);
-
+        // Email service removed: contact form submissions are not sent by mail.
         res.status(200).json({
             success: true,
-            message: 'Nachricht erfolgreich gesendet',
+            message: 'Nachricht erfolgreich empfangen',
         });
     } catch (error) {
         next(error);

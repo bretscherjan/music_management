@@ -23,7 +23,7 @@ interface PdfExportDialogProps {
 }
 
 const OPTIONS_CONFIG = [
-    { key: 'showAssocName'   as const, label: 'Vereinsname',  hint: 'Musig Elgg' },
+    { key: 'showAssocName'   as const, label: 'Vereinsname',  hint: 'Music Management' },
     { key: 'showDocTitle'    as const, label: 'Dokumentname', hint: 'im Kopfbereich' },
     { key: 'showDate'        as const, label: 'Datum',        hint: 'Erstellungsdatum' },
     { key: 'showPageNumbers' as const, label: 'Seitenzahl',   hint: 'Seite X von Y' },

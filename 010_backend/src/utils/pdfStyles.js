@@ -96,7 +96,7 @@ function buildTitleBlock(title, subtitle, opts = {}) {
 
     if (showAssocName) {
         block.push({
-            text: 'Musig Elgg',
+            text: 'Music Management',
             fontSize: 9, color: BRAND.textLight, bold: true,
             letterSpacing: 1, margin: [0, 0, 0, 4]
         });
@@ -136,7 +136,7 @@ function buildHeaderFooter(docTitle, opts = {}) {
         ? (currentPage) => {
             if (currentPage === 1) return null;
             const leftParts = [];
-            if (showAssocName) leftParts.push({ text: 'Musig Elgg', bold: true });
+            if (showAssocName) leftParts.push({ text: 'Music Management', bold: true });
             if (showDocTitle && docTitle) leftParts.push({ text: (leftParts.length ? '  ·  ' : '') + docTitle });
             return {
                 columns: [

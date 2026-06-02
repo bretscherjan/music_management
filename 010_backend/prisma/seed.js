@@ -60,10 +60,10 @@ async function main() {
     const users = await Promise.all([
         // Admin User
         prisma.user.upsert({
-            where: { email: 'admin@musig-elgg.ch' },
+            where: { email: 'admin@music-management.ch' },
             update: {},
             create: {
-                email: 'admin@musig-elgg.ch',
+                email: 'admin@music-management.ch',
                 password: adminPassword,
                 firstName: 'Max',
                 lastName: 'Müller',
@@ -512,6 +512,9 @@ async function main() {
 
     console.log(`  ✓ ${sheetMusics.length} sheet music entries created\n`);
 
+    // Ensure there's an admin user reference for tasks; otherwise skip tasks seeding.
+    const adminUser = users.find(u => u.role === 'admin') || users[0];
+
     console.log('✅ Creating tasks...');
     await prisma.taskHistory.deleteMany({});
     await prisma.task.deleteMany({});
@@ -525,26 +528,30 @@ async function main() {
         }
     });
 
-    const tasks = await Promise.all([
-        prisma.task.create({
-            data: {
-                title: 'Noten sortieren',
-                description: 'Alle Noten für das Weihnachtskonzert sortieren.',
-                priority: 'high',
-                categoryId: taskCategory.id,
-                createdById: adminUser.id,
-            }
-        }),
-        prisma.task.create({
-            data: {
-                title: 'Stühle aufstellen',
-                priority: 'medium',
-                categoryId: taskCategory.id,
-                createdById: adminUser.id,
-            }
-        })
-    ]);
-    console.log(`  ✓ ${tasks.length} tasks created\n`);
+    if (!adminUser || !adminUser.id) {
+        console.log('  ⚠ No admin user found, skipping tasks seeding.\n');
+    } else {
+        const tasks = await Promise.all([
+            prisma.task.create({
+                data: {
+                    title: 'Noten sortieren',
+                    description: 'Alle Noten für das Weihnachtskonzert sortieren.',
+                    priority: 'high',
+                    categoryId: taskCategory.id,
+                    createdById: adminUser.id,
+                }
+            }),
+            prisma.task.create({
+                data: {
+                    title: 'Stühle aufstellen',
+                    priority: 'medium',
+                    categoryId: taskCategory.id,
+                    createdById: adminUser.id,
+                }
+            })
+        ]);
+        console.log(`  ✓ ${tasks.length} tasks created\n`);
+    }
 
     // ============================================
     // SUMMARY
@@ -561,7 +568,7 @@ async function main() {
     console.log('🔑 USER CREDENTIALS:');
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
     console.log('ADMIN:');
-    console.log('  Email:    admin@musig-elgg.ch');
+    console.log('  Email:    admin@music-management.ch');
     console.log('  Password: Admin1234!');
     console.log('');
     console.log('MEMBERS (alle mit gleichem Passwort):');

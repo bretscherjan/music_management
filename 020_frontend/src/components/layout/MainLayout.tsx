@@ -24,7 +24,7 @@ export function MainLayout() {
                         </main>
                         <footer className="border-t py-6 text-center text-sm text-muted-foreground mt-auto hidden md:block">
                             <div className="container-app">
-                                © {new Date().getFullYear()} Musig Elgg – Alle Rechte vorbehalten
+                                © {new Date().getFullYear()} Music Management – Alle Rechte vorbehalten
                             </div>
                         </footer>
                     </div>

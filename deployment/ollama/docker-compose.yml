@@ -1,6 +1,6 @@
 services:
   ollama-docker:
-    container_name: ollama-ai-musig-elgg 
+    container_name: ollama-ai-music-management 
     image: ollama/ollama:latest
     restart: unless-stopped
     ports:

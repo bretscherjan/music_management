@@ -37,7 +37,7 @@ export const PDFViewer = ({ fileUrl }: PDFViewerProps) => {
                         userSelect: 'none',
                     }}
                 >
-                    Eigentum von Musig Elgg - {user?.firstName} {user?.lastName}
+                    Eigentum von Music Management - {user?.firstName} {user?.lastName}
                 </div>
                 {props.annotationLayer.children}
                 {props.textLayer.children}

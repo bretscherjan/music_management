@@ -31,7 +31,7 @@ export const BRAND_RGB = {
 
 // ─── PDF options (4 checkboxes) ───────────────────────────────────────────────
 export interface PdfOptions {
-    showAssocName: boolean;  // "Musig Elgg" in header/title
+    showAssocName: boolean;  // "Music Management" in header/title
     showDocTitle: boolean;  // Document name in running header
     showDate: boolean;  // Generation date
     showPageNumbers: boolean;  // "Seite X von Y" footer
@@ -95,7 +95,7 @@ export function buildPdfTitleBlock(title: string, subtitle: string | null, opts:
     const block: any[] = [];
 
     if (opts.showAssocName) {
-        block.push({ text: 'Musig Elgg', fontSize: 9, color: BRAND.textLight, bold: true, margin: [0, 0, 0, 4] });
+        block.push({ text: 'Music Management', fontSize: 9, color: BRAND.textLight, bold: true, margin: [0, 0, 0, 4] });
     }
     block.push({ text: title, style: 'header' });
     if (subtitle) block.push({ text: subtitle, style: 'subheader' });
@@ -139,7 +139,7 @@ export function addJsPdfTitle(
     if (opts.showAssocName) {
         doc.setFontSize(8);
         doc.setTextColor(...BRAND_RGB.textLight);
-        doc.text('Musig Elgg', 14, y);
+        doc.text('Music Management', 14, y);
         y += 6;
     }
 

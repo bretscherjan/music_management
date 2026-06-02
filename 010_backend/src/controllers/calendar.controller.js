@@ -100,7 +100,7 @@ exports.getCalendarFeed = async (req, res) => {
                 location: event.location ? buildGoogleMapsLocation(event.location) : '',
                 status: 'CONFIRMED',
                 busyStatus: 'BUSY',
-                uid: `event-${event.id}@musig-elgg.ch`,
+                uid: `event-${event.id}@music-management.ch`,
             };
 
             // Add VALARM if reminder is configured
@@ -125,7 +125,7 @@ exports.getCalendarFeed = async (req, res) => {
             }
 
             res.setHeader('Content-Type', 'text/calendar; charset=utf-8');
-            res.setHeader('Content-Disposition', 'attachment; filename="musig_elgg.ics"');
+            res.setHeader('Content-Disposition', 'attachment; filename="music-management.ics"');
             res.send(value);
         });
 

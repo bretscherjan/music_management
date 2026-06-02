@@ -144,7 +144,7 @@ const exportProtokoll = async (req, res) => {
                     size: 'A4',
                     info: {
                         Title: safeTitle,
-                        Author: 'Musig Elgg',
+                        Author: 'Music Management',
                     },
                 });
 

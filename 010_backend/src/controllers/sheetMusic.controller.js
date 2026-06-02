@@ -558,7 +558,7 @@ const exportPdf = asyncHandler(async (req, res) => {
         pageOrientation: 'landscape',
         ...buildHeaderFooter('Noteninventar', opts),
         content: [
-            ...buildTitleBlock('Noteninventar der Musig Elgg', null, opts),
+            ...buildTitleBlock('Noteninventar Music Management', null, opts),
             {
                 table: {
                     headerRows: 1,

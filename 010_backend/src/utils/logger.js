@@ -1,22 +1,3 @@
-/**
- * Application Logger
- * Winston with daily log rotation + in-memory circular buffer.
- *
- * Log format:
- *   2024-05-20 19:00:10 INFO  User:123        - Login erfolgreich (Browser: Chrome)
- *   2024-05-20 19:05:22 WARN  Email:foo@…      - Login fehlgeschlagen (User: 'admin')
- *   2024-05-21 02:00:00 ERROR BullMQ          - Reminder-Job fehlgeschlagen (Redis Connection Timeout)
- *
- * Every log entry may include an optional `email` field and an `error` object
- * (stack/message) – particularly useful when capturing exceptions.
- *
- * Usage:
- *   const logger = require('./logger');
- *   logger.info ({ userId: 123, email: 'foo@bar', action: 'LOGIN',             info: 'erfolgreich (Chrome)' });
- *   logger.warn ({ ip: '1.2.3.4',     email: 'foo@bar', action: 'LOGIN_FAILED',      info: "Wrong password" });
- *   logger.error({ source: 'BullMQ',  action: 'REMINDER_FAILED',   info: 'Redis Timeout', error: err });
- */
-
 const path = require('path');
 const fs = require('fs');
 const winston = require('winston');

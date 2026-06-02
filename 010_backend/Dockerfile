@@ -1,15 +1,21 @@
-FROM node:20-alpine AS base
+FROM node:20-slim AS base
 WORKDIR /app
 
-# Install dependencies
+# Install dependencies and required system packages for Prisma
+RUN apt-get update && apt-get install -y --no-install-recommends openssl ca-certificates && rm -rf /var/lib/apt/lists/*
+
+# Install all dependencies so Prisma CLI is available
 COPY package*.json ./
-RUN npm ci --only=production
+RUN npm ci
 
 # Copy source files
 COPY . .
 
 # Generate Prisma Client
-RUN npx --yes prisma@5.8.0 generate
+RUN npx prisma generate --schema=prisma/schema.prisma
+
+# Remove dev dependencies for production
+RUN npm prune --production
 
 EXPOSE 3004
 

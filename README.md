@@ -1,6 +1,6 @@
 # Music Management
 
-Vereinsplattform fuer Musig Elgg.
+Vereinsplattform fuer Music Management.
 
 ## Beibehaltene Bereiche
 

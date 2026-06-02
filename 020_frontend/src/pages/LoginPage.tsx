@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { AlertCircle, ArrowLeft, Eye, EyeOff } from 'lucide-react'; // Eye & EyeOff hinzugefügt
+import { AlertCircle, Eye, EyeOff } from 'lucide-react'; // Eye & EyeOff hinzugefügt
 
 const loginSchema = z.object({
     email: z.string().email('Bitte gültige E-Mail-Adresse eingeben'),
@@ -67,19 +67,7 @@ export function LoginPage() {
             <header className="border-b bg-card">
                 <div className="container-app flex items-center justify-between h-16">
                     <Link to="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
-                        <img src="/logos/musig.svg" alt="Musig Elgg Logo" className="h-12 w-auto" />
-                        <div className="flex flex-col">
-                            <span className="text-xl font-bold text-brand-secondary">
-                                Elgg
-                            </span>
-                        </div>
-                    </Link>
-                    <Link
-                        to="/"
-                        className="flex items-center gap-2 text-sm text-muted-foreground hover:text-brand-primary transition-colors"
-                    >
-                        <ArrowLeft className="h-4 w-4" />
-                        Zurück zur Startseite
+                        <img src="/logos/musig.svg" alt="Music Management Logo" className="h-12 w-auto" />
                     </Link>
                 </div>
             </header>
@@ -89,7 +77,7 @@ export function LoginPage() {
                 <Card className="w-full max-w-md shadow-xl border-border/10 rounded-[2rem] overflow-hidden">
                     <CardHeader className="text-center space-y-4 bg-muted/30">
                         <div className="flex justify-center">
-                            <img src="/logos/logo_on_white.svg" alt="Musig Elgg Logo" className="h-24 w-auto" />
+                            <img src="/logos/musig.svg" alt="Music Management Logo" className="h-24 w-auto" />
                         </div>
                         <CardTitle className="text-2xl font-bold text-brand-primary">
                             Mitgliederbereich
@@ -182,7 +170,7 @@ export function LoginPage() {
             {/* Footer */}
             <footer className="border-t py-6 text-center text-sm text-muted-foreground bg-card">
                 <div className="container-app">
-                    © {new Date().getFullYear()} Musig Elgg – Alle Rechte vorbehalten
+                    © {new Date().getFullYear()} Music Management – Alle Rechte vorbehalten
                 </div>
             </footer>
         </div>

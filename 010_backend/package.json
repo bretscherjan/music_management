@@ -1,5 +1,5 @@
 {
-    "name": "musig-elgg-api",
+    "name": "music-management-api",
     "version": "1.0.0",
     "description": "Web API für Vereinsverwaltung mit Express, Prisma und MySQL",
     "main": "server.js",
@@ -34,7 +34,6 @@
         "luxon": "^3.7.2",
         "multer": "^1.4.5-lts.1",
         "node-cron": "^4.2.1",
-        "nodemailer": "^8.0.1",
         "pdfkit": "^0.17.2",
         "pdfmake": "^0.3.3",
         "rrule": "^2.7.2",

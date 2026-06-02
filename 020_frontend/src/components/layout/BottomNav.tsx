@@ -1,12 +1,11 @@
 import { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Capacitor } from '@capacitor/core';
 import { useAuth, useCan } from '@/context/AuthContext';
 import { useUnread } from '@/context/UnreadContext';
 import { cn } from '@/lib/utils';
 import {
     Calendar, Folder, MessageSquare, FileText,
-    MoreHorizontal, LogOut, Users, Download,
+    MoreHorizontal, LogOut, Users,
     Music, Library,
     ClipboardList, Shield, BarChart2,
 } from 'lucide-react';
@@ -61,7 +60,6 @@ export function BottomNav() {
     const navigate = useNavigate();
     const { logout } = useAuth();
     const can = useCan();
-    const isAppMode = Capacitor.isNativePlatform();
     const [moreOpen, setMoreOpen] = useState(false);
     const { unreadCounts } = useUnread();
 
@@ -69,7 +67,6 @@ export function BottomNav() {
 
     const filteredMoreMainItems: NavItem[] = [
         ...moreMainItems.filter(t => !t.permission || can(t.permission)),
-        ...(!isAppMode ? [{ label: 'Downloads', href: '/member/download', icon: Download }] : []),
     ];
 
     const filteredAdminItems = adminNavItems.filter(t => !t.permission || can(t.permission));

@@ -1,5 +1,4 @@
 import { Link, useLocation } from 'react-router-dom';
-import { Capacitor } from '@capacitor/core';
 import { useAuth, useCan } from '@/context/AuthContext';
 import { useUnread } from '@/context/UnreadContext';
 import {
@@ -54,7 +53,6 @@ export function Sidebar() {
     const { user } = useAuth();
     const can = useCan();
     const location = useLocation();
-    const isAppMode = Capacitor.isNativePlatform();
     const { unreadCounts } = useUnread();
 
     const filteredMainNavItems = mainNavItems.filter(item => 

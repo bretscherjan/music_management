@@ -17,9 +17,6 @@ COPY packages/shared/ ./packages/shared/
 # Copy service sources
 COPY services/auth-service/ ./services/auth-service/
 
-# Generate Prisma Client
-RUN cd packages/shared && npx --yes prisma@5.8.0 generate
-
 WORKDIR /app/services/auth-service
 EXPOSE 3001
-CMD ["node", "server.js"]
+CMD ["sh", "-c", "cd /app/packages/shared && npx prisma generate && rm -rf /app/services/auth-service/node_modules/@prisma /app/services/auth-service/node_modules/.prisma && ln -s /app/packages/shared/node_modules/@prisma /app/services/auth-service/node_modules/@prisma && ln -s /app/packages/shared/node_modules/.prisma /app/services/auth-service/node_modules/.prisma && cd /app/services/auth-service && node server.js"]

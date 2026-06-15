@@ -1,8 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const { getReminderStats } = require('../controllers/admin.controller');
-const { authMiddleware } = require('../../../packages/shared/src/middlewares/auth.middleware');
-const { adminOnly } = require('../../../packages/shared/src/middlewares/roleCheck.middleware');
+const { authMiddleware } = require('../../../../packages/shared/src/middlewares/auth.middleware');
+const { adminOnly } = require('../../../../packages/shared/src/middlewares/roleCheck.middleware');
 
 // Reminders status is accessible to all authenticated members
 router.get('/reminders', authMiddleware, getReminderStats);
@@ -14,3 +14,4 @@ router.use(adminOnly);
 // Add other admin-only routes here if needed
 
 module.exports = router;
+

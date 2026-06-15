@@ -1,5 +1,5 @@
 const { PrismaClient } = require('@prisma/client');
-const { asyncHandler, AppError } = require('../../../packages/shared/src/middlewares/errorHandler.middleware');
+const { asyncHandler, AppError } = require('../../../../packages/shared/src/middlewares/errorHandler.middleware');
 const PdfPrinter = require('pdfmake/js/Printer').default;
 const path = require('path');
 const fs = require('fs');
@@ -658,3 +658,4 @@ module.exports = {
     toggleBookmark,
     viewSheetMusicPdf,
 };
+

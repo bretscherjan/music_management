@@ -1,8 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const transcribeController = require('../controllers/transcribe.controller');
-const { authMiddleware } = require('../../../packages/shared/src/middlewares/auth.middleware');
-const { permissionCheck } = require('../../../packages/shared/src/middlewares/permission.middleware');
+const { authMiddleware } = require('../../../../packages/shared/src/middlewares/auth.middleware');
+const { permissionCheck } = require('../../../../packages/shared/src/middlewares/permission.middleware');
 
 /**
  * @route   GET /api/transcribe/health
@@ -25,3 +25,4 @@ router.post(
 );
 
 module.exports = router;
+

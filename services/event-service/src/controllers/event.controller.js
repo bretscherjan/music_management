@@ -1,5 +1,5 @@
 const { PrismaClient } = require('@prisma/client');
-const { asyncHandler, AppError } = require('../../../packages/shared/src/middlewares/errorHandler.middleware');
+const { asyncHandler, AppError } = require('../../../../packages/shared/src/middlewares/errorHandler.middleware');
 const { expandRecurringEvents, addExcludedDate } = require('../services/recurrence.service');
 const notificationService = require('../services/notification.service');
 const reminderQueueService = require('../services/reminder.queue.service');
@@ -1312,3 +1312,4 @@ module.exports = {
     verifyAttendance,
     exportSetlistPdf
 };
+

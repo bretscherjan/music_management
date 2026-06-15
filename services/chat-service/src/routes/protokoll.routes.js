@@ -1,8 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const protokollController = require('../controllers/protokoll.controller');
-const { authMiddleware } = require('../../../packages/shared/src/middlewares/auth.middleware');
-const { permissionCheck } = require('../../../packages/shared/src/middlewares/permission.middleware');
+const { authMiddleware } = require('../../../../packages/shared/src/middlewares/auth.middleware');
+const { permissionCheck } = require('../../../../packages/shared/src/middlewares/permission.middleware');
 
 /**
  * @route   GET /api/protokoll/health
@@ -39,3 +39,4 @@ router.post('/summarize', authMiddleware, permissionCheck('protokoll:read'), pro
 router.post('/export', authMiddleware, permissionCheck('protokoll:read'), protokollController.exportProtokoll);
 
 module.exports = router;
+

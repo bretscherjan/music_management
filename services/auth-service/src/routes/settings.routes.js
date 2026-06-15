@@ -1,8 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const settingsController = require('../controllers/settings.controller');
-const { authMiddleware } = require('../../../packages/shared/src/middlewares/auth.middleware');
-const { permissionCheck } = require('../../../packages/shared/src/middlewares/permission.middleware');
+const { authMiddleware } = require('../../../../packages/shared/src/middlewares/auth.middleware');
+const { permissionCheck } = require('../../../../packages/shared/src/middlewares/permission.middleware');
 
 // All settings routes require authentication and admin role
 router.use(authMiddleware);
@@ -18,4 +18,5 @@ router.get('/:key', settingsController.getSetting);
 router.put('/:key', settingsController.updateSetting);
 
 module.exports = router;
+
 

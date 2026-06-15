@@ -44,8 +44,7 @@ services:
     networks:
       - app_network
     # Auth service runs migrations + seeds permissions
-    command: >
-      sh -c "npx --yes prisma@5.8.0 migrate deploy --schema=../../packages/shared/prisma/schema.prisma && node server.js"
+    command: sh -c "cd /app/packages/shared && npx prisma migrate deploy && npx prisma generate && rm -rf /app/services/auth-service/node_modules/@prisma /app/services/auth-service/node_modules/.prisma && ln -s /app/packages/shared/node_modules/@prisma /app/services/auth-service/node_modules/@prisma && ln -s /app/packages/shared/node_modules/.prisma /app/services/auth-service/node_modules/.prisma && cd /app/services/auth-service && npm run dev"
 
   # ── Event Service (Port 3002) ─────────────────────────────────────────────────
   event-service:

@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { globalSearch } = require('../controllers/search.controller');
-const { authMiddleware } = require('../../../packages/shared/src/middlewares/auth.middleware');
+const { authMiddleware } = require('../../../../packages/shared/src/middlewares/auth.middleware');
 
 /**
  * @route   GET /api/search
@@ -13,3 +13,4 @@ const { authMiddleware } = require('../../../packages/shared/src/middlewares/aut
 router.get('/', authMiddleware, globalSearch);
 
 module.exports = router;
+

@@ -1,5 +1,5 @@
 const { PrismaClient } = require('@prisma/client');
-const { asyncHandler, AppError } = require('../../../packages/shared/src/middlewares/errorHandler.middleware');
+const { asyncHandler, AppError } = require('../../../../packages/shared/src/middlewares/errorHandler.middleware');
 const archiver = require('archiver');
 const fs = require('fs');
 const path = require('path');
@@ -408,3 +408,4 @@ module.exports = {
     exportFolderZip,
     exportFolderPdf
 };
+

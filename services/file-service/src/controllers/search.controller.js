@@ -1,5 +1,5 @@
 const { PrismaClient } = require('@prisma/client');
-const { asyncHandler } = require('../../../packages/shared/src/middlewares/errorHandler.middleware');
+const { asyncHandler } = require('../../../../packages/shared/src/middlewares/errorHandler.middleware');
 
 const prisma = new PrismaClient();
 
@@ -221,3 +221,4 @@ const globalSearch = asyncHandler(async (req, res) => {
 });
 
 module.exports = { globalSearch };
+

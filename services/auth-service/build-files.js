@@ -36,14 +36,15 @@ function copyAndTransform(type, file, replacements) {
 }
 
 const routeReplacements = {
-    "'\\.\\./middlewares/": "'../../../packages/shared/src/middlewares/",
-    "'\\.\\./validations/": "'../../../packages/shared/src/validations/"
+    "'\\.\\./middlewares/": "'../../../../packages/shared/src/middlewares/",
+    "'\\.\\./validations/": "'../../../../packages/shared/src/validations/"
 };
 
 const controllerReplacements = {
-    "'\\.\\./middlewares/": "'../../../packages/shared/src/middlewares/",
-    "'\\.\\./utils/": "'../../../packages/shared/src/utils/"
+    "'\\.\\./middlewares/": "'../../../../packages/shared/src/middlewares/",
+    "'\\.\\./utils/": "'../../../../packages/shared/src/utils/"
 };
 
 routes.forEach(r => copyAndTransform('routes', r, routeReplacements));
 controllers.forEach(c => copyAndTransform('controllers', c, controllerReplacements));
+

@@ -3,9 +3,9 @@ const router = express.Router();
 const { z } = require('zod');
 
 const registerController = require('../controllers/register.controller');
-const { authMiddleware } = require('../../../packages/shared/src/middlewares/auth.middleware');
-const { permissionCheck } = require('../../../packages/shared/src/middlewares/permission.middleware');
-const { validate } = require('../../../packages/shared/src/middlewares/validate.middleware');
+const { authMiddleware } = require('../../../../packages/shared/src/middlewares/auth.middleware');
+const { permissionCheck } = require('../../../../packages/shared/src/middlewares/permission.middleware');
+const { validate } = require('../../../../packages/shared/src/middlewares/validate.middleware');
 
 // Validation schemas
 const createRegisterSchema = {
@@ -73,3 +73,4 @@ router.put('/:id', authMiddleware, permissionCheck('registers:write'), validate(
 router.delete('/:id', authMiddleware, permissionCheck('registers:write'), validate(getRegisterByIdSchema), registerController.deleteRegister);
 
 module.exports = router;
+

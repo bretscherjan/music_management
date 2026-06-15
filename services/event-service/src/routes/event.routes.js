@@ -2,9 +2,9 @@ const express = require('express');
 const router = express.Router();
 
 const eventController = require('../controllers/event.controller');
-const { authMiddleware, optionalAuth } = require('../../../packages/shared/src/middlewares/auth.middleware');
-const { permissionCheck } = require('../../../packages/shared/src/middlewares/permission.middleware');
-const { validate } = require('../../../packages/shared/src/middlewares/validate.middleware');
+const { authMiddleware, optionalAuth } = require('../../../../packages/shared/src/middlewares/auth.middleware');
+const { permissionCheck } = require('../../../../packages/shared/src/middlewares/permission.middleware');
+const { validate } = require('../../../../packages/shared/src/middlewares/validate.middleware');
 const {
     createEventSchema,
     updateEventSchema,
@@ -16,7 +16,7 @@ const {
     updateSetlistItemSchema,
     removeSetlistItemSchema,
     reorderSetlistSchema,
-} = require('../../../packages/shared/src/validations/event.validation');
+} = require('../../../../packages/shared/src/validations/event.validation');
 
 /**
  * @route   GET /api/events
@@ -132,3 +132,4 @@ router.get('/:id/verification-list', authMiddleware, permissionCheck('events:adm
 router.post('/:id/verify', authMiddleware, permissionCheck('events:admin'), eventController.verifyAttendance);
 
 module.exports = router;
+

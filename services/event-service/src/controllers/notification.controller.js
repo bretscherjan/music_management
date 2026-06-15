@@ -1,5 +1,5 @@
 const { PrismaClient } = require('@prisma/client');
-const { asyncHandler } = require('../../../packages/shared/src/middlewares/errorHandler.middleware');
+const { asyncHandler } = require('../../../../packages/shared/src/middlewares/errorHandler.middleware');
 
 const prisma = new PrismaClient();
 
@@ -98,3 +98,4 @@ const markCategoryRead = asyncHandler(async (req, res) => {
 });
 
 module.exports = { getUnreadCounts, markCategoryRead };
+

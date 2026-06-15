@@ -7,8 +7,7 @@ COPY services/file-service/package.json ./services/file-service/
 RUN cd services/file-service && npm install
 COPY packages/shared/ ./packages/shared/
 COPY services/file-service/ ./services/file-service/
-RUN cd packages/shared && npx --yes prisma@5.8.0 generate
 WORKDIR /app/services/file-service
 VOLUME ["/app/services/file-service/uploads"]
 EXPOSE 3003
-CMD ["node", "server.js"]
+CMD ["sh", "-c", "cd /app/packages/shared && npx prisma generate && rm -rf /app/services/file-service/node_modules/@prisma /app/services/file-service/node_modules/.prisma && ln -s /app/packages/shared/node_modules/@prisma /app/services/file-service/node_modules/@prisma && ln -s /app/packages/shared/node_modules/.prisma /app/services/file-service/node_modules/.prisma && cd /app/services/file-service && node server.js"]

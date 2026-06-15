@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { authMiddleware } = require('../../../packages/shared/src/middlewares/auth.middleware');
+const { authMiddleware } = require('../../../../packages/shared/src/middlewares/auth.middleware');
 const { getUnreadCounts, markCategoryRead } = require('../controllers/notification.controller');
 
 // All notification routes require authentication
@@ -13,3 +13,4 @@ router.get('/unread-counts', getUnreadCounts);
 router.post('/mark-read', markCategoryRead);
 
 module.exports = router;
+

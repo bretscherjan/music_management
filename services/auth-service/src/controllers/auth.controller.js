@@ -1,10 +1,10 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { PrismaClient } = require('@prisma/client');
-const { asyncHandler, AppError } = require('../../../packages/shared/src/middlewares/errorHandler.middleware');
-const logger = require('../../../packages/shared/src/utils/logger');
+const { asyncHandler, AppError } = require('../../../../packages/shared/src/middlewares/errorHandler.middleware');
+const logger = require('../../../../packages/shared/src/utils/logger');
 const crypto = require('crypto');
-const { assignDefaultPermissions } = require('../../../packages/shared/src/utils/permissions.seed');
+const { assignDefaultPermissions } = require('../../../../packages/shared/src/utils/permissions.seed');
 
 const prisma = new PrismaClient();
 
@@ -332,3 +332,4 @@ module.exports = {
     requestPasswordReset,
     resetPassword
 };
+

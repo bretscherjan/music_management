@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
-const { authMiddleware } = require('../../../packages/shared/src/middlewares/auth.middleware');
-const { permissionCheck } = require('../../../packages/shared/src/middlewares/permission.middleware');
+const { authMiddleware } = require('../../../../packages/shared/src/middlewares/auth.middleware');
+const { permissionCheck } = require('../../../../packages/shared/src/middlewares/permission.middleware');
 const {
     getAllSetlists,
     getSetlistById,
@@ -26,3 +26,4 @@ router.delete('/:id/items/:itemId', permissionCheck('setlists:write'), removeIte
 router.put('/:id/items/reorder', permissionCheck('setlists:write'), reorderItems);
 
 module.exports = router;
+

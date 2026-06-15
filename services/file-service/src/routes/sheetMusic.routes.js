@@ -2,9 +2,9 @@ const express = require('express');
 const router = express.Router();
 
 const sheetMusicController = require('../controllers/sheetMusic.controller');
-const { authMiddleware } = require('../../../packages/shared/src/middlewares/auth.middleware');
-const { permissionCheck } = require('../../../packages/shared/src/middlewares/permission.middleware');
-const { validate } = require('../../../packages/shared/src/middlewares/validate.middleware');
+const { authMiddleware } = require('../../../../packages/shared/src/middlewares/auth.middleware');
+const { permissionCheck } = require('../../../../packages/shared/src/middlewares/permission.middleware');
+const { validate } = require('../../../../packages/shared/src/middlewares/validate.middleware');
 const {
     createSheetMusicSchema,
     updateSheetMusicSchema,
@@ -13,7 +13,7 @@ const {
     querySheetMusicSchema,
     importCsvSchema,
     toggleBookmarkSchema,
-} = require('../../../packages/shared/src/validations/sheetMusic.validation');
+} = require('../../../../packages/shared/src/validations/sheetMusic.validation');
 
 /**
  * @route   GET /api/sheet-music
@@ -86,3 +86,4 @@ router.put('/:id', authMiddleware, permissionCheck('sheetMusic:manage'), validat
 router.delete('/:id', authMiddleware, permissionCheck('sheetMusic:manage'), validate(deleteSheetMusicSchema), sheetMusicController.deleteSheetMusic);
 
 module.exports = router;
+

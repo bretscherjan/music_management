@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
-const { authMiddleware } = require('../../../packages/shared/src/middlewares/auth.middleware');
-const { permissionCheck } = require('../../../packages/shared/src/middlewares/permission.middleware');
+const { authMiddleware } = require('../../../../packages/shared/src/middlewares/auth.middleware');
+const { permissionCheck } = require('../../../../packages/shared/src/middlewares/permission.middleware');
 const {
     getAllMusicFolders,
     getMusicFolderById,
@@ -28,3 +28,4 @@ router.post('/:id/add-items', authMiddleware, permissionCheck('folders:write'), 
 router.delete('/:id', authMiddleware, permissionCheck('folders:write'), deleteMusicFolder);
 
 module.exports = router;
+

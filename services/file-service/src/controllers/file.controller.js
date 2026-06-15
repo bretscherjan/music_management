@@ -3,8 +3,8 @@ const fs = require('fs');
 const multer = require('multer');
 const { PrismaClient } = require('@prisma/client');
 
-const { asyncHandler, AppError } = require('../../../packages/shared/src/middlewares/errorHandler.middleware');
-const { allowedMimeTypes } = require('../validations/file.validation');
+const { asyncHandler, AppError } = require('../../../../packages/shared/src/middlewares/errorHandler.middleware');
+const { allowedMimeTypes } = require('../../../../packages/shared/src/validations/file.validation');
 const notificationService = require('../services/notification.service');
 const fileTokenService = require('../services/fileToken.service');
 
@@ -839,3 +839,4 @@ module.exports = {
     bulkUpdateAccess,
     moveFile,
 };
+

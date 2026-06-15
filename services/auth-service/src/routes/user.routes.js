@@ -2,9 +2,9 @@ const express = require('express');
 const router = express.Router();
 
 const userController = require('../controllers/user.controller');
-const { authMiddleware } = require('../../../packages/shared/src/middlewares/auth.middleware');
-const { permissionCheck } = require('../../../packages/shared/src/middlewares/permission.middleware');
-const { validate } = require('../../../packages/shared/src/middlewares/validate.middleware');
+const { authMiddleware } = require('../../../../packages/shared/src/middlewares/auth.middleware');
+const { permissionCheck } = require('../../../../packages/shared/src/middlewares/permission.middleware');
+const { validate } = require('../../../../packages/shared/src/middlewares/validate.middleware');
 const {
     updateProfileSchema,
     changePasswordSchema,
@@ -18,7 +18,7 @@ const {
     createPermissionTemplateSchema,
     updatePermissionTemplateSchema,
     deletePermissionTemplateSchema,
-} = require('../../../packages/shared/src/validations/user.validation');
+} = require('../../../../packages/shared/src/validations/user.validation');
 
 // ============================================
 // Self-service routes (authenticated users)
@@ -168,3 +168,4 @@ router.put('/:id/role', authMiddleware, permissionCheck('members:write'), valida
 router.delete('/:id', authMiddleware, permissionCheck('members:write'), validate(getUserByIdSchema), userController.deleteUser);
 
 module.exports = router;
+

@@ -1,8 +1,8 @@
 const bcrypt = require('bcryptjs');
 const { PrismaClient } = require('@prisma/client');
-const { asyncHandler, AppError } = require('../../../packages/shared/src/middlewares/errorHandler.middleware');
-const { assignDefaultPermissions } = require('../../../packages/shared/src/utils/permissions.seed');
-const { expandPermissionKeys } = require('../../../packages/shared/src/utils/permissions');
+const { asyncHandler, AppError } = require('../../../../packages/shared/src/middlewares/errorHandler.middleware');
+const { assignDefaultPermissions } = require('../../../../packages/shared/src/utils/permissions.seed');
+const { expandPermissionKeys } = require('../../../../packages/shared/src/utils/permissions');
 
 const prisma = new PrismaClient();
 
@@ -173,7 +173,7 @@ const getNotificationSettings = asyncHandler(async (req, res) => {
     });
 });
 
-const reminderQueueService = require('../services/reminder.queue.service');
+
 
 /**
  * Update notification settings
@@ -212,7 +212,7 @@ const updateNotificationSettings = asyncHandler(async (req, res) => {
 
     // Re-sync reminders to apply new settings to existing events
     // This runs in background to not delay response too much
-    reminderQueueService.syncReminders().catch(err => console.error('Error syncing reminders after settings update:', err));
+
 
     res.json({
         message: 'Benachrichtigungseinstellungen aktualisiert',
@@ -874,3 +874,4 @@ module.exports = {
     saveCalendarPreferences,
     rotateCalendarToken,
 };
+

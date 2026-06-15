@@ -1,5 +1,5 @@
 const onlyOfficeService = require('../services/onlyoffice.service');
-const { asyncHandler } = require('../../../packages/shared/src/middlewares/errorHandler.middleware');
+const { asyncHandler } = require('../../../../packages/shared/src/middlewares/errorHandler.middleware');
 
 const getEditorConfig = asyncHandler(async (req, res) => {
     const config = await onlyOfficeService.getEditorConfig(req.params.id, req.user);
@@ -20,3 +20,4 @@ module.exports = {
     getEditorConfig,
     callback
 };
+

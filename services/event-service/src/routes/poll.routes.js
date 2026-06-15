@@ -3,9 +3,9 @@ const router = express.Router();
 const { z } = require('zod');
 
 const pollController = require('../controllers/poll.controller');
-const { authMiddleware } = require('../../../packages/shared/src/middlewares/auth.middleware');
-const { permissionCheck } = require('../../../packages/shared/src/middlewares/permission.middleware');
-const { validate } = require('../../../packages/shared/src/middlewares/validate.middleware');
+const { authMiddleware } = require('../../../../packages/shared/src/middlewares/auth.middleware');
+const { permissionCheck } = require('../../../../packages/shared/src/middlewares/permission.middleware');
+const { validate } = require('../../../../packages/shared/src/middlewares/validate.middleware');
 
 // ─── Validation Schemas ───────────────────────────────────────────────────────
 
@@ -131,3 +131,4 @@ router.post(
 );
 
 module.exports = router;
+

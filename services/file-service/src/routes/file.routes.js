@@ -3,13 +3,13 @@ const router = express.Router();
 
 const fileController = require('../controllers/file.controller');
 const onlyOfficeController = require('../controllers/onlyoffice.controller');
-const { authMiddleware } = require('../../../packages/shared/src/middlewares/auth.middleware');
-const { permissionCheck } = require('../../../packages/shared/src/middlewares/permission.middleware');
-const { validate } = require('../../../packages/shared/src/middlewares/validate.middleware');
+const { authMiddleware } = require('../../../../packages/shared/src/middlewares/auth.middleware');
+const { permissionCheck } = require('../../../../packages/shared/src/middlewares/permission.middleware');
+const { validate } = require('../../../../packages/shared/src/middlewares/validate.middleware');
 const {
     getFileByIdSchema,
     queryFilesSchema,
-} = require('../../../packages/shared/src/validations/file.validation');
+} = require('../../../../packages/shared/src/validations/file.validation');
 
 /**
  * @route   POST /api/files/upload
@@ -97,3 +97,4 @@ router.post('/:id/view-token', authMiddleware, permissionCheck('files:read'), va
 router.patch('/:id/move', authMiddleware, permissionCheck('files:upload'), validate(getFileByIdSchema), fileController.moveFile);
 
 module.exports = router;
+

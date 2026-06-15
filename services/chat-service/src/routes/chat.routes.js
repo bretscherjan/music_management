@@ -1,8 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const chatController = require('../controllers/chat.controller');
-const { authMiddleware } = require('../../../packages/shared/src/middlewares/auth.middleware');
-const { permissionCheck } = require('../../../packages/shared/src/middlewares/permission.middleware');
+const { authMiddleware } = require('../../../../packages/shared/src/middlewares/auth.middleware');
+const { permissionCheck } = require('../../../../packages/shared/src/middlewares/permission.middleware');
 const { attachIO } = require('../services/websocket.service');
 
 // All chat routes are protected
@@ -27,3 +27,4 @@ router.delete('/:chatId/participants/:userId', permissionCheck('chat:create'), c
 router.post('/:chatId/messages/:messageId/react', permissionCheck('chat:read'), chatController.toggleReaction);
 
 module.exports = router;
+

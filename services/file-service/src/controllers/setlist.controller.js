@@ -1,5 +1,5 @@
 const prisma = require('../utils/prisma');
-const { AppError, asyncHandler } = require('../../../packages/shared/src/middlewares/errorHandler.middleware');
+const { AppError, asyncHandler } = require('../../../../packages/shared/src/middlewares/errorHandler.middleware');
 
 // GET /api/setlists
 const getAllSetlists = asyncHandler(async (req, res) => {
@@ -182,3 +182,4 @@ module.exports = {
     removeItem,
     reorderItems,
 };
+

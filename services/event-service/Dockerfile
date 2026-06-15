@@ -7,7 +7,6 @@ COPY services/event-service/package.json ./services/event-service/
 RUN cd services/event-service && npm install
 COPY packages/shared/ ./packages/shared/
 COPY services/event-service/ ./services/event-service/
-RUN cd packages/shared && npx --yes prisma@5.8.0 generate
 WORKDIR /app/services/event-service
 EXPOSE 3002
-CMD ["node", "server.js"]
+CMD ["sh", "-c", "cd /app/packages/shared && npx prisma generate && rm -rf /app/services/event-service/node_modules/@prisma /app/services/event-service/node_modules/.prisma && ln -s /app/packages/shared/node_modules/@prisma /app/services/event-service/node_modules/@prisma && ln -s /app/packages/shared/node_modules/.prisma /app/services/event-service/node_modules/.prisma && cd /app/services/event-service && node server.js"]

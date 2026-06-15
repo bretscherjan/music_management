@@ -1,6 +1,6 @@
 const { PrismaClient } = require('@prisma/client');
 const crypto = require('crypto');
-const { AppError } = require('../../../packages/shared/src/middlewares/errorHandler.middleware');
+const { AppError } = require('../../../../packages/shared/src/middlewares/errorHandler.middleware');
 
 const prisma = new PrismaClient();
 
@@ -94,3 +94,4 @@ class FileTokenService {
 }
 
 module.exports = new FileTokenService();
+

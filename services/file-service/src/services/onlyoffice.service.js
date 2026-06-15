@@ -3,7 +3,7 @@ const path = require('path');
 const fs = require('fs');
 const https = require('https');
 const { PrismaClient } = require('@prisma/client');
-const { AppError } = require('../../../packages/shared/src/middlewares/errorHandler.middleware');
+const { AppError } = require('../../../../packages/shared/src/middlewares/errorHandler.middleware');
 const fileTokenService = require('./fileToken.service');
 
 const prisma = new PrismaClient();
@@ -196,3 +196,4 @@ class OnlyOfficeService {
 }
 
 module.exports = new OnlyOfficeService();
+

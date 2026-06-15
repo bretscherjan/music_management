@@ -2,10 +2,10 @@ const express = require('express');
 const router = express.Router();
 
 const authController = require('../controllers/auth.controller');
-const { authMiddleware, refreshTokenMiddleware } = require('../../../packages/shared/src/middlewares/auth.middleware');
-const { validate } = require('../../../packages/shared/src/middlewares/validate.middleware');
-const { registerSchema, loginSchema } = require('../../../packages/shared/src/validations/auth.validation');
-const { rateLimiter } = require('../../../packages/shared/src/middlewares/rateLimit.middleware');
+const { authMiddleware, refreshTokenMiddleware } = require('../../../../packages/shared/src/middlewares/auth.middleware');
+const { validate } = require('../../../../packages/shared/src/middlewares/validate.middleware');
+const { registerSchema, loginSchema } = require('../../../../packages/shared/src/validations/auth.validation');
+const { rateLimiter } = require('../../../../packages/shared/src/middlewares/rateLimit.middleware');
 
 // Brute-force protection
 // Login: per-email (user-specific, tight) + per-IP (looser, DDoS/enumeration guard)
@@ -62,3 +62,4 @@ router.post('/forgot-password', forgotPassLimit, authController.requestPasswordR
 router.post('/reset-password/:token', authController.resetPassword);
 
 module.exports = router;
+

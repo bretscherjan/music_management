@@ -1,5 +1,5 @@
 const { PrismaClient } = require('@prisma/client');
-const { asyncHandler, AppError } = require('../../../packages/shared/src/middlewares/errorHandler.middleware');
+const { asyncHandler, AppError } = require('../../../../packages/shared/src/middlewares/errorHandler.middleware');
 
 const prisma = new PrismaClient();
 
@@ -625,3 +625,4 @@ module.exports = {
     castVote,
     addCustomOption,
 };
+

@@ -1,0 +1,10 @@
+const express = require('express');
+const router = express.Router();
+router.use('/files', require('./file.routes'));
+router.use('/folders', require('./folder.routes'));
+router.use('/sheet-music', require('./sheetMusic.routes'));
+router.use('/music-folders', require('./musicFolder.routes'));
+router.use('/setlists', require('./setlist.routes'));
+router.use('/search', require('./search.routes'));
+router.use('/onlyoffice', require('./onlyoffice.routes'));
+module.exports = router;

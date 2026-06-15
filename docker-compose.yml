@@ -21,34 +21,131 @@ services:
       retries: 10
       start_period: 30s
 
-  # ── Node.js Backend (Monolith) ──────────────────────────────────────────────
-  backend:
+  # ── Auth Service (Port 3001) ─────────────────────────────────────────────────
+  auth-service:
     build:
-      context: ./010_backend
-      dockerfile: Dockerfile
-    container_name: music_management_backend
+      context: .
+      dockerfile: services/auth-service/Dockerfile
+    container_name: music_management_auth
     restart: unless-stopped
-    env_file: ./010_backend/.env
     environment:
-      DATABASE_URL: mysql://${MYSQL_USER}:${MYSQL_PASSWORD}@db:3306/${MYSQL_DATABASE}
+      PORT: 3001
       NODE_ENV: production
-      CORS_ORIGIN: http://localhost
-      WHISPER_URL: http://whisper:8000
-      OLLAMA_URL: http://ollama:11434
-    volumes:
-      - uploads_data:/app/uploads
-    ports:
-      - "3004:3004"
+      DATABASE_URL: mysql://${MYSQL_USER}:${MYSQL_PASSWORD}@db:3306/${MYSQL_DATABASE}
+      SHADOW_DATABASE_URL: mysql://${MYSQL_USER}:${MYSQL_PASSWORD}@db:3306/${MYSQL_DATABASE}
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-7d}
+      JWT_REFRESH_EXPIRES_IN: 30d
+      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost}
+      PUBLIC_ADMIN_MODE: ${PUBLIC_ADMIN_MODE:-false}
     depends_on:
       db:
         condition: service_healthy
     networks:
       - app_network
-    # Run Prisma migrations, seed database, then start the server
+    # Auth service runs migrations + seeds permissions
     command: >
-      sh -c "npx --yes prisma@5.8.0 migrate deploy && node prisma/seed.js && node server.js"
+      sh -c "npx --yes prisma@5.8.0 migrate deploy --schema=../../packages/shared/prisma/schema.prisma && node server.js"
 
-  # ── React Frontend (Nginx) ──────────────────────────────────────────────────
+  # ── Event Service (Port 3002) ─────────────────────────────────────────────────
+  event-service:
+    build:
+      context: .
+      dockerfile: services/event-service/Dockerfile
+    container_name: music_management_event
+    restart: unless-stopped
+    environment:
+      PORT: 3002
+      NODE_ENV: production
+      DATABASE_URL: mysql://${MYSQL_USER}:${MYSQL_PASSWORD}@db:3306/${MYSQL_DATABASE}
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-7d}
+      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost}
+      PUBLIC_ADMIN_MODE: ${PUBLIC_ADMIN_MODE:-false}
+    depends_on:
+      db:
+        condition: service_healthy
+      auth-service:
+        condition: service_started
+    networks:
+      - app_network
+
+  # ── File Service (Port 3003) ──────────────────────────────────────────────────
+  file-service:
+    build:
+      context: .
+      dockerfile: services/file-service/Dockerfile
+    container_name: music_management_file
+    restart: unless-stopped
+    environment:
+      PORT: 3003
+      NODE_ENV: production
+      DATABASE_URL: mysql://${MYSQL_USER}:${MYSQL_PASSWORD}@db:3306/${MYSQL_DATABASE}
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-7d}
+      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost}
+      UPLOAD_DIR: uploads
+      MAX_FILE_SIZE: 10485760
+      PUBLIC_ADMIN_MODE: ${PUBLIC_ADMIN_MODE:-false}
+    volumes:
+      - uploads_data:/app/services/file-service/uploads
+    depends_on:
+      db:
+        condition: service_healthy
+      auth-service:
+        condition: service_started
+    networks:
+      - app_network
+
+  # ── Chat Service (Port 3004) ──────────────────────────────────────────────────
+  chat-service:
+    build:
+      context: .
+      dockerfile: services/chat-service/Dockerfile
+    container_name: music_management_chat
+    restart: unless-stopped
+    environment:
+      PORT: 3004
+      NODE_ENV: production
+      DATABASE_URL: mysql://${MYSQL_USER}:${MYSQL_PASSWORD}@db:3306/${MYSQL_DATABASE}
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-7d}
+      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost}
+      CHAT_DATA_DIR: /app/services/chat-service/chat-data
+      WHISPER_URL: http://whisper:8000
+      OLLAMA_URL: http://ollama:11434
+      OLLAMA_MODEL: ${OLLAMA_MODEL:-llama3.1:8b}
+      LLM_PROVIDER: ${LLM_PROVIDER:-ollama}
+      PUBLIC_ADMIN_MODE: ${PUBLIC_ADMIN_MODE:-false}
+    volumes:
+      - chat_data:/app/services/chat-service/chat-data
+    depends_on:
+      db:
+        condition: service_healthy
+      auth-service:
+        condition: service_started
+    networks:
+      - app_network
+
+  # ── API Gateway (Nginx) ───────────────────────────────────────────────────────
+  gateway:
+    build:
+      context: .
+      dockerfile: gateway/Dockerfile
+    container_name: music_management_gateway
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    depends_on:
+      - auth-service
+      - event-service
+      - file-service
+      - chat-service
+      - frontend
+    networks:
+      - app_network
+
+  # ── React Frontend (Nginx) ────────────────────────────────────────────────────
   frontend:
     build:
       context: ./020_frontend
@@ -57,14 +154,10 @@ services:
         VITE_API_URL: ${VITE_API_URL:-}
     container_name: music_management_frontend
     restart: unless-stopped
-    ports:
-      - "80:80"
-    depends_on:
-      - backend
     networks:
       - app_network
 
-  # ── Whisper AI (Speech-to-Text) ─────────────────────────────────────────────
+  # ── Whisper AI (Speech-to-Text) ───────────────────────────────────────────────
   whisper:
     build:
       context: ./deployment/whisper
@@ -74,29 +167,33 @@ services:
     volumes:
       - whisper_models:/app/models
       - whisper_outputs:/app/outputs
-    ports:
-      - "8000:8000"
     networks:
       - app_network
     environment:
       - WHISPER_MODEL=${WHISPER_MODEL:-base}
 
-  # ── Ollama AI (LLM) ─────────────────────────────────────────────────────────
+  # ── Ollama AI (LLM) ───────────────────────────────────────────────────────────
   ollama:
     image: ollama/ollama:latest
     container_name: music_management_ollama
     restart: unless-stopped
     volumes:
       - ollama_data:/root/.ollama
-    ports:
-      - "11434:11434"
     networks:
       - app_network
     # GPU support (optional — remove 'deploy' block if no NVIDIA GPU available)
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - driver: nvidia
+    #           count: 1
+    #           capabilities: [gpu]
 
 volumes:
   mysql_data:
   uploads_data:
+  chat_data:
   whisper_models:
   whisper_outputs:
   ollama_data:

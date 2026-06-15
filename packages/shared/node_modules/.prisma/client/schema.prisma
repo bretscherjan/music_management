@@ -1,0 +1,771 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider          = "mysql"
+  url               = env("DATABASE_URL")
+  shadowDatabaseUrl = env("SHADOW_DATABASE_URL")
+}
+
+model User {
+  id                   Int                   @id @default(autoincrement())
+  email                String                @unique
+  password             String
+  firstName            String
+  lastName             String
+  profilePicture       String?
+  status               UserStatus            @default(active)
+  role                 UserRole              @default(member)
+  type                 UserType              @default(REGULAR)
+  expiresAt            DateTime?
+  registerId           Int?
+  createdAt            DateTime              @default(now())
+  updatedAt            DateTime              @updatedAt
+  phoneNumber          String?
+  calendarToken        String?               @unique
+  calendarPreferences  Json?
+  resetToken           String?               @unique
+  resetTokenExpiry     DateTime?
+  lastLoginAt          DateTime?
+  lastSeenAt           DateTime?
+  ownedNotes           AdminNote[]           @relation("NoteOwner")
+  attendances          Attendance[]
+  fileAccess           FileAccess[]
+  folderAccess         FolderAccess[]
+  noteContributions    NoteContribution[]
+  notificationSettings NotificationSettings?
+  sheetMusicBookmarks  SheetMusicBookmark[]
+  tasksCompleted       Task[]                @relation("TaskCompleter")
+  tasksCreated         Task[]                @relation("TaskCreator")
+  taskHistory          TaskHistory[]
+  register             Register?             @relation(fields: [registerId], references: [id])
+  verifiedAttendances  VerifiedAttendance[]
+  chatParticipants     ChatParticipant[]
+  chatReadStates       ChatReadState[]
+  permissions          UserPermission[]
+  pollsCreated         Poll[]            @relation("PollCreator")
+  pollOptionsAdded     PollOption[]      @relation("PollOptionAdder")
+  pollVotes            PollVote[]        @relation("PollVoter")
+  pollTextAnswers      PollTextAnswer[]  @relation("PollTextAnswerer")
+  pollAudienceRules    PollAudience[]    @relation("PollAudienceUser")
+  categoryReadStates   UserCategoryReadState[]
+
+  @@index([email])
+  @@index([registerId])
+}
+
+model Permission {
+  id          Int              @id @default(autoincrement())
+  key         String           @unique
+  description String?          @db.Text
+  category    String?          
+  users       UserPermission[]
+}
+
+model PermissionTemplate {
+  id             Int      @id @default(autoincrement())
+  systemKey      String?  @unique
+  name           String
+  description    String?  @db.Text
+  permissionKeys Json
+  isSystem       Boolean  @default(false)
+  createdBy      Int?
+  updatedBy      Int?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([name])
+  @@index([isSystem])
+}
+
+model UserPermission {
+  userId       Int
+  permissionId Int
+  grantedAt    DateTime @default(now())
+  grantedBy    Int?     
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@id([userId, permissionId])
+  @@index([userId])
+  @@index([permissionId])
+}
+
+model Chat {
+  id                 Int                @id @default(autoincrement())
+  type               ChatType           @default(direct)
+  title              String?
+  createdBy          Int
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+  lastMessageAt      DateTime?
+  lastMessagePreview String?            @db.Text
+  archivedAt         DateTime?
+  participants       ChatParticipant[]
+  readStates         ChatReadState[]
+  messageIndices     ChatMessageIndex[]
+
+  @@index([lastMessageAt])
+}
+
+model ChatParticipant {
+  id               Int      @id @default(autoincrement())
+  chatId           Int
+  userId           Int
+  role             ChatRole @default(member)
+  joinedAt         DateTime @default(now())
+  muted            Boolean  @default(false)
+  canManageMembers Boolean  @default(false)
+  chat             Chat     @relation(fields: [chatId], references: [id], onDelete: Cascade)
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([chatId, userId])
+  @@index([chatId])
+  @@index([userId])
+}
+
+model ChatMessageIndex {
+  id             Int       @id @default(autoincrement())
+  chatId         Int
+  senderId       Int
+  fileSegment    String    // e.g., "2026-03"
+  messageKey     String    // unique key in the JSON file
+  createdAt      DateTime  @default(now())
+  editedAt       DateTime?
+  deletedAt      DateTime?
+  replyToId      Int?      // Refers to another ChatMessageIndex.id
+  searchableText String?   @db.Text
+  hasMentions    Boolean   @default(false)
+  hasLinks       Boolean   @default(false)
+  chat           Chat      @relation(fields: [chatId], references: [id], onDelete: Cascade)
+
+  @@index([chatId])
+  @@index([createdAt])
+}
+
+model ChatReadState {
+  id               Int      @id @default(autoincrement())
+  chatId           Int
+  userId           Int
+  lastReadSequence Int      @default(0)
+  unreadCount      Int      @default(0)
+  chat             Chat     @relation(fields: [chatId], references: [id], onDelete: Cascade)
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([chatId, userId])
+  @@index([chatId])
+  @@index([userId])
+}
+
+enum ChatType {
+  direct
+  group
+}
+
+enum ChatRole {
+  owner
+  member
+}
+
+model NotificationSettings {
+  id                     Int      @id @default(autoincrement())
+  userId                 Int      @unique
+  notifyOnEventCreate    Boolean  @default(true)
+  notifyOnEventUpdate    Boolean  @default(true)
+  notifyOnEventDelete    Boolean  @default(true)
+  notifyOnFileUpload     Boolean  @default(true)
+  notifyOnFileDelete     Boolean  @default(false)
+  updatedAt              DateTime @updatedAt
+  reminderSettings       Json?
+  user                   User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Register {
+  id           Int            @id @default(autoincrement())
+  name         String         @unique
+  files        File[]
+  fileAccess   FileAccess[]
+  folderAccess FolderAccess[]
+  users        User[]
+  events       Event[]        @relation("EventToRegister")
+  pollAudience PollAudience[] @relation("PollAudienceRegister")
+
+  @@index([name])
+}
+
+model Event {
+  id                    Int                  @id @default(autoincrement())
+  title                 String
+  description           String?              @db.Text
+  location              String?
+  category              EventCategory        @default(other)
+  visibility            EventVisibility      @default(all)
+  date                  DateTime
+  startTime             String
+  endTime               String
+  isRecurring           Boolean              @default(false)
+  recurrenceRule        String?
+  excludedDates         Json?
+  createdAt             DateTime             @default(now())
+  updatedAt             DateTime             @updatedAt
+  responseDeadlineHours Int                  @default(48)
+  setlistEnabled        Boolean              @default(false)
+  isPublic              Boolean              @default(false)
+  attendances           Attendance[]
+  sheetMusic            EventSheetMusic[]
+  files                 File[]
+  workspaceTasks        Task[]
+  verifiedAttendances   VerifiedAttendance[]
+  targetRegisters       Register[]           @relation("EventToRegister")
+  setlists              Setlist[]
+
+  @@index([date])
+  @@index([category])
+}
+
+model Attendance {
+  id        Int              @id @default(autoincrement())
+  status    AttendanceStatus @default(maybe)
+  comment   String?          @db.Text
+  eventId   Int
+  userId    Int
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+  event     Event            @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([eventId, userId])
+  @@index([eventId])
+  @@index([userId])
+}
+
+model File {
+  id               Int              @id @default(autoincrement())
+  filename         String
+  originalName     String
+  path             String
+  mimetype         String
+  size             Int
+  visibility       FileVisibility   @default(all)
+  targetRegisterId Int?
+  eventId          Int?
+  createdAt        DateTime         @default(now())
+  folder           String           @default("/")
+  folderId         Int?
+  sheetMusicId     Int?
+  event            Event?           @relation(fields: [eventId], references: [id])
+  realFolder       Folder?          @relation(fields: [folderId], references: [id])
+  sheetMusic       SheetMusic?      @relation(fields: [sheetMusicId], references: [id])
+  targetRegister   Register?        @relation(fields: [targetRegisterId], references: [id])
+  accessRules      FileAccess[]
+  shareTokens      FileShareToken[]
+
+  @@index([visibility])
+  @@index([targetRegisterId])
+  @@index([eventId])
+  @@index([folder])
+  @@index([folderId], map: "File_folderId_fkey")
+  @@index([sheetMusicId], map: "File_sheetMusicId_fkey")
+}
+
+model FileAccess {
+  id         Int              @id @default(autoincrement())
+  fileId     Int
+  accessType AccessType       @default(ALLOW)
+  targetType AccessTargetType
+  userId     Int?
+  registerId Int?
+  createdAt  DateTime         @default(now())
+  file       File             @relation(fields: [fileId], references: [id], onDelete: Cascade)
+  register   Register?        @relation(fields: [registerId], references: [id], onDelete: Cascade)
+  user       User?            @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([fileId])
+  @@index([userId])
+  @@index([registerId])
+}
+
+model Setting {
+  id    Int    @id @default(autoincrement())
+  key   String @unique
+  value String
+
+  @@index([key])
+}
+
+model SheetMusic {
+  id          Int                  @id @default(autoincrement())
+  title       String
+  composer    String?
+  arranger    String?
+  genre       String?
+  difficulty  Difficulty?
+  publisher   String?
+  notes       String?              @db.Text
+  createdAt   DateTime             @default(now())
+  updatedAt   DateTime             @updatedAt
+  events      EventSheetMusic[]
+  files       File[]
+  folderItems MusicFolderItem[]
+  bookmarks   SheetMusicBookmark[]
+  setlistItems SetlistItem[]
+
+  @@index([title])
+  @@index([genre])
+  @@index([difficulty])
+}
+
+model SheetMusicBookmark {
+  id           Int        @id @default(autoincrement())
+  userId       Int
+  sheetMusicId Int
+  createdAt    DateTime   @default(now())
+  sheetMusic   SheetMusic @relation(fields: [sheetMusicId], references: [id], onDelete: Cascade)
+  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, sheetMusicId])
+  @@index([userId])
+  @@index([sheetMusicId])
+}
+
+model EventSheetMusic {
+  id                Int             @id @default(autoincrement())
+  eventId           Int
+  sheetMusicId      Int?
+  position          Int             @default(0)
+  createdAt         DateTime        @default(now())
+  customDescription String?         @db.Text
+  customTitle       String?
+  duration          Int?
+  type              SetlistItemType @default(sheetMusic)
+  event             Event           @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  sheetMusic        SheetMusic?     @relation(fields: [sheetMusicId], references: [id], onDelete: Cascade)
+
+  @@unique([eventId, position])
+  @@index([eventId])
+  @@index([sheetMusicId])
+}
+
+// ─── Standalone Setlists (reusable, optionally linked to an event) ────────────
+
+model Setlist {
+  id          Int           @id @default(autoincrement())
+  name        String
+  description String?       @db.Text
+  eventId     Int?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  items       SetlistItem[]
+  event       Event?        @relation(fields: [eventId], references: [id], onDelete: SetNull)
+
+  @@index([eventId])
+}
+
+model SetlistItem {
+  id           Int             @id @default(autoincrement())
+  setlistId    Int
+  sheetMusicId Int?
+  position     Int             @default(0)
+  title        String?
+  notes        String?         @db.Text
+  duration     Int?
+  type         SetlistItemType @default(sheetMusic)
+  setlist      Setlist         @relation(fields: [setlistId], references: [id], onDelete: Cascade)
+  sheetMusic   SheetMusic?     @relation(fields: [sheetMusicId], references: [id], onDelete: SetNull)
+
+  @@index([setlistId])
+  @@index([sheetMusicId])
+}
+
+model Folder {
+  id          Int            @id @default(autoincrement())
+  name        String
+  parentId    Int?
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+  files       File[]
+  parent      Folder?        @relation("FolderToFolder", fields: [parentId], references: [id], onDelete: Cascade)
+  children    Folder[]       @relation("FolderToFolder")
+  accessRules FolderAccess[]
+
+  @@unique([name, parentId])
+  @@index([parentId])
+}
+
+model FolderAccess {
+  id         Int              @id @default(autoincrement())
+  folderId   Int
+  accessType AccessType       @default(ALLOW)
+  targetType AccessTargetType
+  userId     Int?
+  registerId Int?
+  createdAt  DateTime         @default(now())
+  folder     Folder           @relation(fields: [folderId], references: [id], onDelete: Cascade)
+  register   Register?        @relation(fields: [registerId], references: [id], onDelete: Cascade)
+  user       User?            @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([folderId])
+  @@index([userId])
+  @@index([registerId])
+}
+
+model VerifiedAttendance {
+  id        Int                @id @default(autoincrement())
+  eventId   Int
+  userId    Int
+  status    VerificationStatus
+  comment   String?
+  updatedAt DateTime           @updatedAt
+  adminId   Int
+  event     Event              @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  user      User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([eventId, userId])
+  @@index([eventId])
+  @@index([userId])
+}
+
+model MusicFolder {
+  id          Int               @id @default(autoincrement())
+  name        String
+  description String?
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+  items       MusicFolderItem[]
+}
+
+model MusicFolderItem {
+  id           Int         @id @default(autoincrement())
+  folderId     Int
+  sheetMusicId Int
+  position     Int         @default(0)
+  folder       MusicFolder @relation(fields: [folderId], references: [id], onDelete: Cascade)
+  sheetMusic   SheetMusic  @relation(fields: [sheetMusicId], references: [id], onDelete: Cascade)
+
+  @@unique([folderId, sheetMusicId])
+  @@index([folderId])
+  @@index([sheetMusicId])
+}
+
+model TaskCategory {
+  id        Int      @id @default(autoincrement())
+  name      String
+  color     String?
+  position  Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  tasks     Task[]
+
+  @@index([position])
+}
+
+model Task {
+  id            Int           @id @default(autoincrement())
+  title         String
+  description   String?       @db.Text
+  priority      TaskPriority  @default(medium)
+  dueDate       DateTime?
+  completed     Boolean       @default(false)
+  completedAt   DateTime?
+  archived      Boolean       @default(false)
+  position      Int           @default(0)
+  categoryId    Int
+  parentId      Int?
+  eventId       Int?
+  createdById   Int
+  completedById Int?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  category      TaskCategory  @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  completedBy   User?         @relation("TaskCompleter", fields: [completedById], references: [id])
+  createdBy     User          @relation("TaskCreator", fields: [createdById], references: [id])
+  event         Event?        @relation(fields: [eventId], references: [id])
+  parent        Task?         @relation("TaskSubtasks", fields: [parentId], references: [id], onDelete: Cascade)
+  subtasks      Task[]        @relation("TaskSubtasks")
+  history       TaskHistory[]
+
+  @@index([categoryId])
+  @@index([parentId])
+  @@index([eventId])
+  @@index([completed])
+  @@index([archived])
+  @@index([position])
+  @@index([completedById], map: "Task_completedById_fkey")
+  @@index([createdById], map: "Task_createdById_fkey")
+}
+
+model TaskHistory {
+  id        Int      @id @default(autoincrement())
+  taskId    Int
+  userId    Int
+  action    String
+  details   Json?
+  createdAt DateTime @default(now())
+  task      Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id])
+
+  @@index([taskId])
+  @@index([userId])
+  @@index([createdAt])
+}
+
+model AdminNote {
+  id            Int                @id @default(autoincrement())
+  title         String
+  content       String             @db.LongText
+  ownerId       Int
+  pinned        Boolean            @default(false)
+  position      Int                @default(0)
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
+  owner         User               @relation("NoteOwner", fields: [ownerId], references: [id])
+  contributions NoteContribution[]
+
+  @@index([ownerId])
+  @@index([pinned])
+  @@index([position])
+}
+
+model NoteContribution {
+  id        Int       @id @default(autoincrement())
+  noteId    Int
+  userId    Int
+  charCount Int       @default(0)
+  updatedAt DateTime  @updatedAt
+  note      AdminNote @relation(fields: [noteId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id])
+
+  @@unique([noteId, userId])
+  @@index([noteId])
+  @@index([userId])
+}
+
+model FileShareToken {
+  id         Int      @id @default(autoincrement())
+  token      String   @unique
+  fileId     Int
+  createdAt  DateTime @default(now())
+  expiresAt  DateTime
+  usageCount Int      @default(0)
+  file       File     @relation(fields: [fileId], references: [id], onDelete: Cascade)
+
+  @@index([token])
+  @@index([fileId], map: "FileShareToken_fileId_fkey")
+}
+
+enum UserType {
+  REGULAR
+  GUEST
+}
+
+enum UserStatus {
+  active
+  passive
+  former
+}
+
+enum UserRole {
+  member
+  admin
+}
+
+enum EventCategory {
+  rehearsal
+  performance
+  other
+}
+
+enum EventVisibility {
+  all
+  register
+  admin
+}
+
+enum AttendanceStatus {
+  yes
+  no
+  maybe
+}
+
+enum FileVisibility {
+  all
+  limit
+  admin
+  register
+}
+
+enum AccessType {
+  ALLOW
+  DENY
+}
+
+enum AccessTargetType {
+  USER
+  REGISTER
+  ADMIN_ONLY
+}
+
+enum Difficulty {
+  easy
+  medium
+  hard
+}
+
+enum SetlistItemType {
+  sheetMusic
+  pause
+  custom
+}
+
+enum VerificationStatus {
+  PRESENT
+  EXCUSED
+  UNEXCUSED
+}
+
+enum TaskPriority {
+  low
+  medium
+  high
+}
+
+model Poll {
+  id                 Int                   @id @default(autoincrement())
+  title              String
+  question           String                @db.Text
+  pollKind           PollKind              @default(SURVEY)
+  type               PollType              @default(SINGLE)
+  maxChoices         Int                   @default(1)
+  anonymity          PollAnonymity         @default(FULLY_ANONYMOUS)
+  resultsVisibility  PollResultsVisibility @default(AFTER_VOTE)
+  allowCustomOptions Boolean               @default(false)
+  status             PollStatus            @default(ACTIVE)
+  endsAt             DateTime?
+  createdById        Int
+  createdAt          DateTime              @default(now())
+  updatedAt          DateTime              @updatedAt
+  createdBy          User                  @relation("PollCreator", fields: [createdById], references: [id])
+  options            PollOption[]
+  votes              PollVote[]
+  textAnswers        PollTextAnswer[]
+  audienceRules      PollAudience[]
+
+  @@index([status])
+  @@index([pollKind])
+  @@index([createdById])
+  @@index([endsAt])
+}
+
+model PollOption {
+  id        Int        @id @default(autoincrement())
+  pollId    Int
+  text      String
+  addedById Int?
+  createdAt DateTime   @default(now())
+  poll      Poll       @relation(fields: [pollId], references: [id], onDelete: Cascade)
+  addedBy   User?      @relation("PollOptionAdder", fields: [addedById], references: [id])
+  votes     PollVote[]
+
+  @@index([pollId])
+  @@index([addedById])
+}
+
+model PollVote {
+  id        Int        @id @default(autoincrement())
+  pollId    Int
+  optionId  Int
+  userId    Int
+  createdAt DateTime   @default(now())
+  poll      Poll       @relation(fields: [pollId], references: [id], onDelete: Cascade)
+  option    PollOption @relation(fields: [optionId], references: [id], onDelete: Cascade)
+  user      User       @relation("PollVoter", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([pollId, optionId, userId])
+  @@index([pollId])
+  @@index([optionId])
+  @@index([userId])
+}
+
+model PollAudience {
+  id         Int                    @id @default(autoincrement())
+  pollId     Int
+  targetType PollAudienceTargetType @default(ALL)
+  userId     Int?
+  registerId Int?
+  poll       Poll                   @relation(fields: [pollId], references: [id], onDelete: Cascade)
+  user       User?                  @relation("PollAudienceUser", fields: [userId], references: [id], onDelete: Cascade)
+  register   Register?              @relation("PollAudienceRegister", fields: [registerId], references: [id], onDelete: Cascade)
+
+  @@index([pollId])
+  @@index([userId])
+  @@index([registerId])
+}
+
+model PollTextAnswer {
+  id        Int      @id @default(autoincrement())
+  pollId    Int
+  userId    Int
+  answer    String   @db.Text
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  poll      Poll     @relation(fields: [pollId], references: [id], onDelete: Cascade)
+  user      User     @relation("PollTextAnswerer", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([pollId, userId])
+  @@index([pollId])
+  @@index([userId])
+}
+
+enum PollKind {
+  SURVEY
+  VOTE
+}
+
+enum PollType {
+  SINGLE
+  MULTIPLE
+}
+
+enum PollAnonymity {
+  FULLY_ANONYMOUS
+  VISIBLE_TO_ADMINS
+  VISIBLE_TO_ALL
+}
+
+enum PollResultsVisibility {
+  ADMINS_ONLY
+  AFTER_VOTE
+  ALWAYS
+}
+
+enum PollStatus {
+  ACTIVE
+  CLOSED
+}
+
+enum PollAudienceTargetType {
+  ALL
+  REGISTER
+  USER
+}
+
+// ─── Unread / Notification state ────────────────────────────────────────────
+
+model UserCategoryReadState {
+  id            Int           @id @default(autoincrement())
+  userId        Int
+  category      ReadCategory
+  lastCheckedAt DateTime      @default(now())
+  user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, category])
+  @@index([userId])
+}
+
+enum ReadCategory {
+  EVENTS
+  POLLS
+}
+
+

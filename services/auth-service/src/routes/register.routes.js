@@ -1,0 +1,75 @@
+const express = require('express');
+const router = express.Router();
+const { z } = require('zod');
+
+const registerController = require('../controllers/register.controller');
+const { authMiddleware } = require('../../../packages/shared/src/middlewares/auth.middleware');
+const { permissionCheck } = require('../../../packages/shared/src/middlewares/permission.middleware');
+const { validate } = require('../../../packages/shared/src/middlewares/validate.middleware');
+
+// Validation schemas
+const createRegisterSchema = {
+    body: z.object({
+        name: z
+            .string({ required_error: 'Name ist erforderlich' })
+            .min(1, 'Name ist erforderlich')
+            .max(100, 'Name darf maximal 100 Zeichen lang sein'),
+        assignUserIds: z.array(z.number()).optional(),
+    }),
+};
+
+const updateRegisterSchema = {
+    params: z.object({
+        id: z.string().regex(/^\d+$/, 'Ungültige Register-ID'),
+    }),
+    body: z.object({
+        name: z
+            .string()
+            .min(1, 'Name ist erforderlich')
+            .max(100, 'Name darf maximal 100 Zeichen lang sein'),
+        assignUserIds: z.array(z.number()).optional(),
+    }),
+};
+
+const getRegisterByIdSchema = {
+    params: z.object({
+        id: z.string().regex(/^\d+$/, 'Ungültige Register-ID'),
+    }),
+};
+
+/**
+ * @route   GET /api/registers
+ * @desc    Get all registers
+ * @access  Private (authenticated users)
+ */
+router.get('/', authMiddleware, permissionCheck('registers:read'), registerController.getAllRegisters);
+
+/**
+ * @route   GET /api/registers/:id
+ * @desc    Get register by ID with members
+ * @access  Private (authenticated users)
+ */
+router.get('/:id', authMiddleware, permissionCheck('registers:read'), validate(getRegisterByIdSchema), registerController.getRegisterById);
+
+/**
+ * @route   POST /api/registers
+ * @desc    Create new register
+ * @access  Admin only
+ */
+router.post('/', authMiddleware, permissionCheck('registers:write'), validate(createRegisterSchema), registerController.createRegister);
+
+/**
+ * @route   PUT /api/registers/:id
+ * @desc    Update register
+ * @access  Admin only
+ */
+router.put('/:id', authMiddleware, permissionCheck('registers:write'), validate(updateRegisterSchema), registerController.updateRegister);
+
+/**
+ * @route   DELETE /api/registers/:id
+ * @desc    Delete register
+ * @access  Admin only
+ */
+router.delete('/:id', authMiddleware, permissionCheck('registers:write'), validate(getRegisterByIdSchema), registerController.deleteRegister);
+
+module.exports = router;

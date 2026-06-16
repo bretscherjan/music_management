@@ -1,0 +1,100 @@
+const express = require('express');
+const router = express.Router();
+
+const fileController = require('../controllers/file.controller');
+const onlyOfficeController = require('../controllers/onlyoffice.controller');
+const { authMiddleware } = require('../../../../packages/shared/src/middlewares/auth.middleware');
+const { permissionCheck } = require('../../../../packages/shared/src/middlewares/permission.middleware');
+const { validate } = require('../../../../packages/shared/src/middlewares/validate.middleware');
+const {
+    getFileByIdSchema,
+    queryFilesSchema,
+} = require('../../../../packages/shared/src/validations/file.validation');
+
+/**
+ * @route   POST /api/files/upload
+ * @desc    Upload a file
+ * @access  Private (authenticated users, admin for visibility settings)
+ */
+router.post(
+    '/upload',
+    authMiddleware,
+    permissionCheck('files:upload'),
+    fileController.upload.single('file'),
+    fileController.uploadFile
+);
+
+
+
+/**
+ * @route   GET /api/files
+ * @desc    Get all files (filtered by user permissions)
+ * @access  Private
+ */
+router.get('/', authMiddleware, permissionCheck('files:read'), validate(queryFilesSchema), fileController.getAllFiles);
+
+/**
+ * @route   POST /api/files/onlyoffice/callback
+ * @desc    Callback from OnlyOffice
+ */
+router.post('/onlyoffice/callback', onlyOfficeController.callback);
+
+/**
+ * @route   GET /api/files/:id/onlyoffice/config
+ * @desc    Get editor config
+ */
+router.get('/:id/onlyoffice/config', authMiddleware, permissionCheck('files:read'), onlyOfficeController.getEditorConfig);
+
+
+
+/**
+ * @route   GET /api/files/:id
+ * @desc    Download file (protected)
+ * @access  Private (based on visibility)
+ */
+router.get('/:id', authMiddleware, permissionCheck('files:read'), validate(getFileByIdSchema), fileController.getFileById);
+
+/**
+ * @route   GET /api/files/:id/info
+ * @desc    Get file metadata
+ * @access  Private (based on visibility)
+ */
+router.get('/:id/info', authMiddleware, permissionCheck('files:read'), validate(getFileByIdSchema), fileController.getFileInfo);
+
+/**
+ * @route   DELETE /api/files/:id
+ * @desc    Delete file
+ * @access  Admin only
+ */
+router.delete('/:id', authMiddleware, permissionCheck('files:permissions'), validate(getFileByIdSchema), fileController.deleteFile);
+
+/**
+ * @route   PUT /api/files/:id/access
+ * @desc    Update file access permissions
+ * @access  Admin only
+ */
+router.put('/:id/access', authMiddleware, permissionCheck('files:permissions'), fileController.updateFileAccess);
+
+/**
+ * @route   POST /api/files/bulk-access
+ * @desc    Update access permissions for multiple items
+ * @access  Admin only
+ */
+router.post('/bulk-access', authMiddleware, permissionCheck('files:permissions'), fileController.bulkUpdateAccess);
+
+/**
+ * @route   POST /api/files/:id/view-token
+ * @desc    Generate a one-time public view token
+ * @access  Private (based on visibility)
+ */
+router.post('/:id/view-token', authMiddleware, permissionCheck('files:read'), validate(getFileByIdSchema), fileController.generateViewToken);
+
+/**
+ * @route   PATCH /api/files/:id/move
+ * @desc    Move file to a different folder
+ * @access  Admin only
+ */
+router.patch('/:id/move', authMiddleware, permissionCheck('files:upload'), validate(getFileByIdSchema), fileController.moveFile);
+
+module.exports = router;
+

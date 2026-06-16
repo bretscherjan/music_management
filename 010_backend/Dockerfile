@@ -12,7 +12,7 @@ RUN npm ci
 COPY . .
 
 # Generate Prisma Client
-RUN npx prisma generate --schema=prisma/schema.prisma
+RUN npx prisma@5.8.0 generate --schema=prisma/schema.prisma
 
 # Remove dev dependencies for production
 RUN npm prune --production
@@ -20,3 +20,4 @@ RUN npm prune --production
 EXPOSE 3004
 
 CMD ["node", "server.js"]
+

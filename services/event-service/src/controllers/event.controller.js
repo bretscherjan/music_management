@@ -1,0 +1,1315 @@
+const { PrismaClient } = require('@prisma/client');
+const { asyncHandler, AppError } = require('../../../../packages/shared/src/middlewares/errorHandler.middleware');
+const { expandRecurringEvents, addExcludedDate } = require('../services/recurrence.service');
+const notificationService = require('../services/notification.service');
+const reminderQueueService = require('../services/reminder.queue.service');
+const PdfPrinter = require('pdfmake/js/Printer').default;
+const path = require('path');
+const { FONTS, STYLES, DEFAULT_STYLE, TABLE_LAYOUT, parseOpts, buildTitleBlock, buildHeaderFooter } = require('../utils/pdfStyles');
+
+
+const prisma = new PrismaClient();
+
+/**
+ * Get all events with optional recurring event expansion
+ * GET /events
+ */
+const getAllEvents = asyncHandler(async (req, res) => {
+    const { startDate, endDate, category, expand } = req.query;
+    const user = req.user;
+
+    // Build where clause based on visibility
+    const whereClause = {};
+
+    // Filter by category if provided
+    if (category) {
+        whereClause.category = category;
+    }
+
+    // Filter by date range if provided
+    if (startDate || endDate) {
+        whereClause.date = {};
+        if (startDate) {
+            whereClause.date.gte = new Date(startDate);
+        }
+        if (endDate) {
+            whereClause.date.lte = new Date(endDate);
+        }
+    }
+
+    // Visibility filter based on user role and register
+    if (user) {
+        if (user.role !== 'admin') {
+            // Logic:
+            // 1. Event is NOT admin-only (visibility != 'admin').
+            // 2. AND (targetRegisters is empty OR user.registerId is in targetRegisters).
+            whereClause.AND = [
+                { visibility: { not: 'admin' } },
+                {
+                    OR: [
+                        { targetRegisters: { none: {} } }, // Empty -> visible to all
+                        user.registerId ? { targetRegisters: { some: { id: user.registerId } } } : {} // Visible if my register is targeted
+                    ]
+                }
+            ];
+
+            // Cleanup logical hole: if user has no register, the second OR condition object is empty which Prisma might ignore or treat weirdly.
+            // If registerId is null, they should ONLY see events with NO targets.
+            if (!user.registerId) {
+                whereClause.AND[1].OR = [{ targetRegisters: { none: {} } }];
+            }
+        }
+    } else {
+        // Unauthenticated users only see public events
+        whereClause.isPublic = true;
+    }
+
+    // Get count of active members for calculating 'open' status
+    const activeMembersCount = await prisma.user.count({
+        where: { status: 'active' }
+    });
+
+
+    const events = await prisma.event.findMany({
+        where: whereClause,
+        include: {
+            _count: {
+                select: { attendances: true },
+            },
+            // Include attendances to calculate summary
+            attendances: {
+                include: {
+                    user: {
+                        select: { status: true }
+                    }
+                }
+            },
+            // Only include user's specific attendance if authenticated (for My Attendance)
+            ...(user ? {
+                // We can't easily include the SAME relation twice with different args in Prisma 
+                // straightforwardly in a way that maps nice to the same field name.
+                // But we fetched ALL attendances above. We can extract the user's attendance in memory.
+            } : {}),
+        },
+        orderBy: { date: 'asc' },
+    });
+
+    // Expand recurring events if requested
+    let result = events;
+    if (expand === 'true' && startDate && endDate) {
+        result = expandRecurringEvents(
+            events,
+            new Date(startDate),
+            new Date(endDate)
+        );
+    }
+
+    // Process events to add summary and userStatus
+    const processedEvents = result.map(event => {
+        // Filter attendances for active users only
+        const activeAttendances = event.attendances.filter(a => a.user.status === 'active');
+
+        const yes = activeAttendances.filter(a => a.status === 'yes').length;
+        const no = activeAttendances.filter(a => a.status === 'no').length;
+        const maybe = activeAttendances.filter(a => a.status === 'maybe').length;
+        // Open = Total Active - (Yes + No + Maybe)
+        // Note: This matches existing logic where 'pending' means no record or null status.
+        // Prisma upsert ensures one record per user. If record missing, it's pending.
+        const respondedCount = yes + no + maybe;
+        const pending = Math.max(0, activeMembersCount - respondedCount);
+
+        // Find user's attendance
+        const userAttendance = user ? event.attendances.find(a => a.userId === user.id) : null;
+
+        const summary = {
+            yes,
+            no,
+            maybe,
+            pending,
+            total: activeMembersCount
+        };
+        // console.log(`DEBUG: Event ${event.id} summary:`, summary);
+
+        return {
+            ...event,
+            attendanceSummary: summary,
+            attendances: userAttendance ? [userAttendance] : [], // Restore expected behavior
+        };
+    });
+
+    res.json({
+        events: processedEvents,
+        count: processedEvents.length,
+    });
+});
+
+/**
+ * Get event by ID
+ * GET /events/:id
+ */
+const getEventById = asyncHandler(async (req, res) => {
+    const { id } = req.params;
+    const user = req.user;
+
+    const event = await prisma.event.findUnique({
+        where: { id: parseInt(id) },
+        include: {
+            targetRegisters: {
+                select: { id: true, name: true }
+            },
+            attendances: {
+                include: {
+                    user: {
+                        select: {
+                            id: true,
+                            firstName: true,
+                            lastName: true,
+                            register: {
+                                select: { id: true, name: true },
+                            },
+                        },
+                    },
+                },
+            },
+            files: user?.role === 'admin' ? true : {
+                where: {
+                    OR: [
+                        { visibility: 'all' },
+                        ...(user?.registerId ? [{
+                            visibility: 'register',
+                            targetRegisterId: user.registerId
+                        }] : []),
+                    ],
+                },
+            },
+            sheetMusic: {
+                include: {
+                    sheetMusic: true,
+                },
+                orderBy: { position: 'asc' },
+            },
+        },
+    });
+
+    if (!event) {
+        throw new AppError('Event nicht gefunden', 404);
+    }
+
+    if (event.visibility === 'admin' && user?.role !== 'admin') {
+        throw new AppError('Keine Berechtigung für diesen Event', 403);
+    }
+
+    // Map sheetMusic relation to setlist property for frontend consistency
+    const eventData = {
+        ...event,
+        setlist: event.sheetMusic,
+    };
+    delete eventData.sheetMusic;
+
+    res.json({ event: eventData });
+});
+
+// Helper to construct a Date object that corresponds to a specific time in Zurich using Luxon
+const { DateTime } = require('luxon');
+
+const createZurichDate = (dateObj, timeStr) => {
+    const y = dateObj.getUTCFullYear();
+    const mon = dateObj.getUTCMonth() + 1; // Luxon months are 1-indexed
+    const d = dateObj.getUTCDate();
+
+    // Create DateTime in Zurich zone
+    // We assume the input dateObj is the date we want "in Zurich".
+    // e.g. if we selected "2024-05-10", we want "2024-05-10 [timeStr] Zurich Time" converted to UTCJSDate.
+
+    const zurichDateTime = DateTime.fromObject({
+        year: y,
+        month: mon,
+        day: d,
+        hour: parseInt(timeStr.split(':')[0]),
+        minute: parseInt(timeStr.split(':')[1])
+    }, { zone: 'Europe/Zurich' });
+
+    return zurichDateTime.toJSDate();
+};
+
+/**
+ * Create new event (or multiple events for recurring)
+ * POST /events
+ */
+const createEvent = asyncHandler(async (req, res) => {
+    const {
+        title,
+        description,
+        location,
+        category,
+        visibility,
+        date,
+        startTime,
+        endTime,
+        isRecurring,
+        recurrenceRule,
+        responseDeadlineHours = 48, // Default 48 hours = 2 days before
+        defaultAttendanceStatus,
+        setlistEnabled = false,
+        isPublic = false,
+        targetRegisters = [], // Array of register IDs
+    } = req.body;
+
+    const eventDate = new Date(date);
+
+    // If recurring, generate all individual events
+    if (isRecurring && recurrenceRule) {
+        const { getEventOccurrences } = require('../services/recurrence.service');
+
+        // Parse the UNTIL date from recurrence rule or default to 1 year
+        let endDate = new Date(eventDate.getTime() + 365 * 24 * 60 * 60 * 1000);
+        const untilMatch = recurrenceRule.match(/UNTIL=([^;]+)/);
+        if (untilMatch) {
+            const untilStr = untilMatch[1];
+            // Parse YYYYMMDDTHHMMSSZ format
+            endDate = new Date(
+                untilStr.replace(/(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})Z/, '$1-$2-$3T$4:$5:$6Z')
+            );
+        }
+
+        // Get all occurrences
+        const occurrences = getEventOccurrences(
+            { isRecurring: true, recurrenceRule, date: eventDate },
+            eventDate,
+            endDate
+        );
+
+        // Create individual events for each occurrence
+        const createdEvents = [];
+        for (const occurrenceDate of occurrences) {
+            const event = await prisma.event.create({
+                data: {
+                    title,
+                    description,
+                    location,
+                    category,
+                    visibility,
+                    date: occurrenceDate,
+                    startTime,
+                    endTime,
+                    responseDeadlineHours: parseInt(responseDeadlineHours),
+                    isRecurring: false, // Each event is now individual
+                    setlistEnabled,
+                    isPublic,
+                    targetRegisters: {
+                        connect: Array.isArray(targetRegisters) ? targetRegisters.map(id => ({ id })) : []
+                    },
+                },
+            });
+            createdEvents.push(event);
+
+            // Auto-create attendance entries for all active users
+            if (defaultAttendanceStatus && defaultAttendanceStatus !== 'none') {
+                const activeUsers = await prisma.user.findMany({
+                    where: { status: 'active' },
+                    select: { id: true }
+                });
+
+                if (activeUsers.length > 0) {
+                    await prisma.attendance.createMany({
+                        data: activeUsers.map(user => ({
+                            eventId: event.id,
+                            userId: user.id,
+                            status: defaultAttendanceStatus,
+                        })),
+                        skipDuplicates: true,
+                    });
+                }
+            }
+        }
+
+        return res.status(201).json({
+            message: `${createdEvents.length} Termine erfolgreich erstellt`,
+            events: createdEvents,
+            count: createdEvents.length,
+        });
+    }
+
+    // Single event creation
+    const event = await prisma.event.create({
+        data: {
+            title,
+            description,
+            location,
+            category,
+            visibility,
+            date: eventDate,
+            startTime,
+            endTime,
+            responseDeadlineHours: parseInt(responseDeadlineHours),
+            isRecurring: false,
+            setlistEnabled,
+            isPublic,
+            targetRegisters: {
+                connect: Array.isArray(targetRegisters) ? targetRegisters.map(id => ({ id })) : []
+            },
+        },
+    });
+
+    notificationService.notifyEventCreated(event);
+
+    // Schedule reminders for this event
+    await reminderQueueService.scheduleEventReminders(event);
+
+    // Auto-create attendance entries for all active users based on the selected status
+    if (defaultAttendanceStatus && defaultAttendanceStatus !== 'none') {
+        const activeUsers = await prisma.user.findMany({
+            where: { status: 'active' },
+            select: { id: true }
+        });
+
+        if (activeUsers.length > 0) {
+            await prisma.attendance.createMany({
+                data: activeUsers.map(user => ({
+                    eventId: event.id,
+                    userId: user.id,
+                    status: defaultAttendanceStatus,
+                })),
+                skipDuplicates: true,
+            });
+        }
+    }
+
+    res.status(201).json({
+        message: 'Event erfolgreich erstellt',
+        event,
+    });
+
+});
+
+/**
+ * Update event
+ * PUT /events/:id
+ */
+const updateEvent = asyncHandler(async (req, res) => {
+    const { id } = req.params;
+    const updateData = { ...req.body };
+
+    // 1. Fetch old event to get old reminders for cancellation
+    const oldEvent = await prisma.event.findUnique({
+        where: { id: parseInt(id) }
+    });
+
+    if (!oldEvent) {
+        throw new AppError('Event nicht gefunden', 404);
+    }
+
+    // Convert date string to Date object if provided
+    if (updateData.date) {
+        updateData.date = new Date(updateData.date);
+    }
+
+    // Handle targetRegisters update separately or within data
+    if (updateData.targetRegisters) {
+        // Use 'set' to replace existing relations
+        updateData.targetRegisters = {
+            set: Array.isArray(updateData.targetRegisters) ? updateData.targetRegisters.map(id => ({ id })) : []
+        };
+    }
+
+    // Update in DB
+    const event = await prisma.event.update({
+        where: { id: parseInt(id) },
+        data: updateData,
+        include: { targetRegisters: true }
+    });
+
+    // 2. Handle Reminders
+    // Check if date or time changed - if so, we need to reschedule reminders
+    const timeChanged = (
+        (updateData.date && oldEvent.date.getTime() !== updateData.date.getTime()) ||
+        (updateData.startTime && oldEvent.startTime !== updateData.startTime)
+    );
+
+    // Since personalized reminders depend on event time, if time changes, we MUST reschedule.
+    if (timeChanged) {
+        // Cancel old reminders is tricky now because we need to find them per user.
+        // But scheduleEventReminders handles "remove existing" by ID.
+        // So we just re-schedule.
+        await reminderQueueService.scheduleEventReminders(event);
+    }
+
+    res.json({
+        message: 'Event erfolgreich aktualisiert',
+        event,
+    });
+
+    notificationService.notifyEventUpdated(event);
+
+    // Reschedule reminders for this event (handles logic if time changed inside the service if we want, 
+    // but here we just call it always to be safe and update any attendee logic)
+    await reminderQueueService.scheduleEventReminders(event);
+});
+
+/**
+ * Delete event
+ * DELETE /events/:id
+ */
+const deleteEvent = asyncHandler(async (req, res) => {
+    const { id } = req.params;
+
+    const event = await prisma.event.findUnique({
+        where: { id: parseInt(id) },
+    });
+
+    await prisma.event.delete({
+        where: { id: parseInt(id) },
+    });
+
+    if (event) {
+        // Cancel Reminders
+        await reminderQueueService.cancelEventReminders(event.id);
+        notificationService.notifyEventDeleted(event);
+    }
+
+    res.json({
+        message: 'Event erfolgreich gelöscht',
+    });
+});
+
+/**
+ * Exclude a date from a recurring event
+ * POST /events/:id/exclude-date
+ */
+const excludeDate = asyncHandler(async (req, res) => {
+    const { id } = req.params;
+    const { date } = req.body;
+
+    const event = await prisma.event.findUnique({
+        where: { id: parseInt(id) },
+    });
+
+    if (!event) {
+        throw new AppError('Event nicht gefunden', 404);
+    }
+
+    if (!event.isRecurring) {
+        throw new AppError('Dieser Event ist kein Serientermin', 400);
+    }
+
+    const updatedExcludedDates = addExcludedDate(event.excludedDates, date);
+
+    const updatedEvent = await prisma.event.update({
+        where: { id: parseInt(id) },
+        data: { excludedDates: updatedExcludedDates },
+    });
+
+    res.json({
+        message: 'Datum erfolgreich ausgeschlossen',
+        event: updatedEvent,
+    });
+});
+
+/**
+ * Set attendance for an event
+ * POST /events/:id/attendance
+ */
+const setAttendance = asyncHandler(async (req, res) => {
+    const { id } = req.params;
+    const { status, comment, userId: targetUserId } = req.body;
+    let userId = req.user.id;
+
+    // If targetUserId is provided, check if requester is admin
+    if (targetUserId) {
+        if (req.user.role !== 'admin') {
+            throw new AppError('Nur Administratoren können den Status anderer Mitglieder ändern', 403);
+        }
+        userId = targetUserId;
+    }
+
+    // Check if event exists and get targetRegisters
+    const event = await prisma.event.findUnique({
+        where: { id: parseInt(id) },
+        include: {
+            targetRegisters: {
+                select: { id: true }
+            }
+        }
+    });
+
+    if (!event) {
+        throw new AppError('Event nicht gefunden', 404);
+    }
+
+    // Check if user is allowed to respond based on targetRegisters
+    const isAdmin = req.user.role === 'admin';
+    const targetRegisterIds = event.targetRegisters?.map(r => r.id) || [];
+
+    if (!isAdmin && targetRegisterIds.length > 0) {
+        // Get the user's registerId (could be current user or target user for admin)
+        const respondingUser = await prisma.user.findUnique({
+            where: { id: userId },
+            select: { registerId: true }
+        });
+
+        if (!respondingUser?.registerId || !targetRegisterIds.includes(respondingUser.registerId)) {
+            throw new AppError('Dieser Termin ist nur für bestimmte Register bestimmt. Sie können keine Rückmeldung geben.', 403);
+        }
+    }
+
+
+    const now = new Date();
+    // isAdmin is already declared earlier in function
+
+    // Calculate response deadline from event date/time and responseDeadlineHours
+    if (!isAdmin && event.responseDeadlineHours) {
+        // Parse event date (stored as UTC midnight) and combine with startTime
+        const eventDateObj = new Date(event.date);
+        const [hours, minutes] = event.startTime.split(':').map(Number);
+
+        // Use UTC date parts + local time construction
+        const eventYear = eventDateObj.getUTCFullYear();
+        const eventMonth = eventDateObj.getUTCMonth();
+        const eventDay = eventDateObj.getUTCDate();
+
+        // Construct the event datetime in local timezone
+        const eventDateTime = new Date(eventYear, eventMonth, eventDay, hours, minutes, 0, 0);
+
+        // Calculate deadline (X hours before event start)
+        const deadline = new Date(eventDateTime.getTime() - event.responseDeadlineHours * 60 * 60 * 1000);
+
+        if (now > deadline) {
+            throw new AppError('Die Rückmeldefrist für diesen Termin ist abgelaufen', 400);
+        }
+    }
+
+    // Also check if event is in the past (additional safety check)
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const eventDay = new Date(new Date(event.date).setHours(0, 0, 0, 0));
+
+    if (eventDay < today && !isAdmin) {
+        throw new AppError('Vergangene Termine können nicht mehr bearbeitet werden', 400);
+    }
+
+
+    // Upsert attendance
+    const attendance = await prisma.attendance.upsert({
+        where: {
+            eventId_userId: {
+                eventId: parseInt(id),
+                userId,
+            },
+        },
+        update: {
+            status,
+            comment,
+        },
+        create: {
+            eventId: parseInt(id),
+            userId,
+            status,
+            comment,
+        },
+        include: {
+            user: {
+                select: {
+                    id: true,
+                    firstName: true,
+                    lastName: true,
+                },
+            },
+        },
+    });
+
+    // Changing attendance status might affect "onlyIfAttending" reminders
+    // We re-schedule reminders for this event (or ideally just this user, but full event sync is safer/easier)
+    // We fetch the event again to have full data (start time, date, etc) need for scheduling
+    // Since we already fetched event above (Zeile 516), we can reuse it, but we need date/time fields which might not be selected?
+    // prisma findUnique include selects all fields by default unless select is used.
+    // Line 516 used include targetRegisters only? Wait. include ADDS to default selection. So we have full event.
+    // We need to ensure date/startTime is present.
+    await reminderQueueService.scheduleEventReminders(event);
+
+    res.json({
+        message: status === 'none' ? 'Rückmeldung zurückgezogen' : 'Rückmeldung gespeichert',
+        attendance,
+    });
+});
+
+/**
+ * Get all attendances for an event (including all active members)
+ * GET /events/:id/attendances
+ */
+const getEventAttendances = asyncHandler(async (req, res) => {
+    const { id } = req.params;
+
+    // Check if event exists and get targetRegisters
+    const event = await prisma.event.findUnique({
+        where: { id: parseInt(id) },
+        include: {
+            targetRegisters: {
+                select: { id: true }
+            }
+        }
+    });
+
+    if (!event) {
+        throw new AppError('Event nicht gefunden', 404);
+    }
+
+    // Build where clause for active members
+    const membersWhereClause = { status: 'active' };
+
+    // If event has targetRegisters, only show members from those registers
+    const targetRegisterIds = event.targetRegisters?.map(r => r.id) || [];
+    if (targetRegisterIds.length > 0) {
+        membersWhereClause.registerId = { in: targetRegisterIds };
+    }
+
+    // Get active members (filtered by targetRegisters if set)
+    const activeMembers = await prisma.user.findMany({
+        where: membersWhereClause,
+        select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            email: true,
+            registerId: true,
+            register: {
+                select: { id: true, name: true },
+            },
+        },
+        orderBy: { lastName: 'asc' },
+    });
+
+    // Get existing attendances
+    const existingAttendances = await prisma.attendance.findMany({
+        where: { eventId: parseInt(id) },
+        include: {
+            user: {
+                select: {
+                    id: true,
+                    firstName: true,
+                    lastName: true,
+                    email: true,
+                    registerId: true,
+                    register: {
+                        select: { id: true, name: true },
+                    },
+                },
+            },
+        },
+    });
+
+    // Create a map of userId -> attendance for quick lookup
+    const attendanceMap = new Map();
+    for (const att of existingAttendances) {
+        attendanceMap.set(att.userId, att);
+    }
+
+    // Build full attendance list with all active members
+    const allMemberAttendances = activeMembers.map(member => {
+        const existing = attendanceMap.get(member.id);
+        if (existing) {
+            return existing;
+        }
+        // Member has no attendance record - return with null status
+        return {
+            id: null,
+            status: null, // null = keine Rückmeldung
+            comment: null,
+            eventId: parseInt(id),
+            userId: member.id,
+            user: member,
+            createdAt: null,
+            updatedAt: null,
+        };
+    });
+
+    // Group by status (including null for 'pending')
+    const grouped = {
+        yes: allMemberAttendances.filter(a => a.status === 'yes'),
+        no: allMemberAttendances.filter(a => a.status === 'no'),
+        maybe: allMemberAttendances.filter(a => a.status === 'maybe'),
+        pending: allMemberAttendances.filter(a => a.status === null),
+    };
+
+    // Calculate actual deadline DateTime for frontend
+    // Parse event date (stored as UTC midnight) and combine with startTime
+    const eventDateObj = new Date(event.date);
+    const [startHours, startMinutes] = event.startTime.split(':').map(Number);
+
+    // Use UTC date parts + local time construction
+    const eventYear = eventDateObj.getUTCFullYear();
+    const eventMonth = eventDateObj.getUTCMonth();
+    const eventDay = eventDateObj.getUTCDate();
+
+    // Construct the event datetime in UTC
+    // Annahme: Die Datenbank speichert Datum in UTC. Die Uhrzeit ist aber "Lokalzeit" im Verein.
+    // Um konsistent zu sein, konstruieren wir ein UTC-Datum aus den Komponenten
+    const eventDateTimeUTC = new Date(Date.UTC(eventYear, eventMonth, eventDay, startHours, startMinutes, 0, 0));
+
+    // Calculate deadline (X hours before event start)
+    const deadline = new Date(eventDateTimeUTC.getTime() - (event.responseDeadlineHours || 48) * 60 * 60 * 1000);
+
+    // Check if locked
+    const now = new Date();
+    const isAdmin = req.user.role === 'admin';
+    let isResponseLocked = false;
+
+    if (!isAdmin) {
+        // Logik 1: Deadline vorbei?
+        if (now > deadline) {
+            isResponseLocked = true;
+        }
+
+        // Logik 2: Event vorbei? (Tages-Check in UTC)
+        const todayUTC = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+        const eventDayUTC = new Date(Date.UTC(eventYear, eventMonth, eventDay));
+
+        if (eventDayUTC < todayUTC) {
+            isResponseLocked = true;
+        }
+    }
+
+    res.json({
+        attendances: allMemberAttendances,
+        grouped,
+        summary: {
+            yes: grouped.yes.length,
+            no: grouped.no.length,
+            maybe: grouped.maybe.length,
+            pending: grouped.pending.length,
+            total: allMemberAttendances.length,
+        },
+        responseDeadlineHours: event.responseDeadlineHours,
+        responseDeadline: deadline.toISOString(), // Send correctly calculated deadline
+        isResponseLocked: isResponseLocked, // NEW: Server-side locking status
+    });
+});
+
+/**
+ * Send reminders to users who haven't responded
+ * POST /events/:id/send-reminders
+ */
+const sendReminders = asyncHandler(async (req, res) => {
+    const { id } = req.params;
+
+    const event = await prisma.event.findUnique({
+        where: { id: parseInt(id) },
+    });
+
+    if (!event) {
+        throw new AppError('Event nicht gefunden', 404);
+    }
+
+    // Get all active users who haven't responded
+    const usersWithAttendance = await prisma.attendance.findMany({
+        where: { eventId: parseInt(id) },
+        select: { userId: true },
+    });
+
+    const respondedUserIds = usersWithAttendance.map(a => a.userId);
+
+    const usersWithoutResponse = await prisma.user.findMany({
+        where: {
+            id: { notIn: respondedUserIds },
+            status: 'active',
+        },
+        select: {
+            id: true,
+            email: true,
+            firstName: true,
+            lastName: true,
+        },
+    });
+
+    if (usersWithoutResponse.length === 0) {
+        return res.json({
+            message: 'Alle Benutzer haben bereits geantwortet',
+            sent: 0,
+        });
+    }
+
+    res.status(503).json({
+        message: 'E-Mail-Erinnerungen sind deaktiviert.',
+    });
+});
+
+/**
+ * Delete multiple events at once
+ * POST /events/bulk-delete
+ */
+const bulkDeleteEvents = asyncHandler(async (req, res) => {
+    const { ids } = req.body;
+
+    // Fetch events before deletion to send notifications
+    const eventsToDelete = await prisma.event.findMany({
+        where: {
+            id: { in: ids },
+        },
+    });
+
+    // Delete all events with the given IDs
+    const result = await prisma.event.deleteMany({
+        where: {
+            id: { in: ids },
+        },
+    });
+
+    // Send notifications for each deleted event
+    // We do this asynchronously to not block the response too long, 
+    // but we use Promise.allSettled to ideally ensure they are triggered
+    if (eventsToDelete.length > 0) {
+        Promise.allSettled(eventsToDelete.map(event =>
+            notificationService.notifyEventDeleted(event)
+        )).catch(err => console.error('Error sending bulk delete notifications:', err));
+    }
+
+    res.json({
+        message: `${result.count} Termine erfolgreich gelöscht`,
+        count: result.count,
+    });
+});
+
+/**
+ * Add item to event setlist (sheet music, pause, or custom)
+ * POST /events/:id/setlist
+ */
+const addItemToSetlist = asyncHandler(async (req, res) => {
+    const { id } = req.params;
+    const { type, sheetMusicId, customTitle, customDescription, duration } = req.body;
+
+    // Check if event exists
+    const event = await prisma.event.findUnique({
+        where: { id: parseInt(id) },
+    });
+
+    if (!event) {
+        throw new AppError('Event nicht gefunden', 404);
+    }
+
+    // Type-specific validation
+    if (type === 'sheetMusic') {
+        if (!sheetMusicId) {
+            throw new AppError('Sheet Music ID ist erforderlich', 400);
+        }
+        const sheetMusic = await prisma.sheetMusic.findUnique({
+            where: { id: parseInt(sheetMusicId) },
+        });
+        if (!sheetMusic) {
+            throw new AppError('Notenblatt nicht gefunden', 404);
+        }
+    } else if (type === 'pause' || type === 'custom') {
+        if (!customTitle) {
+            throw new AppError('Titel ist erforderlich', 400);
+        }
+    }
+
+    // Get next position
+    const maxPosition = await prisma.eventSheetMusic.aggregate({
+        where: { eventId: parseInt(id) },
+        _max: { position: true },
+    });
+    const nextPosition = (maxPosition._max.position ?? -1) + 1;
+
+    // Create item
+    const item = await prisma.eventSheetMusic.create({
+        data: {
+            eventId: parseInt(id),
+            type,
+            sheetMusicId: type === 'sheetMusic' ? parseInt(sheetMusicId) : null,
+            customTitle,
+            customDescription,
+            duration,
+            position: nextPosition,
+        },
+        include: {
+            sheetMusic: true,
+        },
+    });
+
+    res.status(201).json({
+        message: 'Element erfolgreich zum Programm hinzugefügt',
+        item,
+    });
+});
+
+/**
+ * Update setlist item (only for custom/pause items)
+ * PUT /events/:id/setlist/:itemId
+ */
+const updateSetlistItem = asyncHandler(async (req, res) => {
+    const { id, itemId } = req.params;
+    const { customTitle, customDescription, duration } = req.body;
+
+    // Check if item exists
+    const item = await prisma.eventSheetMusic.findFirst({
+        where: {
+            id: parseInt(itemId),
+            eventId: parseInt(id),
+        },
+    });
+
+    if (!item) {
+        throw new AppError('Element nicht gefunden', 404);
+    }
+
+    // Allow updating sheetMusic items (customTitle, customDescription, duration)
+    // if (item.type === 'sheetMusic') {
+    //    throw new AppError('Notenblätter können nicht bearbeitet werden', 400);
+    // }
+
+    const updated = await prisma.eventSheetMusic.update({
+        where: { id: parseInt(itemId) },
+        data: {
+            customTitle,
+            customDescription,
+            duration,
+        },
+        include: {
+            sheetMusic: true,
+        },
+    });
+
+    res.json({
+        message: 'Element erfolgreich aktualisiert',
+        item: updated,
+    });
+});
+
+/**
+ * Remove item from event setlist
+ * DELETE /events/:id/setlist/:itemId
+ */
+const removeItemFromSetlist = asyncHandler(async (req, res) => {
+    const { id, itemId } = req.params;
+
+    // Delete the item
+    await prisma.eventSheetMusic.delete({
+        where: {
+            id: parseInt(itemId),
+        },
+    });
+
+    // Reorder remaining items
+    const remaining = await prisma.eventSheetMusic.findMany({
+        where: { eventId: parseInt(id) },
+        orderBy: { position: 'asc' },
+    });
+
+    // Update positions sequentially
+    for (let i = 0; i < remaining.length; i++) {
+        await prisma.eventSheetMusic.update({
+            where: { id: remaining[i].id },
+            data: { position: i },
+        });
+    }
+
+    res.json({
+        message: 'Element erfolgreich aus dem Programm entfernt',
+    });
+});
+
+/**
+ * Reorder setlist items
+ * PUT /events/:id/setlist/reorder
+ */
+const reorderSetlist = asyncHandler(async (req, res) => {
+    const { id } = req.params;
+    const { items } = req.body;
+
+    // Update all positions in a transaction using a 2-step process to avoid unique constraint violations
+    // 1. Move to temporary negative positions
+    // 2. Move to final positions
+    await prisma.$transaction([
+        ...items.map((item) =>
+            prisma.eventSheetMusic.update({
+                where: { id: item.id },
+                data: { position: -1 * item.id }, // Temp position
+            })
+        ),
+        ...items.map((item) =>
+            prisma.eventSheetMusic.update({
+                where: { id: item.id },
+                data: { position: item.position },
+            })
+        ),
+    ]);
+
+    res.json({
+        message: 'Reihenfolge erfolgreich aktualisiert',
+    });
+});
+
+/**
+ * Get verification list for an event (Admin)
+ * GET /events/:id/verification-list
+ */
+const getVerificationList = asyncHandler(async (req, res) => {
+    const { id } = req.params;
+
+    const event = await prisma.event.findUnique({
+        where: { id: parseInt(id) },
+        include: {
+            targetRegisters: { select: { id: true } }
+        }
+    });
+
+    if (!event) {
+        throw new AppError('Event nicht gefunden', 404);
+    }
+
+    // 1. Get all Active Users (filtered by targetRegisters if applicable)
+    const whereClause = { status: 'active' };
+    const targetRegisterIds = event.targetRegisters?.map(r => r.id) || [];
+    if (targetRegisterIds.length > 0) {
+        whereClause.registerId = { in: targetRegisterIds };
+    }
+
+    const users = await prisma.user.findMany({
+        where: whereClause,
+        select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            register: { select: { id: true, name: true } },
+            profilePicture: true,
+        },
+        orderBy: [{ register: { name: 'asc' } }, { lastName: 'asc' }]
+    });
+
+    // 2. Get User Self-Declared Attendance
+    const attendances = await prisma.attendance.findMany({
+        where: { eventId: parseInt(id) }
+    });
+    const attendanceMap = new Map(attendances.map(a => [a.userId, a]));
+
+    // 3. Get Verified Attendance
+    const verifiedAttendances = await prisma.verifiedAttendance.findMany({
+        where: { eventId: parseInt(id) }
+    });
+    const verifiedMap = new Map(verifiedAttendances.map(v => [v.userId, v]));
+
+    // 4. Merge Data
+    const result = users.map(user => {
+        const attendance = attendanceMap.get(user.id);
+        const verified = verifiedMap.get(user.id);
+
+        let suggestedStatus = 'UNEXCUSED'; // Default if nothing matches
+        if (verified) {
+            suggestedStatus = verified.status;
+        } else if (attendance?.status === 'yes') {
+            suggestedStatus = 'PRESENT';
+        } else if (attendance?.status === 'no') {
+            suggestedStatus = 'EXCUSED';
+        }
+
+        return {
+            user: user,
+            attendance: attendance ? { status: attendance.status, comment: attendance.comment } : null,
+            verified: verified ? {
+                status: verified.status,
+                comment: verified.comment,
+                updatedAt: verified.updatedAt
+            } : null,
+            smartStatus: verified ? verified.status : suggestedStatus
+        };
+    });
+
+    // Group by Register
+    const groupedByRegister = result.reduce((acc, item) => {
+        const regName = item.user.register?.name || 'Ohne Register';
+        if (!acc[regName]) acc[regName] = [];
+        acc[regName].push(item);
+        return acc;
+    }, {});
+
+    res.json({
+        event: { id: event.id, title: event.title, date: event.date },
+        list: result,
+        grouped: groupedByRegister
+    });
+});
+
+/**
+ * Bulk verify attendance for an event
+ * POST /events/:id/verify
+ */
+const verifyAttendance = asyncHandler(async (req, res) => {
+    const { id } = req.params;
+    const { verifications } = req.body; // Array of { userId, status, comment }
+    const adminId = req.user.id; // Corrected: req.user.id not req.params.id
+
+    if (!Array.isArray(verifications)) {
+        throw new AppError('Ungültiges Format', 400);
+    }
+
+    const eventId = parseInt(id);
+
+    // Use transaction to update all
+    // Since we want to update multiple records, we can use a loop of upserts in a transaction
+    const operations = verifications.map(v =>
+        prisma.verifiedAttendance.upsert({
+            where: {
+                eventId_userId: {
+                    eventId: eventId,
+                    userId: v.userId
+                }
+            },
+            update: {
+                status: v.status,
+                comment: v.comment,
+                adminId: adminId
+            },
+            create: {
+                eventId: eventId,
+                userId: v.userId,
+                status: v.status,
+                comment: v.comment,
+                adminId: adminId
+            }
+        })
+    );
+
+    await prisma.$transaction(operations);
+
+    res.json({
+        message: `${operations.length} Einträge erfolgreich verifiziert.`
+    });
+});
+
+/**
+ * Export Event Setlist as PDF (Ablauf)
+ * GET /events/:id/export-pdf
+ */
+const exportSetlistPdf = asyncHandler(async (req, res) => {
+    const { id } = req.params;
+
+    const event = await prisma.event.findUnique({
+        where: { id: parseInt(id) },
+        include: {
+            sheetMusic: {
+                orderBy: { position: 'asc' },
+                include: {
+                    sheetMusic: true
+                }
+            }
+        }
+    });
+
+    if (!event) {
+        throw new AppError('Event nicht gefunden', 404);
+    }
+
+    const opts = parseOpts(req.query);
+
+    const fonts = FONTS;
+
+    const printer = new PdfPrinter(fonts);
+
+    // Filter for table body
+    const tableBody = [
+        [
+            { text: '#', style: 'tableHeader' },
+            { text: 'Titel / Aktion', style: 'tableHeader' },
+            { text: 'Detail / Komponist', style: 'tableHeader' },
+            { text: 'Dauer', style: 'tableHeader', alignment: 'right' }
+        ]
+    ];
+
+    let totalDuration = 0;
+
+    if (event.sheetMusic && event.sheetMusic.length > 0) {
+        event.sheetMusic.forEach((item, index) => {
+            let title = '';
+            let detail = '';
+            let duration = item.duration ? `${item.duration} Min.` : '';
+            if (item.duration) totalDuration += item.duration;
+
+            if (item.type === 'sheetMusic' && item.sheetMusic) {
+                title = item.customTitle || item.sheetMusic.title;
+                detail = item.sheetMusic.composer || '';
+                if (item.sheetMusic.arranger) {
+                    detail += detail ? `, ${item.sheetMusic.arranger}` : item.sheetMusic.arranger;
+                }
+                if (item.customDescription) {
+                    detail += detail ? `\n${item.customDescription}` : item.customDescription;
+                }
+            } else if (item.type === 'pause') {
+                title = 'PAUSE';
+                detail = '';
+            } else if (item.type === 'custom') {
+                title = item.customTitle;
+                detail = item.customDescription || '';
+            }
+
+            tableBody.push([
+                (index + 1).toString(),
+                { text: title, bold: item.type === 'pause' },
+                { text: detail, italics: true, color: 'gray' },
+                { text: duration, alignment: 'right' }
+            ]);
+        });
+
+        // Add Total Duration Row
+        tableBody.push([
+            { text: '', border: [false, true, false, false] },
+            { text: 'Total', bold: true, border: [false, true, false, false] },
+            { text: '', border: [false, true, false, false] },
+            { text: `${totalDuration} Min.`, bold: true, alignment: 'right', border: [false, true, false, false] }
+        ]);
+    } else {
+        tableBody.push([{ text: 'Keine Elemente im Programm', colSpan: 4, alignment: 'center', italics: true }, {}, {}, {}]);
+    }
+
+
+    const formattedDate = new Date(event.date).toLocaleDateString('de-CH');
+    const timeStr = event.startTime ? `${event.startTime} Uhr` : '';
+
+    const docDefinition = {
+        ...buildHeaderFooter(event.title, opts),
+        content: [
+            ...buildTitleBlock(event.title, `${formattedDate} ${timeStr} | ${event.location || ''}`, opts),
+            { text: 'Ablauf / Programm', style: 'sectionHeader' },
+            {
+                table: {
+                    headerRows: 1,
+                    widths: ['auto', '*', '*', 'auto'],
+                    body: tableBody
+                },
+                layout: TABLE_LAYOUT
+            }
+        ],
+        styles: STYLES,
+        defaultStyle: DEFAULT_STYLE
+    };
+
+    const pdfDoc = await printer.createPdfKitDocument(docDefinition);
+
+    // Sanitize filename
+    const safeName = `Ablauf_${event.title}`.replace(/[^a-z0-9]/gi, '_');
+
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `inline; filename="${safeName}.pdf"`);
+
+    pdfDoc.pipe(res);
+    pdfDoc.end();
+});
+
+module.exports = {
+    getAllEvents,
+    getEventById,
+    createEvent,
+    updateEvent,
+    deleteEvent,
+    excludeDate,
+    setAttendance,
+    getEventAttendances,
+    sendReminders,
+    bulkDeleteEvents,
+    addItemToSetlist,
+    updateSetlistItem,
+    removeItemFromSetlist,
+    reorderSetlist,
+    getVerificationList,
+    getVerificationList,
+    verifyAttendance,
+    exportSetlistPdf
+};
+

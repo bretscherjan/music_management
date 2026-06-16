@@ -45,7 +45,8 @@ const protokollService = {
             const token = storage.getItem('accessToken');
             // api is an axios instance, baseURL might be undefined if not explicitly set, 
             // but we can just use the import.meta.env.VITE_API_URL
-            const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:3004/api';
+            const fallbackUrl = window.location.origin ? window.location.origin + '/api' : 'http://localhost/api';
+            const baseUrl = import.meta.env.VITE_API_URL || fallbackUrl;
             xhr.open('POST', `${baseUrl}/protokoll/transcribe`);
             if (token) {
                 // Remove quotes if present, sometimes token is stored with them

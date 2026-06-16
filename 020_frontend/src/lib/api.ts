@@ -1,7 +1,8 @@
 import axios from 'axios';
 import { storage } from './storage';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3004/api';
+const fallbackUrl = window.location.origin ? window.location.origin + '/api' : 'http://localhost/api';
+const API_BASE_URL = import.meta.env.VITE_API_URL || fallbackUrl;
 
 const normalizeMediaPath = (path: string): string => {
     if (path.startsWith('/api/uploads/')) return path;

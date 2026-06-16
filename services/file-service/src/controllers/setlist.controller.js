@@ -1,4 +1,5 @@
-const prisma = require('../utils/prisma');
+const { PrismaClient } = require('@prisma/client');
+const prisma = new PrismaClient();
 const { AppError, asyncHandler } = require('../../../../packages/shared/src/middlewares/errorHandler.middleware');
 
 // GET /api/setlists

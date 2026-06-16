@@ -91,6 +91,7 @@ function DialogContent({
           ],
           className
         )}
+        aria-describedby={props["aria-describedby"] || undefined}
         {...props}
       >
         {children}

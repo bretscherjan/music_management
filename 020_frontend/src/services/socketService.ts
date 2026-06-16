@@ -35,7 +35,8 @@ class SocketService {
                 return;
             }
 
-            const baseUrl = import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:3004';
+            const fallbackUrl = window.location.origin || 'http://localhost';
+            const baseUrl = import.meta.env.VITE_API_URL?.replace('/api', '') || fallbackUrl;
 
             this.socket = io(baseUrl, {
                 path: '/ws',

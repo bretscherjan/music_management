@@ -27,3 +27,5 @@ desktop.ini
 .vscode/
 *.swp
 *.swo
+
+*.node-modules

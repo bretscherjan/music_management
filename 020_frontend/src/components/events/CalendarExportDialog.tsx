@@ -98,7 +98,8 @@ export function CalendarExportDialog({ events }: { events: Event[] }) {
             .catch(() => { /* use defaults silently */ });
     }, []);
 
-    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3004/api';
+    const fallbackUrl = window.location.origin ? window.location.origin + '/api' : 'http://localhost/api';
+    const apiUrl = import.meta.env.VITE_API_URL || fallbackUrl;
     const calendarUrl = localToken ? buildCalendarUrl(apiUrl, localToken, prefs) : '';
 
     const handleCopyLink = () => {

@@ -21,7 +21,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
-import { Music, Search, GripVertical, Edit2, Trash2, Clock, FileText, Pause, Folder, Download } from 'lucide-react';
+import { Music, Search, GripVertical, Edit2, Trash2, Clock, FileText, Pause, Folder } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
 
@@ -47,7 +47,6 @@ export function EventSetlistSection({ event, isAdmin }: EventSetlistSectionProps
     const [pauseMinutes, setPauseMinutes] = useState(15);
     const [customTitle, setCustomTitle] = useState('');
     const [customDescription, setCustomDescription] = useState('');
-    const [isExportingPdf, setIsExportingPdf] = useState(false);
 
     // Drag and drop
     const sensors = useSensors(
@@ -168,18 +167,6 @@ export function EventSetlistSection({ event, isAdmin }: EventSetlistSectionProps
         setPauseMinutes(15);
     };
 
-    const handleExportPdf = async () => {
-        setIsExportingPdf(true);
-        try {
-            const blob = await eventService.exportPdf(event.id);
-            eventService.downloadBlob(blob, `${event.title.replace(/[^a-z0-9]/gi, '_') || 'ablauf'}.pdf`);
-        } catch (error: any) {
-            toast.error(error.response?.data?.message || 'Fehler beim PDF-Export');
-        } finally {
-            setIsExportingPdf(false);
-        }
-    };
-
     const sortedSetlist = [...(event.setlist || [])].sort((a, b) => a.position - b.position);
 
     return (
@@ -190,12 +177,6 @@ export function EventSetlistSection({ event, isAdmin }: EventSetlistSectionProps
                     <h3 className="text-lg font-semibold">Programm / Setlist</h3>
                 </div>
                 <div className="flex flex-wrap gap-2">
-                    <Button variant="outline" size="sm" onClick={handleExportPdf} disabled={isExportingPdf}>
-                        <span className="flex items-center">
-                            <Download className="h-4 w-4 mr-2" />
-                            Ablauf als PDF
-                        </span>
-                    </Button>
                     {isAdmin && (
                         <div className="flex gap-2">
                             <Dialog open={sheetMusicDialogOpen} onOpenChange={setSheetMusicDialogOpen}>

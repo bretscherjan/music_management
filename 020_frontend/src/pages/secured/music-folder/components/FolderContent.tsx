@@ -6,9 +6,7 @@ import { musicFolderService } from '@/services/musicFolderService';
 import { sheetMusicService } from '@/services/sheetMusicService';
 import { useCan } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
-import { Download, Plus, Trash2, GripVertical, Save, X, Loader2, Music } from 'lucide-react';
-import { PdfExportDialog } from '@/components/ui/PdfExportDialog';
-import type { PdfOptions } from '@/utils/pdfTheme';
+import { Plus, Trash2, GripVertical, Save, X, Loader2, Music } from 'lucide-react';
 import { toast } from 'sonner';
 import { Dialog, DialogContent, DialogTrigger, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import type { MusicFolderItem } from '@/services/musicFolderService';
@@ -341,30 +339,6 @@ export const FolderContent = ({ folderId }: FolderContentProps) => {
                                     <span className="hidden sm:inline">Löschen</span>
                                 </Button>
                             )}
-                            <PdfExportDialog
-                                trigger={
-                                    <Button size="sm">
-                                        <Download className="h-4 w-4 sm:mr-2" />
-                                        <span className="hidden sm:inline">Liste als PDF</span>
-                                        <span className="sm:hidden">PDF</span>
-                                    </Button>
-                                }
-                                title="Mappe als PDF exportieren"
-                                onExport={async (opts: PdfOptions) => {
-                                    try {
-                                        const blob = await musicFolderService.exportPdf(folderId, opts);
-                                        const url = window.URL.createObjectURL(blob);
-                                        const link = document.createElement('a');
-                                        link.href = url;
-                                        link.setAttribute('download', `${folder.name.replace(/[^a-z0-9]/gi, '_')}.pdf`);
-                                        document.body.appendChild(link);
-                                        link.click();
-                                        link.parentNode?.removeChild(link);
-                                    } catch (e) {
-                                        toast.error('Fehler beim Exportieren des PDFs');
-                                    }
-                                }}
-                            />
                         </>
                     )}
                 </div>

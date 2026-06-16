@@ -41,8 +41,6 @@ import {
     SheetHeader,
     SheetTitle,
 } from '@/components/ui/sheet';
-import { PdfExportDialog } from '@/components/ui/PdfExportDialog';
-import type { PdfOptions } from '@/utils/pdfTheme';
 import { toast } from 'sonner';
 import { musicFolderService } from '@/services/musicFolderService';
 import { ZoomableTableWrapper } from '@/components/common/ZoomableTableWrapper';
@@ -194,17 +192,6 @@ export function SheetMusicManagementPage() {
         },
     });
 
-    const exportPdfMutation = useMutation({
-        mutationFn: (opts: PdfOptions) => sheetMusicService.exportPdf(queryParams, opts),
-        onSuccess: (blob) => {
-            sheetMusicService.downloadBlob(blob, `noteninventar-${new Date().toISOString().split('T')[0]}.pdf`);
-            toast.success('PDF erfolgreich exportiert');
-        },
-        onError: () => {
-            toast.error('Fehler beim PDF Export');
-        },
-    });
-
     const addToFolderMutation = useMutation({
         mutationFn: ({ folderId, sheetId }: { folderId: number, sheetId: number }) =>
             musicFolderService.addItems(folderId, [sheetId]),
@@ -340,17 +327,6 @@ export function SheetMusicManagementPage() {
                             <FileDown className="h-4 w-4" />
                             CSV
                         </Button>
-                        <PdfExportDialog
-                            trigger={
-                                <Button variant="outline" size="sm" className="gap-1.5 hidden sm:flex" disabled={exportPdfMutation.isPending}>
-                                    <FileDown className="h-4 w-4" />
-                                    PDF
-                                </Button>
-                            }
-                            title="Notenbestand exportieren"
-                            onExport={(opts) => exportPdfMutation.mutate(opts)}
-                            isLoading={exportPdfMutation.isPending}
-                        />
                     </div>
                 }
             />

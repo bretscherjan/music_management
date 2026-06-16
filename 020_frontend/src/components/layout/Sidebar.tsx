@@ -34,7 +34,6 @@ const mainNavItems: NavItem[] = [
 
 const adminNavItems: NavItem[] = [
     { label: 'Termine verwalten', href: '/member/admin/events', icon: <Calendar className="h-5 w-5" />, permission: 'events:write' },
-    { label: 'Workspace', href: '/member/admin/workspace', icon: <Folder className="h-5 w-5" />, permission: 'workspace:read' },
     { label: 'Notenverwaltung', href: '/member/admin/sheet-music', icon: <Library className="h-5 w-5" />, permission: 'sheetMusic:read' },
     { label: 'Register', href: '/member/admin/registers', icon: <Music className="h-5 w-5" />, permission: 'registers:write' },
     { label: 'Protokoll', href: '/member/admin/protokoll', icon: <ClipboardList className="h-5 w-5" />, permission: 'protokoll:read' },
